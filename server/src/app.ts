@@ -1,43 +1,125 @@
-// Load the express module to create a web application
-
 import express from "express";
+import sequelize from './config/database';
+
+// import models
+import { Station } from './models/station.model';
+import { Access } from './models/access.model';
+import { Book } from './models/book.model';
+import { Power } from './models/power.model';
+import { Provider } from './models/provider.model';
+import { User } from './models/user.model';
+import { Terminal } from './models/terminal.model';
+import { Plug } from './models/plug.model';
+import { Vehicule } from './models/vehicule.model';
+import { BookTerminal } from './models/book_terminal.model';
+import { TerminalPlug } from './models/terminal_plug.model';
+import { Compagny } from './models/compagny.model';
+import { Observation } from './models/observation.model';
+import { Operator } from './models/operator.model';
+import { Request } from './models/request.model';
+
+
+async function testDatabaseConnection() {
+  try {
+    await sequelize.authenticate();
+    console.log('🎉 Connexion à la base de données PostgreSQL établie avec succès !');
+
+    User.initialize(sequelize);
+    Access.initialize(sequelize);
+    Compagny.initialize(sequelize);
+    Operator.initialize(sequelize);
+    Plug.initialize(sequelize);
+    Power.initialize(sequelize);
+    Provider.initialize(sequelize);
+    Observation.initialize(sequelize);
+
+    Station.initialize(sequelize);
+    Terminal.initialize(sequelize);
+    Book.initialize(sequelize);
+    BookTerminal.initialize(sequelize);
+    Request.initialize(sequelize);
+
+    TerminalPlug.initialize(sequelize);
+    Vehicule.initialize(sequelize);
+
+
+    User.associate();
+    Access.associate();
+    Book.associate();
+    Compagny.associate();
+    Observation.associate();
+    Operator.associate();
+    Plug.associate();
+    Power.associate();
+    Provider.associate();
+    Request.associate();
+    Station.associate();
+    Terminal.associate();
+    TerminalPlug.associate();
+    Vehicule.associate();
+    BookTerminal.associate();
+
+    console.log('Modèle Station initialisé et prêt.');
+    console.log('Modèle Access initialisé et prêt.');
+    console.log('Modèle Book initialisé et prêt.');
+    console.log('Modèle Power initialisé et prêt.');
+    console.log('Modèle Provider initialisé et prêt.');
+    console.log('Modèle User initialisé et prêt.');
+    console.log('Modèle Terminal initialisé et prêt.');
+    console.log('Modèle Plug initialisé et prêt.');
+    console.log('Modèle Vehicule initialisé et prêt.');
+    console.log('Modèle BookTerminal initialisé et prêt.');
+    console.log('Modèle TerminalPlug initialisé et prêt.');
+    console.log('Modèle Compagny initialisé et prêt.');
+    console.log('Modèle Observation initialisé et prêt.');
+    console.log('Modèle Operator initialisé et prêt.');
+    console.log('Modèle Request initialisé et prêt.');
+
+    console.log('Base de données prête à l\'emploi.');
+
+    await sequelize.sync({ alter: true });
+    console.log('🚀 Base de données synchronisée avec les modèles !');
+
+    // --- NOUVEAU CODE : Création d'un utilisateur ---
+    console.log('\n--- Tentative de création d\'un nouvel utilisateur ---');
+    const [user, created] = await User.findOrCreate({
+      where: { email: 'test.user@example.com' },
+      defaults: {
+        firstName: 'Test',
+        lastName: 'User',
+        email: 'test.user@example.com',
+        password: 'securepassword123',
+        birthdate: new Date('1990-01-01'),
+        address: '123 Main St',
+        city: 'Anytown',
+        postcode: '12345',
+        country: 'FR',
+        isAdmin: false,
+      },
+    });
+
+    if (created) {
+      console.log(`✅ Utilisateur créé avec succès : ID ${user.id}, Email : ${user.email}`);
+    } else {
+      console.log(`ℹ️ L'utilisateur avec l'email ${user.email} existe déjà (ID: ${user.id}).`);
+    }
+
+  } catch (error) {
+    console.error('❌ Impossible de se connecter à la base de données :', error);
+  }
+}
+
+testDatabaseConnection();
+
+
 
 const app = express();
-
-// Configure it
-
-/* ************************************************************************* */
-
-// CORS Handling: Why is the current code present and do I need to define specific allowed origins for my project?
-
-// CORS (Cross-Origin Resource Sharing) is a security mechanism in web browsers that blocks requests from a different domain than the server.
-// You may find the following magic line in forums:
-
-// app.use(cors());
-
-// You should NOT do that: such code uses the `cors` module to allow all origins, which can pose security issues.
-// For this pedagogical template, the CORS code allows CLIENT_URL in development mode (when process.env.CLIENT_URL is defined).
 
 import cors from "cors";
 
 if (process.env.CLIENT_URL != null) {
   app.use(cors({ origin: [process.env.CLIENT_URL] }));
 }
-
-// If you need to allow extra origins, you can add something like this:
-
-/*
-app.use(
-  cors({
-    origin: ["http://mysite.com", "http://another-domain.com"],
-  }),
-);
-*/
-
-// With ["http://mysite.com", "http://another-domain.com"]
-// to be replaced with an array of your trusted origins
-
-/* ************************************************************************* */
 
 // Request Parsing: Understanding the purpose of this part
 
