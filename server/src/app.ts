@@ -1,6 +1,9 @@
 import express from "express";
 import sequelize from './config/database';
 
+const app = express();
+const PORT = process.env.PORT || 3000;
+
 // import models
 import { Station } from './models/station.model';
 import { Access } from './models/access.model';
@@ -18,8 +21,12 @@ import { Observation } from './models/observation.model';
 import { Operator } from './models/operator.model';
 import { Request } from './models/request.model';
 
+app.use(express.json());
 
-async function testDatabaseConnection() {
+app.use(express.urlencoded({ extended: true }));
+
+
+async function startServer() {
   try {
     await sequelize.authenticate();
     console.log('🎉 Connexion à la base de données PostgreSQL établie avec succès !');
@@ -104,16 +111,21 @@ async function testDatabaseConnection() {
       console.log(`ℹ️ L'utilisateur avec l'email ${user.email} existe déjà (ID: ${user.id}).`);
     }
 
+    app.get('/', (req, res) => {
+      res.status(200).send('API backend P3.');
+    });
+
+    app.listen(PORT, () => {
+      console.log(`⚡️ Serveur Express démarré sur http://localhost:${PORT}`);
+    });
+
   } catch (error) {
     console.error('❌ Impossible de se connecter à la base de données :', error);
   }
 }
 
-testDatabaseConnection();
+startServer();
 
-
-
-const app = express();
 
 import cors from "cors";
 
