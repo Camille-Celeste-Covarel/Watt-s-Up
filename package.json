@@ -25,7 +25,13 @@
     "start": "npm run start --workspace=server",
     "test": "npm run test --workspaces --if-present"
   },
-  "keywords": [],
+  "keywords": [
+    "monorepo",
+    "react",
+    "nodejs",
+    "postgresql",
+    "sequelize"
+  ],
   "author": "  (hit Enter to use an empty string)",
   "license": "MIT",
   "devDependencies": {
