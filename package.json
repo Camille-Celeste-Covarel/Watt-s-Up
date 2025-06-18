@@ -1,14 +1,14 @@
 {
-  "name": "js-toulouse-geocode",
+  "name": "p3",
   "version": "0.0.1",
   "description": "",
-  "homepage": "https://github.com/  (hit Enter to use an empty string)/js-toulouse-geocode#readme",
+  "homepage": "https://github.com/  (hit Enter to use an empty string)/p3#readme",
   "bugs": {
-    "url": "https://github.com/  (hit Enter to use an empty string)/js-toulouse-geocode/issues"
+    "url": "https://github.com/  (hit Enter to use an empty string)/p3/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/  (hit Enter to use an empty string)/js-toulouse-geocode.git"
+    "url": "git+https://github.com/  (hit Enter to use an empty string)/p3.git"
   },
   "workspaces": ["client", "server"],
   "scripts": {
@@ -25,7 +25,8 @@
     "start": "npm run start --workspace=server",
     "test": "npm run test --workspaces --if-present"
   },
-  "keywords": [],
+
+  "keywords": ["monorepo", "react", "nodejs", "postgresql", "sequelize"],
   "author": "  (hit Enter to use an empty string)",
   "license": "MIT",
   "devDependencies": {
