@@ -57,7 +57,7 @@ export class Station extends Model {
   public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
-      Station.init(
+    Station.init(
       {
         id: {
           type: DataTypes.INTEGER,

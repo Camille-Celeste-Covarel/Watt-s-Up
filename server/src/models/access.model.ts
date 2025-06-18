@@ -21,7 +21,7 @@ export class Access
   public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
-      Access.init(
+    Access.init(
       {
         id: {
           type: DataTypes.INTEGER,

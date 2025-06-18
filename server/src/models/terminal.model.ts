@@ -22,7 +22,7 @@ export class Terminal extends Model {
   public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
-      Terminal.init(
+    Terminal.init(
       {
         id: {
           type: DataTypes.INTEGER,

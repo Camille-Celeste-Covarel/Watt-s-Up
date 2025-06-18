@@ -30,7 +30,7 @@ export class Book
   public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
-      Book.init(
+    Book.init(
       {
         id: {
           type: DataTypes.INTEGER,
