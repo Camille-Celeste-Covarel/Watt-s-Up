@@ -1,0 +1,28 @@
+.topbar-container {
+  background-color: #f2c641;
+  padding: 10px 20px;
+}
+
+.logo {
+  height: 50px;
+  margin-bottom: 15px;
+}
+
+.topbar-search {
+  display: flex;
+  justify-content: space-between;
+}
+
+.searchbar {
+  padding: 10px;
+  background-color: white;
+  width: 60vw;
+}
+
+.loupe {
+  height: 20px;
+}
+
+.filtre {
+  height: 40px;
+}
