@@ -8,7 +8,8 @@ import { TerminalPlug } from './terminal_plug.model';
 interface PlugAttributes {
     id: number;
     name: string;
-    createdAt?: Date;
+    createdAt?:
+        Date;
     updatedAt?: Date;
 }
 

@@ -5,7 +5,8 @@ import { User } from './user.model';
 import { Terminal } from './terminal.model';
 
 interface RequestAttributes {
-    id: number;
+    id:
+        number;
     message: string;
     dateRequest: Date;
     status: 'pending' | 'accepted' | 'rejected';

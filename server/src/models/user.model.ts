@@ -2,7 +2,8 @@ import { Model, DataTypes, Sequelize, Optional } from 'sequelize';
 
 // 1. Interface des attributs du modèle (ce que le modèle contient après avoir été créé/récupéré)
 interface UserAttributes {
-    id: number;
+    id:
+        number;
     firstName: string;
     lastName: string;
     email: string;

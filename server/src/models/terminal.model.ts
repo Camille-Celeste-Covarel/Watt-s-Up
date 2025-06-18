@@ -8,7 +8,8 @@ import { TerminalPlug } from './terminal_plug.model';
 
 export class Terminal extends Model {
     public id!: number;
-    public idStation!: number;
+    public idStation!:
+        number;
     public idBook?: number;
     public idPower?: number;
     public typeDePrise!: string;

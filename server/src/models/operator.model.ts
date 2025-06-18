@@ -2,7 +2,8 @@ import { Model, DataTypes, Sequelize, Optional } from 'sequelize';
 import { Station } from './station.model';
 
 interface OperatorAttributes {
-    id: number;
+    id:
+        number;
     name: string;
     createdAt?: Date;
     updatedAt?: Date;

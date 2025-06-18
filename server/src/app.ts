@@ -1,7 +1,8 @@
 import express from "express";
 import sequelize from './config/database';
 
-const app = express();
+const app
+    = express();
 const PORT = process.env.PORT || 3000;
 
 // import models

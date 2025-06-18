@@ -2,7 +2,8 @@ import { Model, DataTypes, Sequelize } from 'sequelize';
 
 export class BookTerminal extends Model {
     public id!: number;
-    public idBook!: number;
+    public idBook!:
+        number;
     public idTerminal!: number;
     public readonly createdAt!: Date;
     public readonly updatedAt!: Date;

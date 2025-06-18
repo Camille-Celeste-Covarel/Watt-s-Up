@@ -3,7 +3,8 @@ import { Station } from './station.model'; // Pour les associations futures
 import { User } from './user.model'; // Pour les associations futures
 
 interface ObservationAttributes {
-    id: number;
+    id:
+        number;
     comment: string;
     idStation: number;
     idUser: number;

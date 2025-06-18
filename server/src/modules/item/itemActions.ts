@@ -42,7 +42,8 @@ const add: RequestHandler = async (req, res, next) => {
   try {
 
     // Create the item
-    const insertId = await User.findOrCreate({defaults: {
+    const insertId =
+        await User.findOrCreate({defaults: {
         firstName: 'Test',
         lastName: 'User',
         email: 'test.user@example.com',

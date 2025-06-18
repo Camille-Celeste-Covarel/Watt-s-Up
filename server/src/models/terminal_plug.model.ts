@@ -3,7 +3,8 @@ import { Plug } from './plug.model';
 import { Terminal } from './terminal.model';
 
 interface TerminalPlugAttributes {
-    idPlug: number;
+    idPlug:
+        number;
     idTerminal: number;
 }
 

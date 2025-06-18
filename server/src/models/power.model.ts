@@ -4,7 +4,8 @@ import { Model, DataTypes, Sequelize, Optional } from 'sequelize';
 import { Terminal } from './terminal.model';
 
 interface PowerAttributes {
-    id: number;
+    id:
+        number;
     name: string;
     createdAt?: Date;
     updatedAt?: Date;

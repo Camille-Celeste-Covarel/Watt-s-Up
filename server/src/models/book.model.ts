@@ -6,7 +6,8 @@ import { Terminal } from './terminal.model'; // Pour les associations futures
 interface BookAttributes {
     id: number;
     startTime: Date;
-    price: number;
+    price:
+        number;
     actived: boolean;
     idUser: number;
     idTerminal: number;

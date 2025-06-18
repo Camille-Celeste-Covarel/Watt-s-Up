@@ -4,7 +4,8 @@ import { Station } from './station.model'; // Nécessaire pour les associations 
 interface AccessAttributes {
     id: number;
     name: string;
-    createdAt?: Date;
+    createdAt?:
+        Date;
     updatedAt?: Date;
 }
 

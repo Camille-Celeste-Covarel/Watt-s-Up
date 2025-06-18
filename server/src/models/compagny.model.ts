@@ -3,7 +3,8 @@ import { Model, DataTypes, Sequelize, Optional } from 'sequelize';
 import { Station } from './station.model';
 
 interface CompagnyAttributes {
-    id: number;
+    id:
+        number;
     name: string;
     createdAt?: Date;
     updatedAt?: Date;

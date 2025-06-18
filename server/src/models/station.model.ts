@@ -5,7 +5,8 @@ import { Book } from './book.model';
 import { Terminal } from './terminal.model';
 
 export class Station extends Model {
-    public id!: number;
+    public id!:
+        number;
     public id_station_itinerance?: string;
     public id_access?: number;
     public id_provider?: number;

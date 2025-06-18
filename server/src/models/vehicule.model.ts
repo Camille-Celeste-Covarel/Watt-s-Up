@@ -3,7 +3,8 @@ import { Plug } from './plug.model';
 import { User } from './user.model';
 
 interface VehiculeAttributes {
-    id: number;
+    id:
+        number;
     name: string;
     licensePlate: string;
     color: string;
