@@ -1,7 +1,6 @@
 {
   "name": "@js-monorepo/server",
-  "scripts":
-  {
+  "scripts": {
     "check-types": "tsc --noEmit",
     "dev": "tsx watch --clear-screen=false ./src/main",
     "db:migrate": "tsx ./bin/migrate",
@@ -20,6 +19,7 @@
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7"
   },
+
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
     "@types/cors": "^2.8.17",
