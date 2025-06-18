@@ -1,36 +1,36 @@
 import express from "express";
-import sequelize from './config/database';
+import sequelize from "./config/database";
 
-const app
-    = express();
+const app = express();
 const PORT = process.env.PORT || 3000;
 
+import { Access } from "./models/access.model";
+import { Book } from "./models/book.model";
+import { BookTerminal } from "./models/book_terminal.model";
+import { Compagny } from "./models/compagny.model";
+import { Observation } from "./models/observation.model";
+import { Operator } from "./models/operator.model";
+import { Plug } from "./models/plug.model";
+import { Power } from "./models/power.model";
+import { Provider } from "./models/provider.model";
+import { Request } from "./models/request.model";
 // import models
-import { Station } from './models/station.model';
-import { Access } from './models/access.model';
-import { Book } from './models/book.model';
-import { Power } from './models/power.model';
-import { Provider } from './models/provider.model';
-import { User } from './models/user.model';
-import { Terminal } from './models/terminal.model';
-import { Plug } from './models/plug.model';
-import { Vehicule } from './models/vehicule.model';
-import { BookTerminal } from './models/book_terminal.model';
-import { TerminalPlug } from './models/terminal_plug.model';
-import { Compagny } from './models/compagny.model';
-import { Observation } from './models/observation.model';
-import { Operator } from './models/operator.model';
-import { Request } from './models/request.model';
+import { Station } from "./models/station.model";
+import { Terminal } from "./models/terminal.model";
+import { TerminalPlug } from "./models/terminal_plug.model";
+import { User } from "./models/user.model";
+import { Vehicule } from "./models/vehicule.model";
 
 app.use(express.json());
 
 app.use(express.urlencoded({ extended: true }));
 
-
 async function startServer() {
   try {
     await sequelize.authenticate();
-    console.log('🎉 Connexion à la base de données PostgreSQL établie avec succès !');
+    console.log(
+      "🎉 Connexion à la base de données PostgreSQL établie avec succès !",
+    );
 
     User.initialize(sequelize);
     Access.initialize(sequelize);
@@ -50,7 +50,6 @@ async function startServer() {
     TerminalPlug.initialize(sequelize);
     Vehicule.initialize(sequelize);
 
-
     User.associate();
     Access.associate();
     Book.associate();
@@ -67,66 +66,71 @@ async function startServer() {
     Vehicule.associate();
     BookTerminal.associate();
 
-    console.log('Modèle Station initialisé et prêt.');
-    console.log('Modèle Access initialisé et prêt.');
-    console.log('Modèle Book initialisé et prêt.');
-    console.log('Modèle Power initialisé et prêt.');
-    console.log('Modèle Provider initialisé et prêt.');
-    console.log('Modèle User initialisé et prêt.');
-    console.log('Modèle Terminal initialisé et prêt.');
-    console.log('Modèle Plug initialisé et prêt.');
-    console.log('Modèle Vehicule initialisé et prêt.');
-    console.log('Modèle BookTerminal initialisé et prêt.');
-    console.log('Modèle TerminalPlug initialisé et prêt.');
-    console.log('Modèle Compagny initialisé et prêt.');
-    console.log('Modèle Observation initialisé et prêt.');
-    console.log('Modèle Operator initialisé et prêt.');
-    console.log('Modèle Request initialisé et prêt.');
+    console.log("Modèle Station initialisé et prêt.");
+    console.log("Modèle Access initialisé et prêt.");
+    console.log("Modèle Book initialisé et prêt.");
+    console.log("Modèle Power initialisé et prêt.");
+    console.log("Modèle Provider initialisé et prêt.");
+    console.log("Modèle User initialisé et prêt.");
+    console.log("Modèle Terminal initialisé et prêt.");
+    console.log("Modèle Plug initialisé et prêt.");
+    console.log("Modèle Vehicule initialisé et prêt.");
+    console.log("Modèle BookTerminal initialisé et prêt.");
+    console.log("Modèle TerminalPlug initialisé et prêt.");
+    console.log("Modèle Compagny initialisé et prêt.");
+    console.log("Modèle Observation initialisé et prêt.");
+    console.log("Modèle Operator initialisé et prêt.");
+    console.log("Modèle Request initialisé et prêt.");
 
-    console.log('Base de données prête à l\'emploi.');
+    console.log("Base de données prête à l'emploi.");
 
     await sequelize.sync({ alter: true });
-    console.log('🚀 Base de données synchronisée avec les modèles !');
+    console.log("🚀 Base de données synchronisée avec les modèles !");
 
     // --- NOUVEAU CODE : Création d'un utilisateur ---
-    console.log('\n--- Tentative de création d\'un nouvel utilisateur ---');
+    console.log("\n--- Tentative de création d'un nouvel utilisateur ---");
     const [user, created] = await User.findOrCreate({
-      where: { email: 'test.user@example.com' },
+      where: { email: "test.user@example.com" },
       defaults: {
-        firstName: 'Test',
-        lastName: 'User',
-        email: 'test.user@example.com',
-        password: 'securepassword123',
-        birthdate: new Date('1990-01-01'),
-        address: '123 Main St',
-        city: 'Anytown',
-        postcode: '12345',
-        country: 'FR',
+        firstName: "Test",
+        lastName: "User",
+        email: "test.user@example.com",
+        password: "securepassword123",
+        birthdate: new Date("1990-01-01"),
+        address: "123 Main St",
+        city: "Anytown",
+        postcode: "12345",
+        country: "FR",
         isAdmin: false,
       },
     });
 
     if (created) {
-      console.log(`✅ Utilisateur créé avec succès : ID ${user.id}, Email : ${user.email}`);
+      console.log(
+        `✅ Utilisateur créé avec succès : ID ${user.id}, Email : ${user.email}`,
+      );
     } else {
-      console.log(`ℹ️ L'utilisateur avec l'email ${user.email} existe déjà (ID: ${user.id}).`);
+      console.log(
+        `ℹ️ L'utilisateur avec l'email ${user.email} existe déjà (ID: ${user.id}).`,
+      );
     }
 
-    app.get('/', (req, res) => {
-      res.status(200).send('API backend P3.');
+    app.get("/", (req, res) => {
+      res.status(200).send("API backend P3.");
     });
 
     app.listen(PORT, () => {
       console.log(`⚡️ Serveur Express démarré sur http://localhost:${PORT}`);
     });
-
   } catch (error) {
-    console.error('❌ Impossible de se connecter à la base de données :', error);
+    console.error(
+      "❌ Impossible de se connecter à la base de données :",
+      error,
+    );
   }
 }
 
 startServer();
-
 
 import cors from "cors";
 
