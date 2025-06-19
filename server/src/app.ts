@@ -21,8 +21,10 @@ import { TerminalPlug } from "./models/terminal_plug.model";
 import { User } from "./models/user.model";
 import { Vehicule } from "./models/vehicule.model";
 
-app.use(express.json());
+// LOGS
+import { ImportLog } from "./models/importlog.model";
 
+app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 async function startServer() {
@@ -40,15 +42,17 @@ async function startServer() {
     Power.initialize(sequelize);
     Provider.initialize(sequelize);
     Observation.initialize(sequelize);
-
+    //// Phase une initialisation ///
     Station.initialize(sequelize);
     Terminal.initialize(sequelize);
     Book.initialize(sequelize);
     BookTerminal.initialize(sequelize);
     Request.initialize(sequelize);
-
+    //// Phase deux initialisation ///
     TerminalPlug.initialize(sequelize);
     Vehicule.initialize(sequelize);
+    //// Phase trois initialisation ///
+    ImportLog.initialize(sequelize);
 
     User.associate();
     Access.associate();
@@ -65,6 +69,7 @@ async function startServer() {
     TerminalPlug.associate();
     Vehicule.associate();
     BookTerminal.associate();
+    ImportLog.associate();
 
     console.log("Modèle Station initialisé et prêt.");
     console.log("Modèle Access initialisé et prêt.");
@@ -81,6 +86,7 @@ async function startServer() {
     console.log("Modèle Observation initialisé et prêt.");
     console.log("Modèle Operator initialisé et prêt.");
     console.log("Modèle Request initialisé et prêt.");
+    console.log("Modèle ImportLog initialisé et prêt.");
 
     console.log("Base de données prête à l'emploi.");
 

@@ -13,3 +13,4 @@ export * from "./request.model";
 export * from "./terminal.model";
 export * from "./terminal_plug.model";
 export * from "./vehicule.model";
+export * from "./importlog.model";

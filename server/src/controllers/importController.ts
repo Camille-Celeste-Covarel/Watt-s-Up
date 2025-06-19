@@ -3,6 +3,7 @@ import path from "node:path";
 import type { Request, Response } from "express";
 import * as fastCsv from "fast-csv";
 import type { Transaction } from "sequelize";
+import { v4 as uuidv4 } from "uuid";
 import sequelize from "../config/database";
 import { transformCsvRowToEntities } from "../data-processing/dataTransformer";
 import * as Models from "../models/_index";
@@ -17,10 +18,9 @@ import type {
   TerminalAttributes,
 } from "../types/models/models";
 
-const UPLOAD_DIR = "uploads/csv/";
+const UPLOAD_DIR = path.join(__dirname, "..", "..", "..", "CSVCache");
 const BATCH_SIZE = 2000;
-const ERROR_LOG_DIR = "logs";
-const ERROR_LOG_FILE = path.join(ERROR_LOG_DIR, "import_errors.log");
+const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "..", "logs");
 
 if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
@@ -31,24 +31,64 @@ if (!fs.existsSync(ERROR_LOG_DIR)) {
 
 const processedStationsGlobalCache = new Map<string, Models.Station>();
 
-async function logErrorToFile(error: TransformError): Promise<void> {
-  const logEntry = `${JSON.stringify({
-    timestamp: new Date().toISOString(),
-    type: error.type,
-    message: error.message,
-    rowNumber: error.rowNumber,
-    rowData: error.rowData,
-    details: error.details
-      ? error.details instanceof Error
-        ? error.details.message
-        : String(error.details)
-      : undefined,
-  })}\n`;
+async function logErrorToFile(
+  error: TransformError,
+  currentLogFilePath: string,
+): Promise<void> {
+  const now = new Date();
+  const time = now.toLocaleTimeString("fr-FR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    second: "2-digit",
+  });
+
+  let affectedColumns = "";
+  switch (error.type) {
+    case "INVALID_GEOMETRY":
+      affectedColumns =
+        "coordonneesXY, consolidated_latitude, consolidated_longitude";
+      break;
+    case "MISSING_TERMINAL_ID":
+      affectedColumns = "id_pdc_itinerance";
+      break;
+    case "DATABASE_BATCH_ERROR":
+      affectedColumns = "N/A (Erreur BDD globale du lot)";
+      break;
+    default:
+      if (error.rowData && Object.keys(error.rowData).length > 0) {
+        const relevantKeys = [
+          "nom_station",
+          "id_station_itinerance",
+          "id_pdc_itinerance",
+          "nom_amenageur",
+        ];
+        const foundKeys = relevantKeys.filter((key) =>
+          Object.prototype.hasOwnProperty.call(error.rowData, key),
+        );
+        if (foundKeys.length > 0) {
+          // Correction du type 'any'
+          affectedColumns = foundKeys
+            .map((key) => `${key}: "${error.rowData[key as keyof CsvRow]}"`)
+            .join(", ");
+        } else {
+          affectedColumns = "N/A (colonnes non spécifiques)";
+        }
+      } else {
+        affectedColumns = "N/A";
+      }
+      break;
+  }
+
+  const logEntry =
+    `${time} : ERREUR - ${error.message} - Ligne N° ${error.rowNumber}` +
+    `${affectedColumns && affectedColumns !== "N/A" ? ` - Colonnes: [${affectedColumns}]` : ""}` +
+    `${error.details ? ` - Détails: ${error.details instanceof Error ? error.details.message : String(error.details)}` : ""}\n`;
+
   try {
-    await fs.promises.appendFile(ERROR_LOG_FILE, logEntry);
+    await fs.promises.appendFile(currentLogFilePath, logEntry);
   } catch (err: unknown) {
     console.error(
-      `Failed to write error to log file: ${(err as Error).message}`,
+      `ÉCHEC: Impossible d'écrire l'erreur dans le fichier de log à ${currentLogFilePath}: ${(err as Error).message}`,
     );
   }
 }
@@ -60,6 +100,7 @@ async function processBatch(
     rowNumber: number;
   }[],
   errorCounts: Record<string, number>,
+  currentLogFilePath: string,
 ) {
   let transactionInstance: Transaction | undefined;
   try {
@@ -136,7 +177,7 @@ async function processBatch(
         const error = (
           item.transformedResult as { success: false; error: TransformError }
         ).error;
-        await logErrorToFile(error);
+        await logErrorToFile(error, currentLogFilePath);
         errorCounts[error.type] = (errorCounts[error.type] || 0) + 1;
       }
     }
@@ -148,21 +189,44 @@ async function processBatch(
     }
     const errorType = "DATABASE_BATCH_ERROR";
     const errorMessage = `Erreur lors du traitement d'un lot de données: ${(batchError as Error).message}`;
-    await logErrorToFile({
-      type: errorType,
-      message: errorMessage,
-      rowData: batch[0]?.rowData || ({} as CsvRow),
-      rowNumber: batch[0]?.rowNumber || -1,
-      details: batchError,
-    });
+    await logErrorToFile(
+      {
+        type: errorType,
+        message: errorMessage,
+        rowData: batch[0]?.rowData || ({} as CsvRow),
+        rowNumber: batch[0]?.rowNumber || -1,
+        details: batchError,
+      },
+      currentLogFilePath,
+    );
     errorCounts[errorType] = (errorCounts[errorType] || 0) + 1;
     return { success: false, count: batch.length };
   }
 }
 
 export const importCsv = async (req: Request, res: Response): Promise<void> => {
+  processedStationsGlobalCache.clear();
+
+  const importUuid = uuidv4();
+  const currentErrorLogFile = path.join(
+    ERROR_LOG_DIR,
+    `import_errors_${importUuid}.log`,
+  );
+
+  // Correction de l'avertissement 'Variable initializer is redundant'
+  let importCompleted: boolean;
+  importCompleted = false;
+
+  if (!fs.existsSync(ERROR_LOG_DIR)) {
+    fs.mkdirSync(ERROR_LOG_DIR, { recursive: true });
+  }
+
   if (!req.file) {
-    res.status(400).json({ message: "Aucun fichier CSV fourni." });
+    res.status(400).json({
+      message: "Aucun fichier CSV fourni.",
+      importId: importUuid,
+      errorLogFile: currentErrorLogFile,
+    });
     return;
   }
 
@@ -174,7 +238,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     transformedResult: TransformResult;
     rowNumber: number;
   }[] = [];
-  let importCompleted = false;
 
   const csvStream = fs
     .createReadStream(filePath)
@@ -193,14 +256,14 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
       if (currentBatch.length >= BATCH_SIZE) {
         csvStream.pause();
-        await processBatch(currentBatch, errorCounts);
+        await processBatch(currentBatch, errorCounts, currentErrorLogFile);
         currentBatch = [];
         csvStream.resume();
       }
     })
     .on("end", async () => {
       if (currentBatch.length > 0) {
-        await processBatch(currentBatch, errorCounts);
+        await processBatch(currentBatch, errorCounts, currentErrorLogFile);
       }
       importCompleted = true;
       fs.unlink(filePath, (err) => {
@@ -217,10 +280,11 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       );
       res.status(200).json({
         message: "Importation CSV terminée.",
+        importId: importUuid,
         totalLinesProcessed: totalProcessedLines,
         successfulLines: totalProcessedLines - totalErrors,
         errorSummary: errorCounts,
-        errorLogFile: ERROR_LOG_FILE,
+        errorLogFile: currentErrorLogFile,
       });
     })
     .on("error", async (streamError: unknown) => {
@@ -236,6 +300,8 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({
           message: "Erreur lors de la lecture du fichier CSV.",
           error: (streamError as Error).message,
+          importId: importUuid,
+          errorLogFile: currentErrorLogFile,
         });
       }
     });

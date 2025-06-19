@@ -319,3 +319,21 @@ export type UserCreationAttributes = Optional<
   | "createdAt"
   | "updatedAt"
 >;
+
+export interface ImportLogAttributes {
+  id: number;
+  importId: string;
+  fileName: string;
+  totalLinesProcessed: number;
+  successfulLines: number;
+  errorSummary: object | null;
+  errorLogFilePath: string | null;
+  status: "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
+  importDate: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type ImportLogCreationAttributes = Optional<
+  ImportLogAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
