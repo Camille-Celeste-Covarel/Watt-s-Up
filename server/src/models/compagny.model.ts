@@ -1,24 +1,19 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  CompagnyAttributes,
+  CompagnyCreationAttributes,
+} from "../types/models/models";
 import { Station } from "./station.model";
-
-interface CompagnyAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface CompagnyCreationAttributes
-  extends Optional<CompagnyAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 export class Compagny
   extends Model<CompagnyAttributes, CompagnyCreationAttributes>
   implements CompagnyAttributes
 {
-  public id!: number;
-  public name!: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare name: string;
+
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Compagny.init(

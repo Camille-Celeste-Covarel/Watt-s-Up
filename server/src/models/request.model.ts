@@ -1,40 +1,25 @@
-// src/models/request.model.ts
-
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  RequestAttributes,
+  RequestCreationAttributes,
+} from "../types/models/models";
 import { Terminal } from "./terminal.model";
 import { User } from "./user.model";
-
-interface RequestAttributes {
-  id: number;
-  message: string;
-  dateRequest: Date;
-  status: "pending" | "accepted" | "rejected";
-  response?: string;
-  idUser: number;
-  idTerminal?: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface RequestCreationAttributes
-  extends Optional<
-    RequestAttributes,
-    "id" | "response" | "idTerminal" | "createdAt" | "updatedAt"
-  > {}
 
 export class Request
   extends Model<RequestAttributes, RequestCreationAttributes>
   implements RequestAttributes
 {
-  public id!: number;
-  public message!: string;
-  public dateRequest!: Date;
-  public status!: "pending" | "accepted" | "rejected";
-  public response?: string;
-  public idUser!: number;
-  public idTerminal?: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare message: string | null;
+  public declare dateRequest: Date | null;
+  public declare status: string | null;
+  public declare response: string | null;
+  public declare idUser: number;
+  public declare idTerminal: number;
+
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Request.init(

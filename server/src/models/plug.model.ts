@@ -1,28 +1,21 @@
-// src/models/plug.model.ts
-
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  PlugAttributes,
+  PlugCreationAttributes,
+} from "../types/models/models";
 import { Terminal } from "./terminal.model";
 import { TerminalPlug } from "./terminal_plug.model";
 import { Vehicule } from "./vehicule.model";
-
-interface PlugAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface PlugCreationAttributes
-  extends Optional<PlugAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 export class Plug
   extends Model<PlugAttributes, PlugCreationAttributes>
   implements PlugAttributes
 {
-  public id!: number;
-  public name!: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare name: string;
+
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Plug.init(

@@ -1,33 +1,24 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Terminal } from "./terminal.model"; // Pour les associations futures
-import { User } from "./user.model"; // Pour les associations futures
-
-interface BookAttributes {
-  id: number;
-  startTime: Date;
-  price: number;
-  actived: boolean;
-  idUser: number;
-  idTerminal: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface BookCreationAttributes
-  extends Optional<BookAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  BookAttributes,
+  BookCreationAttributes,
+} from "../types/models/models";
+import { Terminal } from "./terminal.model";
+import { User } from "./user.model";
 
 export class Book
   extends Model<BookAttributes, BookCreationAttributes>
   implements BookAttributes
 {
-  public id!: number;
-  public startTime!: Date;
-  public price!: number;
-  public actived!: boolean;
-  public idUser!: number;
-  public idTerminal!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare startTime: Date | null;
+  public declare price: number | null;
+  public declare actived: boolean | null;
+  public declare idUser: number;
+  public declare idTerminal: number;
+
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Book.init(

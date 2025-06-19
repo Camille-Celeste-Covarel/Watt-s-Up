@@ -1,29 +1,22 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Station } from "./station.model"; // Pour les associations futures
-import { User } from "./user.model"; // Pour les associations futures
-
-interface ObservationAttributes {
-  id: number;
-  comment: string;
-  idStation: number;
-  idUser: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface ObservationCreationAttributes
-  extends Optional<ObservationAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  ObservationAttributes,
+  ObservationCreationAttributes,
+} from "../types/models/models";
+import { Station } from "./station.model";
+import { User } from "./user.model";
 
 export class Observation
   extends Model<ObservationAttributes, ObservationCreationAttributes>
   implements ObservationAttributes
 {
-  public id!: number;
-  public comment!: string;
-  public idStation!: number;
-  public idUser!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare comment: string | null;
+  public declare idStation: number;
+  public declare idUser: number;
+
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Observation.init(

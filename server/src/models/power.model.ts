@@ -1,26 +1,19 @@
-// src/models/power.model.ts
-
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  PowerAttributes,
+  PowerCreationAttributes,
+} from "../types/models/models";
 import { Terminal } from "./terminal.model";
-
-interface PowerAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface PowerCreationAttributes
-  extends Optional<PowerAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 export class Power
   extends Model<PowerAttributes, PowerCreationAttributes>
   implements PowerAttributes
 {
-  public id!: number;
-  public name!: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare name: string;
+
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Power.init(

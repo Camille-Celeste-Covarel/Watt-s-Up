@@ -1,33 +1,23 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  VehiculeAttributes,
+  VehiculeCreationAttributes,
+} from "../types/models/models";
 import { Plug } from "./plug.model";
 import { User } from "./user.model";
-
-interface VehiculeAttributes {
-  id: number;
-  name: string;
-  licensePlate: string;
-  color: string;
-  idPlug: number;
-  idUser: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface VehiculeCreationAttributes
-  extends Optional<VehiculeAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 export class Vehicule
   extends Model<VehiculeAttributes, VehiculeCreationAttributes>
   implements VehiculeAttributes
 {
-  public id!: number;
-  public name!: string;
-  public licensePlate!: string;
-  public color!: string;
-  public idPlug!: number;
-  public idUser!: number;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare name: string;
+  public declare licensePlate: string | null;
+  public declare color: string | null;
+  public declare idPlug: number;
+  public declare idUser: number;
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Vehicule.init(

@@ -1,58 +1,29 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-
-// 1. Interface des attributs du modèle (ce que le modèle contient après avoir été créé/récupéré)
-interface UserAttributes {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  gender?: "Femme" | "Homme" | "Autre";
-  birthdate: Date;
-  address: string;
-  addressBis?: string;
-  city: string;
-  postcode: string;
-  country: string;
-  password: string;
-  avatarUrl?: string;
-  isAdmin: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface UserCreationAttributes
-  extends Optional<
-    UserAttributes,
-    | "id"
-    | "avatarUrl"
-    | "isAdmin"
-    | "gender"
-    | "addressBis"
-    | "createdAt"
-    | "updatedAt"
-  > {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  UserAttributes,
+  UserCreationAttributes,
+} from "../types/models/models";
 
 export class User
   extends Model<UserAttributes, UserCreationAttributes>
   implements UserAttributes
 {
-  public id!: number;
-  public firstName!: string;
-  public lastName!: string;
-  public email!: string;
-  public gender?: "Femme" | "Homme" | "Autre";
-  public birthdate!: Date;
-  public address!: string;
-  public addressBis?: string;
-  public city!: string;
-  public postcode!: string;
-  public country!: string;
-  public password!: string;
-  public avatarUrl?: string;
-  public isAdmin!: boolean;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
-
+  public declare id: number;
+  public declare firstName: string;
+  public declare lastName: string;
+  public declare email: string;
+  public declare gender?: "Femme" | "Homme" | "Autre";
+  public declare birthdate: Date;
+  public declare address: string;
+  public declare addressBis?: string;
+  public declare city: string;
+  public declare postcode: string;
+  public declare country: string;
+  public declare password: string;
+  public declare avatarUrl?: string;
+  public declare isAdmin: boolean;
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
   static associate() {}
 
   static initialize(sequelize: Sequelize) {

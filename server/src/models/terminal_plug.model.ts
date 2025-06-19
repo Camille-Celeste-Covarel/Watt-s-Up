@@ -1,18 +1,17 @@
 import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  TerminalPlugAttributes,
+  TerminalPlugCreationAttributes,
+} from "../types/models/models";
 import { Plug } from "./plug.model";
 import { Terminal } from "./terminal.model";
 
-interface TerminalPlugAttributes {
-  idPlug: number;
-  idTerminal: number;
-}
-
 export class TerminalPlug
-  extends Model<TerminalPlugAttributes>
+  extends Model<TerminalPlugAttributes, TerminalPlugCreationAttributes>
   implements TerminalPlugAttributes
 {
-  public idPlug!: number;
-  public idTerminal!: number;
+  public declare idPlug: number;
+  public declare idTerminal: number;
 
   static initialize(sequelize: Sequelize) {
     TerminalPlug.init(
@@ -44,7 +43,7 @@ export class TerminalPlug
       },
       {
         sequelize,
-        tableName: "terminal-plug",
+        tableName: "terminal_plug",
         timestamps: false,
         underscored: true,
         modelName: "TerminalPlug",

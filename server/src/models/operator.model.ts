@@ -1,24 +1,19 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  OperatorAttributes,
+  OperatorCreationAttributes,
+} from "../types/models/models";
 import { Station } from "./station.model";
-
-interface OperatorAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface OperatorCreationAttributes
-  extends Optional<OperatorAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 export class Operator
   extends Model<OperatorAttributes, OperatorCreationAttributes>
   implements OperatorAttributes
 {
-  public id!: number;
-  public name!: string;
-  public readonly createdAt!: Date;
-  public readonly updatedAt!: Date;
+  public declare id: number;
+  public declare name: string;
+
+  public declare readonly createdAt: Date;
+  public declare readonly updatedAt: Date;
 
   static initialize(sequelize: Sequelize) {
     Operator.init(
