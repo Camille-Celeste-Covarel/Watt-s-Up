@@ -8,6 +8,11 @@ function SearchBar() {
     <div className="topbar-search">
       <div className="searchbar">
         <img src={loupe} alt="" className="loupe" />
+        <input
+          type="text"
+          placeholder="Rechercher une borne..."
+          className="search-input"
+        />
       </div>
       <img src={filtre} alt="filtre" className="filtre" />
     </div>
