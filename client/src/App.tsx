@@ -1,5 +1,6 @@
 import "./normalize.css";
 import "./App.css";
+import MapLibre from "./components/map/MapLibre";
 import NavBar from "./components/navbar/NavBar";
 import SearchBar from "./components/searchbar/SearchBar";
 import TopBar from "./components/topbar/TopBar";
@@ -9,6 +10,7 @@ function App() {
     <>
       <TopBar />
       <SearchBar />
+      <MapLibre />
       <NavBar />
     </>
   );
