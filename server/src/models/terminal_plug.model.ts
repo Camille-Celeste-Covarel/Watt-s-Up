@@ -46,7 +46,6 @@ export class TerminalPlug
         tableName: "terminal_plug",
         timestamps: false,
         underscored: true,
-        modelName: "TerminalPlug",
       },
     );
   }

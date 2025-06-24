@@ -15,10 +15,11 @@ const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
   dialect: "postgres",
   logging: false,
   pool: {
-    max: 5,
+    max: 10,
     min: 0,
-    acquire: 30000,
+    acquire: 120000,
     idle: 10000,
+    evict: 1000,
   },
   dialectOptions: {},
   timezone: "+00:00",

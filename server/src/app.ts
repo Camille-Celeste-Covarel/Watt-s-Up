@@ -90,7 +90,9 @@ async function startServer() {
 
     console.log("Base de données prête à l'emploi.");
 
-    await sequelize.sync({ alter: true });
+    await sequelize.sync({
+      /*force: true*/
+    });
     console.log("🚀 Base de données synchronisée avec les modèles !");
 
     // --- NOUVEAU CODE : Création d'un utilisateur ---

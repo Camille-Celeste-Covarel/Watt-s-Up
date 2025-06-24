@@ -51,4 +51,5 @@ export interface CsvRow {
   consolidated_is_lon_lat_correct?: string;
   consolidated_is_code_insee_verified?: string;
   consolidated_is_code_insee_modified?: string;
+  [key: string]: string | number | null | undefined;
 }
