@@ -1,4 +1,3 @@
-// src/tools/logger.ts
 import fs from "node:fs";
 import path from "node:path";
 import type { Writable } from "node:stream";
@@ -10,18 +9,15 @@ import {
 import type { CsvRow } from "../types/dataProcessing/dataProcessing";
 import type { TransformError } from "../types/dataProcessing/importProcessingTypes";
 
-// Sauvegarder les fonctions originales de console dès le début du module logger
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
 const LOGS_DIR = path.join(__dirname, "..", "..", "..", "logs");
 
-// S'assurer que le dossier logs existe
 if (!fs.existsSync(LOGS_DIR)) {
   fs.mkdirSync(LOGS_DIR, { recursive: true });
 }
 
-// Définir le chemin du fichier de log de la console
 const CONSOLE_OUTPUT_FILE = path.join(
   LOGS_DIR,
   `console_output_${new Date().toISOString().replace(/:/g, "-")}.log`,
@@ -35,7 +31,6 @@ let consoleLogStream: Writable;
  */
 export const initializeConsoleLogStream = (): Writable => {
   if (consoleLogStream && !consoleLogStream.writableEnded) {
-    // Si le stream existe et n'est pas fermé, le fermer avant de le recréer
     try {
       consoleLogStream.end();
       originalConsoleLog("[DEBUG - logger.ts] Ancien stream de console fermé.");
@@ -57,7 +52,6 @@ export const initializeConsoleLogStream = (): Writable => {
   return consoleLogStream;
 };
 
-// Initialiser le stream au chargement du module
 initializeConsoleLogStream();
 
 /**
@@ -90,7 +84,6 @@ export const redirectConsoleOutput = (): void => {
     originalConsoleError.apply(console, args);
     try {
       if (consoleLogStream && !consoleLogStream.writableEnded) {
-        // Ajout d'une logique pour formater les erreurs Sequelize plus précisément
         const formattedArgs = args.map((arg) => {
           if (arg instanceof ForeignKeyConstraintError) {
             const error = arg as ForeignKeyConstraintError;
@@ -146,7 +139,7 @@ export const restoreConsoleOutput = (): void => {
   console.error = originalConsoleError;
   if (consoleLogStream && !consoleLogStream.writableEnded) {
     try {
-      consoleLogStream.end(); // Fermer le stream quand on restreint les fonctions
+      consoleLogStream.end();
       originalConsoleLog(
         "[DEBUG - logger.ts] Stream de console fermé et fonctions restaurées.",
       );
