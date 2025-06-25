@@ -1,5 +1,4 @@
 // Load environment variables from .env file
-import "dotenv/config";
 
 // Check database connection
 // Note: This is optional and can be removed if the database connection

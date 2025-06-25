@@ -10,46 +10,52 @@ export class Vehicule
   extends Model<VehiculeAttributes, VehiculeCreationAttributes>
   implements VehiculeAttributes
 {
-  public declare id: number;
-  public declare name: string;
-  public declare licensePlate: string | null;
-  public declare color: string | null;
-  public declare idPlug: number;
-  public declare idUser: number;
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public id!: string;
+  public name!: string;
+  public license_plate!: string | null;
+  public color!: string | null;
+  public id_plug!: string;
+  public id_user!: string;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Vehicule.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING(255),
           allowNull: false,
         },
-        licensePlate: {
-          type: DataTypes.STRING(128),
-          allowNull: false,
-          unique: true,
-          field: "license_plate",
+        license_plate: {
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
         color: {
-          type: DataTypes.STRING(128),
-          allowNull: false,
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
-        idPlug: {
-          type: DataTypes.INTEGER,
+        id_plug: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_plug",
+          references: {
+            model: "plug",
+            key: "id",
+          },
         },
-        idUser: {
-          type: DataTypes.INTEGER,
+        id_user: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_user",
+          references: {
+            model: "user",
+            key: "id",
+          },
         },
       },
       {
@@ -57,12 +63,13 @@ export class Vehicule
         tableName: "vehicule",
         timestamps: true,
         underscored: true,
+        modelName: "Vehicule",
       },
     );
   }
 
   static associate() {
-    Vehicule.belongsTo(Plug, { foreignKey: "idPlug", as: "plug" });
-    Vehicule.belongsTo(User, { foreignKey: "idUser", as: "user" });
+    Vehicule.belongsTo(Plug, { foreignKey: "id_plug", as: "plug" });
+    Vehicule.belongsTo(User, { foreignKey: "id_user", as: "user" });
   }
 }

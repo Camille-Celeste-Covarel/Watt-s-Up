@@ -1,27 +1,172 @@
 import type * as GeoJSON from "geojson";
 import type { Optional } from "sequelize";
 
+export interface AccessAttributes {
+  id: string;
+  name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type AccessCreationAttributes = Optional<
+  AccessAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface BookAttributes {
+  id: string;
+  start_time: Date | null;
+  price: number | null;
+  actived: boolean | null;
+  id_user: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type BookCreationAttributes = Optional<
+  BookAttributes,
+  "id" | "createdAt" | "updatedAt" | "start_time" | "price" | "actived"
+>;
+
+export interface BookTerminalAttributes {
+  id: string;
+  id_book: string;
+  id_terminal: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type BookTerminalCreationAttributes = Optional<
+  BookTerminalAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface CompagnyAttributes {
+  id: string;
+  name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type CompagnyCreationAttributes = Optional<
+  CompagnyAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface ImportLogAttributes {
+  id: string;
+  import_id: string;
+  file_name: string;
+  total_lines_processed: number;
+  successful_lines: number;
+  error_summary: Record<string, unknown> | null;
+  error_log_file_path: string | null;
+  status: "IN_PROGRESS" | "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED";
+  import_date: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type ImportLogCreationAttributes = Optional<
+  ImportLogAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface ObservationAttributes {
+  id: string;
+  comment: string | null;
+  id_station: string;
+  id_user: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type ObservationCreationAttributes = Optional<
+  ObservationAttributes,
+  "id" | "createdAt" | "updatedAt" | "comment"
+>;
+
+export interface OperatorAttributes {
+  id: string;
+  name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type OperatorCreationAttributes = Optional<
+  OperatorAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface PlugAttributes {
+  id: string;
+  name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type PlugCreationAttributes = Optional<
+  PlugAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface PowerAttributes {
+  id: string;
+  name: number;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type PowerCreationAttributes = Optional<
+  PowerAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface ProviderAttributes {
+  id: string;
+  name: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type ProviderCreationAttributes = Optional<
+  ProviderAttributes,
+  "id" | "createdAt" | "updatedAt"
+>;
+
+export interface RequestAttributes {
+  id: string;
+  message: string | null;
+  date_request: Date | null;
+  status: string | null;
+  response: string | null;
+  id_user: string;
+  id_terminal: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+export type RequestCreationAttributes = Optional<
+  RequestAttributes,
+  | "id"
+  | "createdAt"
+  | "updatedAt"
+  | "message"
+  | "date_request"
+  | "status"
+  | "response"
+>;
+
 export interface StationAttributes {
-  id: number;
+  id: string;
   id_station_itinerance: string | null;
-  id_access: number | null;
-  id_provider: number | null;
-  id_book: number | null;
-  id_station_local: string | null;
+  id_access: string | null;
+  id_provider: string | null;
+  id_book: string | null;
   nom_amenageur: string | null;
   siren_amenageur: string | null;
   contact_amenageur: string | null;
   nom_operateur: string | null;
-  id_operator: number | null;
+  id_operator: string | null;
   contact_operateur: string | null;
   telephone_operateur: string | null;
   nom_enseigne: string | null;
-  id_compagny: number | null;
+  id_compagny: string | null;
+  id_station_local: string | null;
   nom_station: string;
   implantation_station: string | null;
   adresse_station: string | null;
   code_insee_commune: string | null;
-  nbre_pdc: number | null;
+  nbre_pdc?: number | null;
   gratuit: boolean | null;
   paiement_acte: boolean | null;
   paiement_cb: boolean | null;
@@ -55,7 +200,6 @@ export interface StationAttributes {
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 export type StationCreationAttributes = Optional<
   StationAttributes,
   | "id"
@@ -112,228 +256,92 @@ export type StationCreationAttributes = Optional<
 >;
 
 export interface TerminalAttributes {
-  id: number;
-  idStation: number;
-  idBook: number | null;
-  idPower: number | null;
+  id: string;
+  id_station: string;
+  id_power: string | null;
   id_pdc_itinerance: string | null;
   id_pdc_local: string | null;
   latitude: number | null;
   longitude: number | null;
   geom: GeoJSON.Point | null;
-  typeDePrise: string;
-  puissanceNominale: number;
-  priseType2: boolean;
-  priseTypeEf: boolean;
-  priseChademo: boolean;
-  priseComboCcs: boolean;
-  priseAutre: string | null;
+  type_de_prise: string;
+  puissance_nominale: number;
+  prise_type_2: boolean;
+  prise_type_ef: boolean;
+  prise_chademo: boolean;
+  prise_combo_ccs: boolean;
+  prise_autre: string | null;
   status: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
-
 export type TerminalCreationAttributes = Optional<
   TerminalAttributes,
   | "id"
   | "createdAt"
   | "updatedAt"
-  | "idBook"
-  | "idPower"
+  | "id_power"
   | "id_pdc_itinerance"
   | "id_pdc_local"
   | "latitude"
   | "longitude"
   | "geom"
-  | "priseAutre"
+  | "prise_autre"
   | "status"
 >;
 
 export interface TerminalPlugAttributes {
-  idPlug: number;
-  idTerminal: number;
+  id: string;
+  idPlug: string;
+  idTerminal: string;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
-
 export type TerminalPlugCreationAttributes = Optional<
   TerminalPlugAttributes,
-  never
->;
-
-export interface AccessAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type AccessCreationAttributes = Optional<
-  AccessAttributes,
   "id" | "createdAt" | "updatedAt"
 >;
 
-export interface CompagnyAttributes {
-  id: number;
-  name: string;
+export interface UserAttributes {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  gender?: "Femme" | "Homme" | "Autre";
+  birthdate: Date;
+  address: string;
+  address_bis?: string;
+  city: string;
+  postcode: string;
+  country: string;
+  password: string;
+  avatar_url?: string;
+  is_admin: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 }
-export type CompagnyCreationAttributes = Optional<
-  CompagnyAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
-
-export interface OperatorAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type OperatorCreationAttributes = Optional<
-  OperatorAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
-
-export interface ProviderAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type ProviderCreationAttributes = Optional<
-  ProviderAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
-
-export interface PlugAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type PlugCreationAttributes = Optional<
-  PlugAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
-
-export interface PowerAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type PowerCreationAttributes = Optional<
-  PowerAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
-
-export interface BookAttributes {
-  id: number;
-  startTime: Date | null;
-  price: number | null;
-  actived: boolean | null;
-  idUser: number;
-  idTerminal: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type BookCreationAttributes = Optional<
-  BookAttributes,
-  "id" | "createdAt" | "updatedAt" | "startTime" | "price" | "actived"
->;
-
-export interface RequestAttributes {
-  id: number;
-  message: string | null;
-  dateRequest: Date | null;
-  status: string | null;
-  response: string | null;
-  idUser: number;
-  idTerminal: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type RequestCreationAttributes = Optional<
-  RequestAttributes,
+export type UserCreationAttributes = Optional<
+  UserAttributes,
   | "id"
+  | "avatar_url"
+  | "is_admin"
+  | "gender"
+  | "address_bis"
   | "createdAt"
   | "updatedAt"
-  | "message"
-  | "dateRequest"
-  | "status"
-  | "response"
->;
-
-export interface ObservationAttributes {
-  id: number;
-  comment: string | null;
-  idStation: number;
-  idUser: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type ObservationCreationAttributes = Optional<
-  ObservationAttributes,
-  "id" | "createdAt" | "updatedAt" | "comment"
 >;
 
 export interface VehiculeAttributes {
-  id: number;
+  id: string;
   name: string;
-  licensePlate: string | null;
+  license_plate: string | null;
   color: string | null;
-  idPlug: number;
-  idUser: number;
+  id_plug: string;
+  id_user: string;
   createdAt?: Date;
   updatedAt?: Date;
 }
 export type VehiculeCreationAttributes = Optional<
   VehiculeAttributes,
-  "id" | "createdAt" | "updatedAt" | "licensePlate" | "color"
->;
-
-export interface UserAttributes {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  gender?: "Femme" | "Homme" | "Autre";
-  birthdate: Date;
-  address: string;
-  addressBis?: string;
-  city: string;
-  postcode: string;
-  country: string;
-  password: string;
-  avatarUrl?: string;
-  isAdmin: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-export type UserCreationAttributes = Optional<
-  UserAttributes,
-  | "id"
-  | "avatarUrl"
-  | "isAdmin"
-  | "gender"
-  | "addressBis"
-  | "createdAt"
-  | "updatedAt"
->;
-
-export interface ImportLogAttributes {
-  id: number;
-  importId: string;
-  fileName: string;
-  totalLinesProcessed: number;
-  successfulLines: number;
-  errorSummary: object | null;
-  errorLogFilePath: string | null;
-  status: "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
-  importDate: Date;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type ImportLogCreationAttributes = Optional<
-  ImportLogAttributes,
-  "id" | "createdAt" | "updatedAt"
+  "id" | "createdAt" | "updatedAt" | "license_plate" | "color"
 >;

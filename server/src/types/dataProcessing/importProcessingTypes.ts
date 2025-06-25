@@ -4,7 +4,7 @@ import type { CsvRow } from "./dataProcessing";
 export interface TransformedData {
   stationData: Partial<StationAttributes>;
   terminalData: Partial<TerminalAttributes>;
-  plugAssociations: { idPlug: number }[];
+  plugAssociations: { id_plug: string }[];
 }
 
 export interface TransformError {
@@ -13,6 +13,9 @@ export interface TransformError {
   rowNumber?: number;
   rowData: CsvRow;
   details?: unknown;
+  columnName?: string;
+  culpritValue?: string;
+  originalError?: unknown;
 }
 
 export type TransformResult =

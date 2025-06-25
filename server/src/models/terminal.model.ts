@@ -1,70 +1,58 @@
 import type * as GeoJSON from "geojson";
-import { DataTypes, Model, type Sequelize } from "sequelize";
+import { DataTypes, Model, Op, type Sequelize } from "sequelize";
 import type {
   TerminalAttributes,
   TerminalCreationAttributes,
 } from "../types/models/models";
 import { Book } from "./book.model";
 import { BookTerminal } from "./book_terminal.model";
-import { Plug } from "./plug.model";
 import { Power } from "./power.model";
 import { Station } from "./station.model";
-import { TerminalPlug } from "./terminal_plug.model";
 
 export class Terminal
   extends Model<TerminalAttributes, TerminalCreationAttributes>
   implements TerminalAttributes
 {
-  public declare id: number;
-  public declare idStation: number;
-  public declare idBook: number | null;
-  public declare idPower: number | null;
+  public id!: string;
+  public id_station!: string;
+  public id_power!: string | null;
+  public id_pdc_itinerance!: string | null;
+  public id_pdc_local!: string | null;
+  public latitude!: number | null;
+  public longitude!: number | null;
+  public geom!: GeoJSON.Point | null;
+  public type_de_prise!: string;
+  public puissance_nominale!: number;
+  public prise_type_2!: boolean;
+  public prise_type_ef!: boolean;
+  public prise_chademo!: boolean;
+  public prise_combo_ccs!: boolean;
+  public prise_autre!: string | null;
+  public status!: string;
 
-  public declare id_pdc_itinerance: string | null;
-  public declare id_pdc_local: string | null;
-  public declare latitude: number | null;
-  public declare longitude: number | null;
-  public declare geom: GeoJSON.Point | null;
-
-  public declare typeDePrise: string;
-  public declare puissanceNominale: number;
-  public declare priseType2: boolean;
-  public declare priseTypeEf: boolean;
-  public declare priseChademo: boolean;
-  public declare priseComboCcs: boolean;
-  public declare priseAutre: string | null;
-
-  public declare status: string;
-
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Terminal.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
-        idStation: {
-          type: DataTypes.INTEGER,
+        id_station: {
+          type: DataTypes.UUID,
           allowNull: false,
           references: {
             model: "station",
             key: "id",
           },
         },
-        idBook: {
-          type: DataTypes.INTEGER,
-          allowNull: true,
-          references: {
-            model: "book",
-            key: "id",
-          },
-        },
-        idPower: {
-          type: DataTypes.INTEGER,
+
+        id_power: {
+          type: DataTypes.UUID,
           allowNull: true,
           references: {
             model: "power",
@@ -73,8 +61,8 @@ export class Terminal
         },
         id_pdc_itinerance: {
           type: DataTypes.STRING(255),
-          allowNull: true,
           unique: true,
+          allowNull: true,
         },
         id_pdc_local: {
           type: DataTypes.STRING(255),
@@ -92,44 +80,41 @@ export class Terminal
           type: DataTypes.GEOMETRY("POINT", 4326),
           allowNull: true,
         },
-        typeDePrise: {
+        type_de_prise: {
           type: DataTypes.STRING(255),
           allowNull: false,
-          defaultValue: "UNKNOWN",
         },
-        puissanceNominale: {
+        puissance_nominale: {
           type: DataTypes.DOUBLE,
           allowNull: false,
-          defaultValue: 0,
         },
-        priseType2: {
+        prise_type_2: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,
         },
-        priseTypeEf: {
+        prise_type_ef: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,
         },
-        priseChademo: {
+        prise_chademo: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,
         },
-        priseComboCcs: {
+        prise_combo_ccs: {
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,
         },
-        priseAutre: {
+        prise_autre: {
           type: DataTypes.STRING(255),
           allowNull: true,
         },
         status: {
-          type: DataTypes.STRING(50),
-          allowNull: false,
-          defaultValue: "unknown",
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
       },
       {
@@ -138,25 +123,27 @@ export class Terminal
         timestamps: true,
         underscored: true,
         modelName: "Terminal",
+        indexes: [
+          {
+            fields: ["id_station", "id_pdc_itinerance"],
+            unique: true,
+            where: {
+              id_pdc_itinerance: { [Op.ne]: null },
+            },
+          },
+        ],
       },
     );
   }
 
   static associate() {
-    Terminal.belongsTo(Station, { foreignKey: "idStation", as: "station" });
-    Terminal.belongsTo(Book, { foreignKey: "idBook", as: "book" });
-    Terminal.belongsTo(Power, { foreignKey: "idPower", as: "power" });
+    Terminal.belongsTo(Station, { foreignKey: "id_station", as: "station" });
+    Terminal.belongsTo(Power, { foreignKey: "id_power", as: "power" });
     Terminal.belongsToMany(Book, {
       through: BookTerminal,
-      foreignKey: "idTerminal",
-      otherKey: "idBook",
-      as: "relatedBooks",
-    });
-    Terminal.belongsToMany(Plug, {
-      through: TerminalPlug,
-      foreignKey: "idTerminal",
-      otherKey: "idPlug",
-      as: "plugs",
+      foreignKey: "id_terminal",
+      otherKey: "id_book",
+      as: "books",
     });
   }
 }

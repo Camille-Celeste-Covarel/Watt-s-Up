@@ -10,35 +10,42 @@ export class Observation
   extends Model<ObservationAttributes, ObservationCreationAttributes>
   implements ObservationAttributes
 {
-  public declare id: number;
-  public declare comment: string | null;
-  public declare idStation: number;
-  public declare idUser: number;
+  public id!: string;
+  public comment!: string | null;
+  public id_station!: string;
+  public id_user!: string;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Observation.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         comment: {
           type: DataTypes.TEXT,
-          allowNull: false,
+          allowNull: true,
         },
-        idStation: {
-          type: DataTypes.INTEGER,
+        id_station: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_station",
+          references: {
+            model: "station",
+            key: "id",
+          },
         },
-        idUser: {
-          type: DataTypes.INTEGER,
+        id_user: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_user",
+          references: {
+            model: "user",
+            key: "id",
+          },
         },
       },
       {
@@ -46,12 +53,13 @@ export class Observation
         tableName: "observation",
         timestamps: true,
         underscored: true,
+        modelName: "Observation",
       },
     );
   }
 
   static associate() {
-    Observation.belongsTo(Station, { foreignKey: "idStation", as: "station" });
-    Observation.belongsTo(User, { foreignKey: "idUser", as: "user" });
+    Observation.belongsTo(Station, { foreignKey: "id_station", as: "station" });
+    Observation.belongsTo(User, { foreignKey: "id_user", as: "user" });
   }
 }

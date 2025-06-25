@@ -10,52 +10,57 @@ export class Request
   extends Model<RequestAttributes, RequestCreationAttributes>
   implements RequestAttributes
 {
-  public declare id: number;
-  public declare message: string | null;
-  public declare dateRequest: Date | null;
-  public declare status: string | null;
-  public declare response: string | null;
-  public declare idUser: number;
-  public declare idTerminal: number;
+  public id!: string;
+  public message!: string | null;
+  public date_request!: Date | null;
+  public status!: string | null;
+  public response!: string | null;
+  public id_user!: string;
+  public id_terminal!: string;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Request.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         message: {
           type: DataTypes.TEXT,
-          allowNull: false,
+          allowNull: true,
         },
-        dateRequest: {
+        date_request: {
           type: DataTypes.DATE,
-          allowNull: false,
-          field: "date_request",
+          allowNull: true,
         },
         status: {
-          type: DataTypes.ENUM("pending", "accepted", "rejected"),
-          allowNull: false,
-          defaultValue: "pending",
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
         response: {
           type: DataTypes.TEXT,
           allowNull: true,
         },
-        idUser: {
-          type: DataTypes.INTEGER,
+        id_user: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_user",
+          references: {
+            model: "user",
+            key: "id",
+          },
         },
-        idTerminal: {
-          type: DataTypes.INTEGER,
-          allowNull: true,
-          field: "id_terminal",
+        id_terminal: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          references: {
+            model: "terminal",
+            key: "id",
+          },
         },
       },
       {
@@ -63,12 +68,13 @@ export class Request
         tableName: "request",
         timestamps: true,
         underscored: true,
+        modelName: "Request",
       },
     );
   }
 
   static associate() {
-    Request.belongsTo(User, { foreignKey: "idUser", as: "user" });
-    Request.belongsTo(Terminal, { foreignKey: "idTerminal", as: "terminal" });
+    Request.belongsTo(User, { foreignKey: "id_user", as: "user" });
+    Request.belongsTo(Terminal, { foreignKey: "id_terminal", as: "terminal" });
   }
 }

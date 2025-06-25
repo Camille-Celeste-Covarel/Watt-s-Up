@@ -3,6 +3,7 @@ import type {
   BookAttributes,
   BookCreationAttributes,
 } from "../types/models/models";
+import { BookTerminal } from "./book_terminal.model";
 import { Terminal } from "./terminal.model";
 import { User } from "./user.model";
 
@@ -10,47 +11,43 @@ export class Book
   extends Model<BookAttributes, BookCreationAttributes>
   implements BookAttributes
 {
-  public declare id: number;
-  public declare startTime: Date | null;
-  public declare price: number | null;
-  public declare actived: boolean | null;
-  public declare idUser: number;
-  public declare idTerminal: number;
+  public id!: string;
+  public start_time!: Date | null;
+  public price!: number | null;
+  public actived!: boolean | null;
+  public id_user!: string;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Book.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
-        },
-        startTime: {
-          type: DataTypes.DATE,
           allowNull: false,
-          field: "start_time",
+        },
+        start_time: {
+          type: DataTypes.DATE,
+          allowNull: true,
         },
         price: {
-          type: DataTypes.DECIMAL(10, 0),
-          allowNull: false,
+          type: DataTypes.DOUBLE,
+          allowNull: true,
         },
         actived: {
           type: DataTypes.BOOLEAN,
-          allowNull: false,
-          defaultValue: true,
+          allowNull: true,
         },
-        idUser: {
-          type: DataTypes.INTEGER,
+        id_user: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_user",
-        },
-        idTerminal: {
-          type: DataTypes.INTEGER,
-          allowNull: false,
-          field: "id_terminal",
+          references: {
+            model: "user",
+            key: "id",
+          },
         },
       },
       {
@@ -58,12 +55,18 @@ export class Book
         tableName: "book",
         timestamps: true,
         underscored: true,
+        modelName: "Book",
       },
     );
   }
 
   static associate() {
-    Book.belongsTo(User, { foreignKey: "idUser", as: "user" });
-    Book.belongsTo(Terminal, { foreignKey: "idTerminal", as: "terminal" });
+    Book.belongsTo(User, { foreignKey: "id_user", as: "user" });
+    Book.belongsToMany(Terminal, {
+      through: BookTerminal,
+      foreignKey: "id_book",
+      otherKey: "id_terminal",
+      as: "terminals",
+    });
   }
 }

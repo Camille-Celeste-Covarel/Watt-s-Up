@@ -3,29 +3,30 @@ import type {
   ProviderAttributes,
   ProviderCreationAttributes,
 } from "../types/models/models";
-import { Station } from "./station.model";
 
 export class Provider
   extends Model<ProviderAttributes, ProviderCreationAttributes>
   implements ProviderAttributes
 {
-  public declare id: number;
-  public declare name: string;
+  public id!: string;
+  public name!: string;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Provider.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -33,11 +34,10 @@ export class Provider
         tableName: "provider",
         timestamps: true,
         underscored: true,
+        modelName: "Provider",
       },
     );
   }
 
-  static associate() {
-    Provider.hasMany(Station, { foreignKey: "idProvider", as: "stations" });
-  }
+  static associate() {}
 }

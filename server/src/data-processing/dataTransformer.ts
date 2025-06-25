@@ -1,5 +1,5 @@
 import type * as GeoJSON from "geojson";
-import type { CsvRow } from "../types/dataProcessing/dataProcessing"; // CsvRow reste ici
+import type { CsvRow } from "../types/dataProcessing/dataProcessing";
 import type { TransformResult } from "../types/dataProcessing/importProcessingTypes";
 import type {
   StationAttributes,
@@ -140,7 +140,7 @@ export async function transformCsvRowToEntities(
       normalizeString(row.nom_enseigne) || "Inconnu",
     );
     const idPower = await findOrCreatePowerByName(
-      normalizeString(row.puissance_nominale) || "0",
+      puissanceNominaleTerminal || 0,
     );
 
     const stationData: Partial<StationAttributes> = {
@@ -198,43 +198,44 @@ export async function transformCsvRowToEntities(
     const terminalData: Partial<TerminalAttributes> = {
       id_pdc_itinerance: idTerminalItinerance,
       id_pdc_local: idTerminalLocal,
-      idPower: idPower,
+      id_power: idPower,
       latitude: latitude,
       longitude: longitude,
       geom: geoJsonPoint,
       status: "unknown",
-      idBook: null,
 
-      puissanceNominale: puissanceNominaleTerminal || 0,
-      typeDePrise: priseAutre || "UNKNOWN",
-      priseType2: priseType2 || false,
-      priseTypeEf: priseTypeEf || false,
-      priseChademo: priseChademo || false,
-      priseComboCcs: priseComboCcs || false,
-      priseAutre: priseAutre,
+      puissance_nominale: puissanceNominaleTerminal || 0,
+      type_de_prise: priseAutre || "UNKNOWN",
+      prise_type_2: priseType2 || false,
+      prise_type_ef: priseTypeEf || false,
+      prise_chademo: priseChademo || false,
+      prise_combo_ccs: priseComboCcs || false,
+      prise_autre: priseAutre,
     };
 
-    const plugAssociations: { idPlug: number }[] = [];
+    const plugAssociations: { id_plug: string }[] = [];
 
     if (priseTypeEf)
       plugAssociations.push({
-        idPlug: await findOrCreatePlugByName("Type EF"),
+        id_plug: await findOrCreatePlugByName("Type EF"),
       });
     if (priseType2)
-      plugAssociations.push({ idPlug: await findOrCreatePlugByName("Type 2") });
+      plugAssociations.push({
+        id_plug: await findOrCreatePlugByName("Type 2"),
+      });
     if (priseComboCcs)
       plugAssociations.push({
-        idPlug: await findOrCreatePlugByName("Combo CCS"),
+        id_plug: await findOrCreatePlugByName("Combo CCS"),
       });
     if (priseChademo)
       plugAssociations.push({
-        idPlug: await findOrCreatePlugByName("Chademo"),
+        id_plug: await findOrCreatePlugByName("Chademo"),
       });
 
     if (priseAutre && priseAutre !== "false") {
       const idAutrePlug = await findOrCreatePlugByName(priseAutre);
-      if (!plugAssociations.some((p) => p.idPlug === idAutrePlug)) {
-        plugAssociations.push({ idPlug: idAutrePlug });
+      if (!plugAssociations.some((p) => p.id_plug === idAutrePlug)) {
+        plugAssociations.push({ id_plug: idAutrePlug });
       }
     }
 

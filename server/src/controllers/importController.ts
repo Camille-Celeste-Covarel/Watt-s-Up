@@ -15,8 +15,11 @@ import type {
   TransformResult,
 } from "../types/dataProcessing/importProcessingTypes";
 import type {
+  ImportLogAttributes,
+  ImportLogCreationAttributes,
   StationAttributes,
   TerminalAttributes,
+  TerminalPlugAttributes,
 } from "../types/models/models";
 
 import {
@@ -25,6 +28,7 @@ import {
   redirectConsoleOutput,
   restoreConsoleOutput,
 } from "../tools/logger";
+import { sendImportNotification } from "../tools/notificationService";
 
 initializeConsoleLogStream();
 redirectConsoleOutput();
@@ -40,15 +44,6 @@ if (!fs.existsSync(ERROR_LOG_DIR)) {
 }
 
 const processedStationsGlobalCache = new Map<string, Models.Station>();
-
-/**
- * Traite un lot de lignes CSV, tente de persister les données dans la base de données
- * et gère les erreurs spécifiques aux transactions de lot.
- * @param {Array<Object>} batch - Le lot de lignes CSV à traiter.
- * @param {Object} errorCounts - Un objet pour compter les différents types d'erreurs.
- * @param {Writable} errorLogStream - Le stream pour écrire les logs d'erreurs spécifiques à l'importation.
- * @returns {Promise<{ success: boolean; count: number }>} Un objet indiquant le succès du lot et le nombre de lignes traitées.
- */
 
 async function processBatch(
   batch: {
@@ -82,7 +77,8 @@ async function processBatch(
         console.error(
           `[DEBUG - Batch] Ligne ${item.rowNumber}: Erreur détectée par le transformateur: ${error.type} - ${error.message}.`,
         );
-        await logImportErrorToFile(
+
+        logImportErrorToFile(
           {
             type: error.type,
             message: error.message,
@@ -182,7 +178,8 @@ async function processBatch(
 
         errorCounts.STATION_UPSERT_FAILED =
           (errorCounts.STATION_UPSERT_FAILED || 0) + 1;
-        await logImportErrorToFile(
+
+        logImportErrorToFile(
           {
             type: "STATION_UPSERT_FAILED",
             message: `Échec persistance station: ${(stationError as Error).message}`,
@@ -201,7 +198,8 @@ async function processBatch(
         );
         errorCounts.MISSING_PARENT_STATION =
           (errorCounts.MISSING_PARENT_STATION || 0) + 1;
-        await logImportErrorToFile(
+        // Suppression de 'await'
+        logImportErrorToFile(
           {
             type: "MISSING_PARENT_STATION",
             message:
@@ -218,7 +216,7 @@ async function processBatch(
 
       const terminalCreateData: Partial<TerminalAttributes> = {
         ...terminalData,
-        idStation: station.id,
+        id_station: station.id,
       };
 
       const {
@@ -255,9 +253,9 @@ async function processBatch(
 
       if (plugAssociations.length > 0) {
         const terminalPlugsToCreate = plugAssociations.map(
-          (pa: { idPlug: number }) => ({
+          (pa: { id_plug: string }) => ({
             idTerminal: terminal.id,
-            idPlug: pa.idPlug,
+            idPlug: pa.id_plug,
           }),
         );
         await Models.TerminalPlug.bulkCreate(terminalPlugsToCreate, {
@@ -353,7 +351,7 @@ async function processBatch(
 
     errorCounts[errorType] = (errorCounts[errorType] || 0) + 1;
     console.error(`[DEBUG - Batch] Erreur critique du lot: ${errorMessage}`);
-    await logImportErrorToFile(
+    logImportErrorToFile(
       {
         type: errorType,
         message: errorMessage,
@@ -497,24 +495,28 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       (sum, count) => sum + count,
       0,
     );
-    const status =
+    const status: ImportLogAttributes["status"] =
       totalErrors === 0
-        ? "SUCCESS"
+        ? "COMPLETED"
         : totalErrors < totalProcessedLines
           ? "PARTIAL_SUCCESS"
           : "FAILED";
 
-    await Models.ImportLog.create({
-      importId: importUuid,
-      fileName: (req.file as CustomFile).originalname,
-      totalLinesProcessed: totalProcessedLines,
-      successfulLines: totalProcessedLines - totalErrors,
-      errorSummary: errorCounts,
-      errorLogFilePath: currentErrorLogFile,
+    const importSummary: ImportLogCreationAttributes = {
+      import_id: importUuid,
+      file_name: (req.file as CustomFile).originalname,
+      total_lines_processed: totalProcessedLines,
+      successful_lines: totalProcessedLines - totalErrors,
+      error_summary: errorCounts,
+      error_log_file_path: currentErrorLogFile,
       status: status,
-      importDate: new Date(),
-    });
+      import_date: new Date(),
+    };
+
+    const createdLogEntry = await Models.ImportLog.create(importSummary);
     console.log("[DEBUG - IMPORT_LOG] Entrée ImportLog créée en BDD.");
+
+    await sendImportNotification(createdLogEntry);
 
     res.status(200).json({
       message: "Importation CSV terminée.",
@@ -542,21 +544,24 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         "[DEBUG - LOG STREAM] Commande de fermeture du stream global de console envoyée suite à une erreur.",
       );
 
-      const status = "FAILED";
-      await Models.ImportLog.create({
-        importId: importUuid,
-        fileName:
+      const status: ImportLogAttributes["status"] = "FAILED";
+      const importSummary: ImportLogCreationAttributes = {
+        import_id: importUuid,
+        file_name:
           (req.file as CustomFile)?.originalname || "N/A (Stream Error)",
-        totalLinesProcessed: totalProcessedLines,
-        successfulLines: 0,
-        errorSummary: {
+        total_lines_processed: totalProcessedLines,
+        successful_lines: 0,
+        error_summary: {
           message: `Erreur lors de la lecture du stream CSV: ${(streamError as Error).message}`,
         },
-        errorLogFilePath: currentErrorLogFile,
+        error_log_file_path: currentErrorLogFile,
         status: status,
-        importDate: new Date(),
-      });
+        import_date: new Date(),
+      };
+      const createdErrorLogEntry = await Models.ImportLog.create(importSummary);
       console.log("[DEBUG - IMPORT_LOG] Entrée ImportLog FAILED créée en BDD.");
+
+      await sendImportNotification(createdErrorLogEntry);
 
       res.status(500).json({
         message: "Erreur lors de la lecture du fichier CSV.",
