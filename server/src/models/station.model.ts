@@ -80,20 +80,32 @@ export class Station
         },
         id_station_itinerance: {
           type: DataTypes.STRING(255),
-          unique: false,
           allowNull: true,
+          unique: true,
         },
         id_access: {
           type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "access",
+            key: "id",
+          },
         },
         id_provider: {
           type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "provider",
+            key: "id",
+          },
         },
         id_book: {
           type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "book",
+            key: "id",
+          },
         },
         nom_amenageur: {
           type: DataTypes.STRING(255),
@@ -114,6 +126,10 @@ export class Station
         id_operator: {
           type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "operator",
+            key: "id",
+          },
         },
         contact_operateur: {
           type: DataTypes.STRING(255),
@@ -130,6 +146,10 @@ export class Station
         id_compagny: {
           type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "compagny",
+            key: "id",
+          },
         },
         id_station_local: {
           type: DataTypes.STRING(255),
@@ -154,7 +174,6 @@ export class Station
         nbre_pdc: {
           type: DataTypes.INTEGER,
           allowNull: true,
-          defaultValue: 0,
         },
         gratuit: {
           type: DataTypes.BOOLEAN,
@@ -185,7 +204,7 @@ export class Station
           allowNull: true,
         },
         horaires: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.TEXT,
           allowNull: true,
         },
         accessibilite_pmr: {
@@ -269,7 +288,7 @@ export class Station
           allowNull: true,
         },
         coordonneesXY: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.TEXT,
           allowNull: true,
         },
         geom: {
@@ -302,7 +321,6 @@ export class Station
               id_station_itinerance: { [Op.ne]: null },
             },
           },
-          { fields: ["coordonneesXY"] },
         ],
       },
     );
