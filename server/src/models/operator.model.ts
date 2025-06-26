@@ -3,29 +3,30 @@ import type {
   OperatorAttributes,
   OperatorCreationAttributes,
 } from "../types/models/models";
-import { Station } from "./station.model";
 
 export class Operator
   extends Model<OperatorAttributes, OperatorCreationAttributes>
   implements OperatorAttributes
 {
-  public declare id: number;
-  public declare name: string;
+  public id!: string;
+  public name!: string;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Operator.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
-          type: DataTypes.STRING(128),
+          type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -33,11 +34,10 @@ export class Operator
         tableName: "operator",
         timestamps: true,
         underscored: true,
+        modelName: "Operator",
       },
     );
   }
 
-  static associate() {
-    Operator.hasMany(Station, { foreignKey: "idOperator", as: "stations" });
-  }
+  static associate() {}
 }

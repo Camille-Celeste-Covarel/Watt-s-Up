@@ -2,7 +2,9 @@ import express from "express";
 import sequelize from "./config/database";
 
 const app = express();
+console.log("DEBUG: process.env.PORT before definition:", process.env.PORT);
 const PORT = process.env.PORT || 3000;
+console.log("DEBUG: PORT variable after definition:", PORT);
 
 import { Access } from "./models/access.model";
 import { Book } from "./models/book.model";
@@ -98,8 +100,8 @@ async function startServer() {
     const [user, created] = await User.findOrCreate({
       where: { email: "test.user@example.com" },
       defaults: {
-        firstName: "Test",
-        lastName: "User",
+        first_name: "Test",
+        last_name: "User",
         email: "test.user@example.com",
         password: "securepassword123",
         birthdate: new Date("1990-01-01"),
@@ -107,7 +109,7 @@ async function startServer() {
         city: "Anytown",
         postcode: "12345",
         country: "FR",
-        isAdmin: false,
+        is_admin: false,
       },
     });
 

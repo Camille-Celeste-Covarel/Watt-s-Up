@@ -10,45 +10,67 @@ export class TerminalPlug
   extends Model<TerminalPlugAttributes, TerminalPlugCreationAttributes>
   implements TerminalPlugAttributes
 {
-  public declare idPlug: number;
-  public declare idTerminal: number;
+  public id!: string;
+  public idPlug!: string;
+  public idTerminal!: string;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     TerminalPlug.init(
       {
-        idPlug: {
-          type: DataTypes.INTEGER,
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
           allowNull: false,
-          field: "id_plug",
+        },
+        idPlug: {
+          type: DataTypes.UUID,
+          allowNull: false,
           references: {
-            model: Plug,
+            model: "plug",
             key: "id",
           },
-          onUpdate: "CASCADE",
-          onDelete: "CASCADE",
+          field: "id_plug",
         },
         idTerminal: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_terminal",
           references: {
-            model: Terminal,
+            model: "terminal",
             key: "id",
           },
-          onUpdate: "CASCADE",
-          onDelete: "CASCADE",
+          field: "id_terminal",
         },
       },
       {
         sequelize,
         tableName: "terminal_plug",
-        timestamps: false,
+        timestamps: true,
         underscored: true,
+        modelName: "TerminalPlug",
+        indexes: [
+          {
+            unique: true,
+            fields: ["id_plug", "id_terminal"],
+          },
+        ],
       },
     );
   }
 
-  static associate() {}
+  static associate() {
+    TerminalPlug.belongsTo(Terminal, {
+      foreignKey: "idTerminal", // <-- CHANGEMENT ICI: CAMELCASE
+      as: "terminal",
+      targetKey: "id", // Assurez-vous que la clé cible est correcte
+    });
+    TerminalPlug.belongsTo(Plug, {
+      foreignKey: "idPlug", // <-- CHANGEMENT ICI: CAMELCASE
+      as: "plug",
+      targetKey: "id", // Assurez-vous que la clé cible est correcte
+    });
+  }
 }

@@ -1,4 +1,3 @@
-import type * as GeoJSON from "geojson";
 import {
   Access,
   Compagny,
@@ -8,8 +7,8 @@ import {
   Provider,
 } from "../models/_index";
 
-export async function findOrCreateAccessByName(name: string): Promise<number> {
-  const [access, created] = await Access.findOrCreate({
+export async function findOrCreateAccessByName(name: string): Promise<string> {
+  const [access] = await Access.findOrCreate({
     where: { name },
     defaults: { name },
   });
@@ -18,8 +17,8 @@ export async function findOrCreateAccessByName(name: string): Promise<number> {
 
 export async function findOrCreateCompagnyByName(
   name: string,
-): Promise<number> {
-  const [compagny, created] = await Compagny.findOrCreate({
+): Promise<string> {
+  const [compagny] = await Compagny.findOrCreate({
     where: { name },
     defaults: { name },
   });
@@ -28,8 +27,8 @@ export async function findOrCreateCompagnyByName(
 
 export async function findOrCreateOperatorByName(
   name: string,
-): Promise<number> {
-  const [operator, created] = await Operator.findOrCreate({
+): Promise<string> {
+  const [operator] = await Operator.findOrCreate({
     where: { name },
     defaults: { name },
   });
@@ -38,74 +37,27 @@ export async function findOrCreateOperatorByName(
 
 export async function findOrCreateProviderByName(
   name: string,
-): Promise<number> {
-  const [provider, created] = await Provider.findOrCreate({
+): Promise<string> {
+  const [provider] = await Provider.findOrCreate({
     where: { name },
     defaults: { name },
   });
   return provider.id;
 }
 
-export async function findOrCreatePlugByName(name: string): Promise<number> {
-  const [plug, created] = await Plug.findOrCreate({
+export async function findOrCreatePlugByName(name: string): Promise<string> {
+  const [plug] = await Plug.findOrCreate({
     where: { name },
     defaults: { name },
   });
   return plug.id;
 }
 
-export async function findOrCreatePowerByName(name: string): Promise<number> {
-  const [power, created] = await Power.findOrCreate({
+export async function findOrCreatePowerByName(name: number): Promise<string> {
+  // name est un number ici pour Power
+  const [power] = await Power.findOrCreate({
     where: { name },
     defaults: { name },
   });
   return power.id;
-}
-
-export function parseBoolean(value: string | undefined): boolean {
-  if (value === undefined || value === null) {
-    return false;
-  }
-  const lowerCaseValue = value.toLowerCase().trim();
-  return (
-    lowerCaseValue === "true" ||
-    lowerCaseValue === "1" ||
-    lowerCaseValue === "oui" ||
-    lowerCaseValue === "yes"
-  );
-}
-
-export function parseCoordinates(
-  coordString: string | undefined,
-): GeoJSON.Point | null {
-  if (!coordString) {
-    return null;
-  }
-
-  const cleanedString = coordString.replace(/[\[\]\s]/g, "").trim();
-  const parts = cleanedString.split(",").map(Number);
-
-  if (
-    parts.length === 2 &&
-    !Number.isNaN(parts[0]) &&
-    !Number.isNaN(parts[1])
-  ) {
-    const longitude = parts[0];
-    const latitude = parts[1];
-    if (
-      latitude >= -90 &&
-      latitude <= 90 &&
-      longitude >= -180 &&
-      longitude <= 180
-    ) {
-      return {
-        type: "Point",
-        coordinates: [longitude, latitude],
-      };
-    }
-  }
-  console.warn(
-    `[Parse Error] Coordonnées invalides ou format inattendu: "${coordString}"`,
-  );
-  return null;
 }

@@ -1,79 +1,83 @@
 import { DataTypes, Model, type Sequelize } from "sequelize";
-import type { Optional } from "sequelize";
-import type { ImportLogAttributes } from "../types/models/models";
-
-export type ImportLogCreationAttributes = Optional<
+import type {
   ImportLogAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
+  ImportLogCreationAttributes,
+} from "../types/models/models";
 
 export class ImportLog
   extends Model<ImportLogAttributes, ImportLogCreationAttributes>
   implements ImportLogAttributes
 {
-  public id!: number;
-  public importId!: string;
-  public fileName!: string;
-  public totalLinesProcessed!: number;
-  public successfulLines!: number;
-  public errorSummary!: object | null;
-  public errorLogFilePath!: string | null;
-  public status!: "SUCCESS" | "PARTIAL_SUCCESS" | "FAILED";
-  public importDate!: Date;
+  public id!: string;
+  public import_id!: string;
+  public file_name!: string;
+  public total_lines_processed!: number;
+  public successful_lines!: number;
+  public error_summary!: ImportLogAttributes["error_summary"];
+  public error_log_file_path!: string | null;
+  public status!: "IN_PROGRESS" | "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED";
+  public import_date!: Date;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
-  static initialize(sequelize: Sequelize): void {
+  static initialize(sequelize: Sequelize) {
     ImportLog.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
-          primaryKey: true,
-        },
-        importId: {
           type: DataTypes.UUID,
-          allowNull: false,
-          unique: true,
-        },
-        fileName: {
-          type: DataTypes.STRING,
+          defaultValue: DataTypes.UUIDV4,
+          primaryKey: true,
           allowNull: false,
         },
-        totalLinesProcessed: {
+        import_id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
+          allowNull: false,
+        },
+        file_name: {
+          type: DataTypes.STRING(255),
+          allowNull: false,
+        },
+        total_lines_processed: {
           type: DataTypes.INTEGER,
           allowNull: false,
         },
-        successfulLines: {
+        successful_lines: {
           type: DataTypes.INTEGER,
           allowNull: false,
         },
-        errorSummary: {
+        error_summary: {
           type: DataTypes.JSONB,
           allowNull: true,
         },
-        errorLogFilePath: {
-          type: DataTypes.STRING,
+        error_log_file_path: {
+          type: DataTypes.STRING(255),
           allowNull: true,
         },
         status: {
-          type: DataTypes.ENUM("SUCCESS", "PARTIAL_SUCCESS", "FAILED"),
+          type: DataTypes.ENUM(
+            "IN_PROGRESS",
+            "COMPLETED",
+            "PARTIAL_SUCCESS",
+            "FAILED",
+          ),
           allowNull: false,
         },
-        importDate: {
+        import_date: {
           type: DataTypes.DATE,
           allowNull: false,
-          defaultValue: DataTypes.NOW,
         },
       },
       {
         sequelize,
-        tableName: "import_logs",
+        tableName: "import_log",
         timestamps: true,
+        underscored: true,
+        modelName: "ImportLog",
       },
     );
   }
 
-  static associate(): void {}
+  static associate() {}
 }

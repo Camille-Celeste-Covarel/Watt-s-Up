@@ -3,17 +3,15 @@ import { Sequelize } from "sequelize";
 
 dotenv.config();
 
-const DB_HOST = process.env.DB_HOST || "localhost";
-const DB_PORT = Number.parseInt(process.env.DB_PORT || "5432", 10);
 const DB_USER = process.env.DB_USER || "P3_user";
 const DB_PASSWORD = process.env.DB_PASSWORD || "";
 const DB_NAME = process.env.DB_NAME || "P3_db";
 
 const sequelize = new Sequelize(DB_NAME, DB_USER, DB_PASSWORD, {
-  host: DB_HOST,
-  port: DB_PORT,
-  dialect: "postgres",
-  logging: false,
+  host: process.env.DB_HOST as string,
+  port: Number.parseInt(process.env.DB_PORT as string, 10),
+  dialect: process.env.DB_DIALECT as "postgres",
+  logging: process.env.NODE_ENV === "development" ? console.log : false,
   pool: {
     max: 10,
     min: 0,

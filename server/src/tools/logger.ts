@@ -1,303 +1,287 @@
 import fs from "node:fs";
 import path from "node:path";
 import type { Writable } from "node:stream";
-import {
-  DatabaseError,
-  ForeignKeyConstraintError,
-  UniqueConstraintError,
-} from "sequelize";
-import type { CsvRow } from "../types/dataProcessing/dataProcessing";
+import { DatabaseError } from "sequelize";
 import type { TransformError } from "../types/dataProcessing/importProcessingTypes";
+
+
+export enum LogLevel {
+  DEBUG = 0,
+  INFO = 1,
+  WARN = 2,
+  ERROR = 3,
+  CRITICAL = 4,
+}
+
+const LOG_LEVEL_NAMES: { [key: string]: LogLevel } = {
+  DEBUG: LogLevel.DEBUG,
+  INFO: LogLevel.INFO,
+  WARN: LogLevel.WARN,
+  ERROR: LogLevel.ERROR,
+  CRITICAL: LogLevel.CRITICAL,
+};
+
+const LOG_LEVEL_VALUES: Set<number> = new Set(
+  Object.values(LogLevel).filter((v) => typeof v === "number") as number[],
+);
+
 
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
-const LOGS_DIR = path.join(__dirname, "..", "..", "..", "logs");
+let logStream: Writable | null = null;
+let minLogLevel: LogLevel = LogLevel.INFO;
 
-if (!fs.existsSync(LOGS_DIR)) {
-  fs.mkdirSync(LOGS_DIR, { recursive: true });
-}
 
-const CONSOLE_OUTPUT_FILE = path.join(
-  LOGS_DIR,
-  `console_output_${new Date().toISOString().replace(/:/g, "-")}.log`,
-);
-let consoleLogStream: Writable;
+const LOG_DIR = process.env.LOG_DIR || "./logs";
+const MAX_LOG_AGE_DAYS = 7;
+
 
 /**
- * Initialise ou réinitialise le stream de sortie de la console vers un fichier.
- * Cela devrait idéalement être appelé une seule fois au démarrage de l'application.
- * @returns {Writable} Le stream de fichier pour les logs de console.
+ * Initialise un stream de log pour la console globale.
+ * Redirige les sorties de console.log et console.error vers ce stream
+ * et une sortie fichier.
  */
-export const initializeConsoleLogStream = (): Writable => {
-  if (consoleLogStream && !consoleLogStream.writableEnded) {
-    try {
-      consoleLogStream.end();
-      originalConsoleLog("[DEBUG - logger.ts] Ancien stream de console fermé.");
-    } catch (e) {
-      originalConsoleError(
-        `[ERROR - logger.ts] Erreur lors de la fermeture de l'ancien stream de console: ${(e as Error).message}`,
-      );
-    }
+
+export function initializeConsoleLogStream() {
+  const logFilePath = path.join(LOG_DIR, "console.log");
+
+  if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+    // Log via originalConsoleLog car la redirection n'est peut-être pas encore en place
+    originalConsoleLog(`Répertoire de logs créé: ${LOG_DIR}`, LogLevel.DEBUG);
   }
-  consoleLogStream = fs.createWriteStream(CONSOLE_OUTPUT_FILE, { flags: "a" });
-  consoleLogStream.on("error", (err) => {
-    originalConsoleError(
-      `[ERROR - ConsoleLogStream Listener] Erreur sur le stream de console: ${err.message}`,
+
+  if (logStream) {
+    originalConsoleLog(
+      "Fermeture du stream de log existant avant de le réinitialiser.",
+      LogLevel.DEBUG,
     );
+    logStream.end();
+
+  }
+
+  logStream = fs.createWriteStream(logFilePath, { flags: "a" });
+
+  logStream.on("error", (err) => {
+    originalConsoleError(
+      `ERREUR CRITIQUE du stream de log vers le fichier (${logFilePath}) : ${err.message}. Le log fichier est désactivé.`,
+      LogLevel.CRITICAL,
+      err,
+    );
+    logStream = null;
   });
   originalConsoleLog(
-    `[DEBUG - logger.ts] Nouveau stream de console initialisé vers: ${CONSOLE_OUTPUT_FILE}`,
+    `Stream de log de la console initialisé vers ${logFilePath}`,
+    LogLevel.DEBUG,
   );
-  return consoleLogStream;
-};
+}
 
-initializeConsoleLogStream();
-
-/**
- * Redirige les sorties console.log et console.error vers le fichier de log configuré,
- * tout en les affichant également dans la console originale.
- */
-export const redirectConsoleOutput = (): void => {
-  console.log = (...args: unknown[]): void => {
-    const now = new Date();
-    const timePrefix = `${String(now.getHours()).padStart(2, "0")};${String(now.getMinutes()).padStart(2, "0")};${String(now.getSeconds()).padStart(2, "0")} | `;
-    const logMessage = args.map((arg) => String(arg)).join(" ");
-
-    originalConsoleLog.apply(console, args); // Afficher aussi dans la console standard
-    try {
-      if (consoleLogStream && !consoleLogStream.writableEnded) {
-        // Vérifier si le stream est toujours ouvert
-        consoleLogStream.write(`${timePrefix}${logMessage}\n`);
-      }
-    } catch (e) {
-      originalConsoleError(
-        `[ERROR - ConsoleLogStream Wrapper] Échec d'écriture dans le log de console: ${(e as Error).message}`,
-      );
-    }
-  };
-
-  console.error = (...args: unknown[]): void => {
-    const now = new Date();
-    const timePrefix = `${String(now.getHours()).padStart(2, "0")};${String(now.getMinutes()).padStart(2, "0")};${String(now.getSeconds()).padStart(2, "0")} | `;
-
-    originalConsoleError.apply(console, args);
-    try {
-      if (consoleLogStream && !consoleLogStream.writableEnded) {
-        const formattedArgs = args.map((arg) => {
-          if (arg instanceof ForeignKeyConstraintError) {
-            const error = arg as ForeignKeyConstraintError;
-            return `[SequelizeForeignKeyConstraintError] Nom: ${error.name}, Message: ${error.message}, Code: ${(error.parent as { code?: string; detail?: string })?.code || "N/A"}, Détail: ${(error.parent as { detail?: string })?.detail || "N/A"}, Contrainte: ${(error as { constraint?: string }).constraint || "N/A"}, Table: ${(error as { table?: string }).table || "N/A"}, SQL: ${(error as { sql?: string }).sql || "N/A"}`;
-          }
-          if (arg instanceof UniqueConstraintError) {
-            const error = arg as UniqueConstraintError;
-            return `[SequelizeUniqueConstraintError] Nom: ${error.name}, Message: ${error.message}, Code: ${(error.parent as { code?: string; detail?: string })?.code || "N/A"}, Détail: ${(error.parent as { detail?: string })?.detail || "N/A"}, Contrainte: ${(error as { constraint?: string }).constraint || "N/A"}, Table: ${(error as { table?: string }).table || "N/A"}, Champs: ${JSON.stringify((error as { fields?: unknown }).fields)}`;
-          }
-          if (arg instanceof DatabaseError) {
-            const error = arg as DatabaseError;
-            return `[SequelizeDatabaseError] Nom: ${error.name}, Message: ${error.message}, Code: ${(error.parent as { code?: string; detail?: string })?.code || "N/A"}, Détail: ${(error.parent as { detail?: string })?.detail || "N/A"}, SQL: ${(error as { sql?: string }).sql || "N/A"}`;
-          }
-          if (arg instanceof Error) {
-            return `[Erreur] Nom: ${arg.name}, Message: ${arg.message}, Stack: ${arg.stack || "N/A"}`;
-          }
-          if (typeof arg === "object" && arg !== null) {
-            const seen = new WeakSet<object>();
-            try {
-              return JSON.stringify(arg, (key, value) => {
-                if (typeof value === "object" && value !== null) {
-                  if (seen.has(value)) {
-                    return;
-                  }
-                  seen.add(value);
-                }
-                return value;
-              });
-            } catch (e) {
-              return `[Object] (Erreur de sérialisation: ${(e as Error).message})`;
-            }
-          }
-          return String(arg);
-        });
-        consoleLogStream.write(
-          `${timePrefix}[ERROR] ${formattedArgs.join(" ")}\n`,
-        );
-      }
-    } catch (e) {
-      originalConsoleError(
-        `[ERROR - ConsoleLogStream Wrapper] Échec d'écriture dans le log de console (erreur): ${(e as Error).message}`,
-      );
-    }
-  };
 };
 
 /**
- * Rétablit les fonctions console.log et console.error à leurs comportements originaux
- * et ferme le stream de log de console.
+ * Redirige les méthodes console.log et console.error
+ * pour inclure des timestamps et des niveaux de log,
+ * et écrire dans un fichier si un stream est configuré.
  */
-export const restoreConsoleOutput = (): void => {
+export function redirectConsoleOutput() {
+  const configuredLevel = process.env.LOG_LEVEL?.toUpperCase();
+  minLogLevel =
+    configuredLevel && LOG_LEVEL_NAMES[configuredLevel] !== undefined
+      ? LOG_LEVEL_NAMES[configuredLevel]
+      : LogLevel.INFO;
+
+  console.log = (message?: unknown, ...optionalParams: unknown[]) => {
+    let level: LogLevel = LogLevel.INFO;
+    let filteredParams: unknown[] = optionalParams;
+
+    if (optionalParams.length > 0) {
+      const firstParam = optionalParams[0];
+      if (typeof firstParam === "number" && LOG_LEVEL_VALUES.has(firstParam)) {
+        level = firstParam;
+        filteredParams = optionalParams.slice(1);
+      } else if (
+        typeof firstParam === "string" &&
+        LOG_LEVEL_NAMES[firstParam.toUpperCase()] !== undefined
+      ) {
+        level = LOG_LEVEL_NAMES[firstParam.toUpperCase()];
+        filteredParams = optionalParams.slice(1);
+      }
+    }
+
+    if (level >= minLogLevel) {
+      const time = new Date().toLocaleTimeString("fr-FR");
+      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.map((p) => String(p)).join(" ")}`;
+      originalConsoleLog(logMessage);
+
+      if (logStream) {
+        logStream.write(`${logMessage}\n`);
+      }
+    }
+  };
+
+  console.error = (message?: unknown, ...optionalParams: unknown[]) => {
+    let level: LogLevel = LogLevel.ERROR;
+    let filteredParams: unknown[] = optionalParams;
+
+    if (optionalParams.length > 0) {
+      const firstParam = optionalParams[0];
+      if (typeof firstParam === "number" && LOG_LEVEL_VALUES.has(firstParam)) {
+        level = firstParam;
+        filteredParams = optionalParams.slice(1);
+      } else if (
+        typeof firstParam === "string" &&
+        LOG_LEVEL_NAMES[firstParam.toUpperCase()] !== undefined
+      ) {
+        level = LOG_LEVEL_NAMES[firstParam.toUpperCase()];
+        filteredParams = optionalParams.slice(1);
+      }
+    }
+
+    if (level >= minLogLevel) {
+      const time = new Date().toLocaleTimeString("fr-FR");
+      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.map((p) => String(p)).join(" ")}`;
+      originalConsoleError(logMessage); // Toujours logguer sur la console originale
+
+      if (logStream) {
+        // N'écrit sur le stream fichier que s'il est actif
+        logStream.write(`${logMessage}\n`);
+
+      }
+    }
+  };
+}
+
+/**
+ * Restaure les méthodes console.log et console.error à leurs implémentations originales.
+ * Ferme également le stream de log si configuré.
+ */
+export function restoreConsoleOutput() {
   console.log = originalConsoleLog;
   console.error = originalConsoleError;
-  if (consoleLogStream && !consoleLogStream.writableEnded) {
-    try {
-      consoleLogStream.end();
-      originalConsoleLog(
-        "[DEBUG - logger.ts] Stream de console fermé et fonctions restaurées.",
-      );
-    } catch (e) {
-      originalConsoleError(
-        `[ERROR - logger.ts] Erreur lors de la fermeture du stream de console à la restauration: ${(e as Error).message}`,
-      );
-    }
+  if (logStream) {
+    logStream.end();
+    logStream = null;
+
   }
-};
+  originalConsoleLog(
+    "Console output restored and log stream closed.",
+    LogLevel.DEBUG,
+  );
+}
 
 /**
- * Log les erreurs spécifiques d'importation dans un fichier dédié (import_errors_[UUID].log).
- * @param {TransformError} error - L'objet erreur transformé.
- * @param {Writable} errorLogStream - Le stream d'écriture pour le fichier d'erreurs d'importation.
+ * Log une erreur d'importation dans un fichier d'erreur spécifique.
+ * @param error L'objet d'erreur de transformation.
+ * @param errorLogStream Le stream d'écriture du fichier de log d'erreur.
  */
-export async function logImportErrorToFile(
+export function logImportErrorToFile(
   error: TransformError,
   errorLogStream: Writable,
-): Promise<void> {
-  const now = new Date();
-  const time = now.toLocaleTimeString("fr-FR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
+) {
+  const time = new Date().toLocaleTimeString("fr-FR");
+  let detailsString = "";
+  let affectedColumns = "";
 
-  let affectedColumns: string | undefined = "";
-  switch (error.type) {
-    case "INVALID_GEOMETRY":
-      affectedColumns =
-        "coordonneesXY, consolidated_latitude, consolidated_longitude";
-      break;
-    case "MISSING_TERMINAL_ID":
-      affectedColumns = "id_pdc_itinerance";
-      break;
-    case "DATABASE_BATCH_ERROR":
-    case "DATABASE_UNIQUE_CONSTRAINT_VIOLATION":
-    case "DATABASE_FOREIGN_KEY_VIOLATION":
-    case "STATION_UPSERT_FAILED":
-    case "MISSING_PARENT_STATION":
-      affectedColumns = "N/A (Erreur BDD globale du lot)";
-      break;
-    case "VALUE_TOO_LONG": {
-      let columnName: string | undefined = "Unknown Column";
-      if (
-        error.details &&
-        typeof error.details === "object" &&
-        "original" in error.details &&
-        (error.details as { original?: { column?: string } }).original?.column
-      ) {
-        columnName = (error.details as { original?: { column?: string } })
-          .original?.column;
-      } else if (
-        error.details &&
-        typeof error.details === "object" &&
-        "column" in error.details
-      ) {
-        columnName =
-          (error.details as { column?: string }).column || "Unknown Column";
-      } else if (
-        error.details instanceof Error &&
-        typeof (error.details as Error).message === "string"
-      ) {
-        const match = error.details.message.match(/column "(\w+)"/);
-        if (match?.[1]) {
-          columnName = match[1];
-        }
-      }
-      affectedColumns = columnName;
-      break;
+  if (
+    error.type === "TRANSFORMATION_ERROR" &&
+    error.originalError instanceof Error
+  ) {
+    detailsString = `Erreur interne: ${error.originalError.message}`;
+  } else if (error.originalError instanceof DatabaseError) {
+    detailsString = `Erreur BDD: ${error.originalError.message}`;
+    const dbError = error.originalError as DatabaseError & { column?: string };
+    if (dbError.column) {
+      affectedColumns = dbError.column;
     }
-    case "MISSING_UPDATED_AT":
-      affectedColumns =
-        error.details &&
-        typeof error.details === "object" &&
-        "entity" in error.details
-          ? `Entité: ${String((error.details as { entity?: string }).entity)}`
-          : "N/A";
-      break;
-    default:
-      if (error.rowData && Object.keys(error.rowData).length > 0) {
-        const relevantKeys = [
-          "nom_station",
-          "id_station_itinerance",
-          "id_pdc_itinerance",
-          "nom_amenageur",
-        ];
-        const foundKeys = relevantKeys.filter((key) =>
-          Object.prototype.hasOwnProperty.call(error.rowData, key),
-        );
-        if (foundKeys.length > 0) {
-          affectedColumns = foundKeys
-            .map((key) => {
-              const value = (error.rowData as CsvRow)[key];
-              return `${key}: "${value !== undefined && value !== null ? String(value) : "N/A"}"`;
-            })
-            .join(", ");
-        } else {
-          affectedColumns = "N/A (colonnes non spécifiques)";
-        }
-      } else {
-        affectedColumns = "N/A";
-      }
-      break;
   }
 
-  let detailsString = "";
-  if (error.details) {
-    if (error.details instanceof Error) {
-      detailsString = error.details.message;
-    } else if (typeof error.details === "object") {
-      try {
-        const seen = new WeakSet();
-        detailsString = JSON.stringify(error.details, (key, value) => {
-          if (typeof value === "object" && value !== null) {
-            if (seen.has(value)) {
-              return;
-            }
-            seen.add(value);
-          }
-          return value;
-        });
-      } catch (e) {
-        detailsString = `[Object] (Erreur de sérialisation: ${(e as Error).message})`;
-      }
-    } else {
-      detailsString = String(error.details);
+  if (
+    error.originalError instanceof Error &&
+    error.originalError.message.includes("value too long") &&
+    error.columnName
+  ) {
+    detailsString = `Valeur trop longue pour la colonne "${error.columnName}".`;
+  } else if (
+    error.originalError &&
+    typeof error.originalError === "object" &&
+    "message" in error.originalError
+  ) {
+    if (
+      (error.originalError as { message: string }).message.includes(
+        "value too long",
+      ) &&
+      error.columnName
+    ) {
+      detailsString = `Valeur trop longue pour la colonne "${error.columnName}".`;
     }
   }
 
   const logEntry =
-    `${time} : ERREUR - ${error.message} - Ligne N° ${error.rowNumber}` +
-    `${affectedColumns && affectedColumns !== "N/A" ? ` - Colonnes: [${affectedColumns}]` : ""}` +
-    `${detailsString ? ` - Détails: ${detailsString}` : ""}\n`;
+    `${time} | Ligne ${error.rowNumber} | Type: ${error.type} | Message: ${error.message}` +
+    `${affectedColumns ? ` | Colonne(s) affectée(s): ${affectedColumns}` : ""}` +
+    `${error.columnName ? ` | Colonne CSV: ${error.columnName}` : ""}` +
+    `${error.culpritValue ? ` | Valeur: "${error.culpritValue}"` : ""}` +
+    `${detailsString ? ` | Détails: ${detailsString}` : ""}\n`;
 
-  const canWrite = errorLogStream.writable;
-  if (!canWrite) {
-    originalConsoleError(
-      `[DEBUG - LOG WRITE] Stream de log d'erreur n'est PAS en écriture pour l'erreur: ${logEntry.trim()}`,
-    );
-    originalConsoleError(
-      `[DEBUG - LOG WRITE] État du stream: writableEnded=${errorLogStream.writableEnded}, writableFinished=${errorLogStream.writableFinished}, writableCorked=${errorLogStream.writableCorked}`,
-    );
-    return;
-  }
+  errorLogStream.write(logEntry);
+}
 
-  try {
-    errorLogStream.write(logEntry, (err) => {
-      if (err) {
-        originalConsoleError(
-          `[DEBUG - LOG WRITE] ERREUR LORS DE L'ÉCRITURE DANS LE STREAM DE LOG D'ERREUR: ${err.message}. Log à écrire: ${logEntry.trim()}`,
-        );
-      }
-    });
-  } catch (err: unknown) {
-    originalConsoleError(
-      `[DEBUG - LOG WRITE] ERREUR CRITIQUE PENDANT errorLogStream.write(): ${(err as Error).message}. Log: ${logEntry.trim()}`,
-    );
-  }
+/**
+ * Supprime les fichiers de log plus anciens que MAX_LOG_AGE_DAYS.
+ */
+export function cleanOldLogs() {
+  originalConsoleLog(
+    `Début du nettoyage des logs anciens dans ${LOG_DIR}.`,
+    LogLevel.DEBUG,
+  );
+  const now = new Date();
+  const cutoffTime = now.setDate(now.getDate() - MAX_LOG_AGE_DAYS);
+
+  fs.readdir(LOG_DIR, (err, files) => {
+    if (err) {
+      originalConsoleError(
+        `Impossible de lire le répertoire de logs: ${err.message}`,
+        LogLevel.ERROR,
+      );
+      return;
+    }
+
+    for (const file of files) {
+      const filePath = path.join(LOG_DIR, file);
+      fs.stat(filePath, (statErr, stats) => {
+        if (statErr) {
+          originalConsoleError(
+            `Impossible d'obtenir les statistiques du fichier ${file}: ${statErr.message}`,
+            LogLevel.ERROR,
+          );
+          return;
+        }
+
+        const isConsoleLog = file === "console.log";
+        const isImportErrorLog =
+          file.startsWith("import_errors_") && file.endsWith(".log");
+
+        if (
+          (isConsoleLog || isImportErrorLog) &&
+          stats.mtime.getTime() < cutoffTime
+        ) {
+          fs.unlink(filePath, (unlinkErr) => {
+            if (unlinkErr) {
+              originalConsoleError(
+                `Impossible de supprimer le fichier ${file}: ${unlinkErr.message}`,
+                LogLevel.ERROR,
+              );
+            } else {
+              originalConsoleLog(
+                `Fichier de log ancien supprimé: ${file}`,
+                LogLevel.INFO,
+              );
+            }
+          });
+        }
+      });
+    }
+    originalConsoleLog("Nettoyage des logs anciens terminé.", LogLevel.DEBUG);
+  });
 }

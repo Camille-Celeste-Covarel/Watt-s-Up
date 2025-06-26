@@ -35,8 +35,8 @@ const add: RequestHandler = async (req, res, next) => {
   try {
     const [user, created] = await User.findOrCreate({
       defaults: {
-        firstName: "Test",
-        lastName: "User",
+        first_name: "Test",
+        last_name: "User",
         email: "test.user@example.com",
         password: "securepassword123",
         birthdate: new Date("1990-01-01"),
@@ -44,7 +44,7 @@ const add: RequestHandler = async (req, res, next) => {
         city: "Anytown",
         postcode: "12345",
         country: "FR",
-        isAdmin: false,
+        is_admin: false,
       },
     });
 

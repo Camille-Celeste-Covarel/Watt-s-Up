@@ -1,5 +1,5 @@
 import type * as GeoJSON from "geojson";
-import { DataTypes, Model, type Sequelize } from "sequelize";
+import { DataTypes, Model, Op, type Sequelize } from "sequelize";
 import type {
   StationAttributes,
   StationCreationAttributes,
@@ -15,84 +15,97 @@ export class Station
   extends Model<StationAttributes, StationCreationAttributes>
   implements StationAttributes
 {
-  public declare id: number;
-  public declare id_station_itinerance: string | null;
-  public declare id_access: number | null;
-  public declare id_provider: number | null;
-  public declare id_book: number | null;
-  public declare nom_amenageur: string | null;
-  public declare siren_amenageur: string | null;
-  public declare contact_amenageur: string | null;
-  public declare nom_operateur: string | null;
-  public declare id_operator: number | null;
-  public declare contact_operateur: string | null;
-  public declare telephone_operateur: string | null;
-  public declare nom_enseigne: string | null;
-  public declare id_compagny: number | null;
-  public declare id_station_local: string | null;
-  public declare nom_station: string;
-  public declare implantation_station: string | null;
-  public declare adresse_station: string | null;
-  public declare code_insee_commune: string | null;
-  public declare nbre_pdc: number | null;
-  public declare gratuit: boolean | null;
-  public declare paiement_acte: boolean | null;
-  public declare paiement_cb: boolean | null;
-  public declare paiement_autre: string | null;
-  public declare tarification: string | null;
-  public declare condition_acces: string | null;
-  public declare reservation: boolean | null;
-  public declare horaires: string | null;
-  public declare accessibilite_pmr: string | null;
-  public declare restriction_gabarit: string | null;
-  public declare station_deux_roues: boolean | null;
-  public declare raccordement: string | null;
-  public declare num_pdl: string | null;
-  public declare date_mise_en_service: Date | null;
-  public declare observations: string | null;
-  public declare date_maj: Date | null;
-  public declare cable_t2_attache: boolean | null;
-  public declare last_modified: Date | null;
-  public declare datagouv_dataset_id: string | null;
-  public declare datagouv_resource_id: string | null;
-  public declare datagouv_organization_or_owner: string | null;
-  public declare consolidated_latitude: number | null;
-  public declare consolidated_longitude: number | null;
-  public declare consolidated_code_postal: string | null;
-  public declare consolidated_commune: string | null;
-  public declare consolidated_is_lon_lat_correct: boolean | null;
-  public declare consolidated_is_code_insee_verified: boolean | null;
-  public declare consolidated_is_code_insee_modified: boolean | null;
-  public declare coordonneesXY: string | null;
-  public declare geom: GeoJSON.Point | null;
+  public id!: string;
+  public id_station_itinerance!: string | null;
+  public id_access!: string | null;
+  public id_provider!: string | null;
+  public id_book!: string | null;
+  public nom_amenageur!: string | null;
+  public siren_amenageur!: string | null;
+  public contact_amenageur!: string | null;
+  public nom_operateur!: string | null;
+  public id_operator!: string | null;
+  public contact_operateur!: string | null;
+  public telephone_operateur!: string | null;
+  public nom_enseigne!: string | null;
+  public id_compagny!: string | null;
+  public id_station_local!: string | null;
+  public nom_station!: string;
+  public implantation_station!: string | null;
+  public adresse_station!: string | null;
+  public code_insee_commune!: string | null;
+  public nbre_pdc?: number | null;
+  public gratuit!: boolean | null;
+  public paiement_acte!: boolean | null;
+  public paiement_cb!: boolean | null;
+  public paiement_autre!: string | null;
+  public tarification!: string | null;
+  public condition_acces!: string | null;
+  public reservation!: boolean | null;
+  public horaires!: string | null;
+  public accessibilite_pmr!: string | null;
+  public restriction_gabarit!: string | null;
+  public station_deux_roues!: boolean | null;
+  public raccordement!: string | null;
+  public num_pdl!: string | null;
+  public date_mise_en_service!: Date | null;
+  public observations!: string | null;
+  public date_maj!: Date | null;
+  public cable_t2_attache!: boolean | null;
+  public last_modified!: Date | null;
+  public datagouv_dataset_id!: string | null;
+  public datagouv_resource_id!: string | null;
+  public datagouv_organization_or_owner!: string | null;
+  public consolidated_latitude!: number | null;
+  public consolidated_longitude!: number | null;
+  public consolidated_code_postal!: string | null;
+  public consolidated_commune!: string | null;
+  public consolidated_is_lon_lat_correct!: boolean | null;
+  public consolidated_is_code_insee_verified!: boolean | null;
+  public consolidated_is_code_insee_modified!: boolean | null;
+  public coordonneesXY!: string | null;
+  public geom!: GeoJSON.Point | null;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Station.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         id_station_itinerance: {
           type: DataTypes.STRING(255),
-          unique: false,
           allowNull: true,
+          unique: true,
         },
         id_access: {
-          type: DataTypes.INTEGER,
+          type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "access",
+            key: "id",
+          },
         },
         id_provider: {
-          type: DataTypes.INTEGER,
+          type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "provider",
+            key: "id",
+          },
         },
         id_book: {
-          type: DataTypes.INTEGER,
+          type: DataTypes.UUID,
           allowNull: true,
+          references: {
+            model: "book",
+            key: "id",
+          },
         },
         nom_amenageur: {
           type: DataTypes.STRING(255),
@@ -111,7 +124,7 @@ export class Station
           allowNull: true,
         },
         id_operator: {
-          type: DataTypes.INTEGER,
+          type: DataTypes.UUID,
           allowNull: true,
           references: {
             model: "operator",
@@ -131,7 +144,7 @@ export class Station
           allowNull: true,
         },
         id_compagny: {
-          type: DataTypes.INTEGER,
+          type: DataTypes.UUID,
           allowNull: true,
           references: {
             model: "compagny",
@@ -191,7 +204,7 @@ export class Station
           allowNull: true,
         },
         horaires: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.TEXT,
           allowNull: true,
         },
         accessibilite_pmr: {
@@ -275,7 +288,7 @@ export class Station
           allowNull: true,
         },
         coordonneesXY: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.TEXT,
           allowNull: true,
         },
         geom: {
@@ -289,6 +302,26 @@ export class Station
         timestamps: true,
         underscored: true,
         modelName: "Station",
+        indexes: [
+          {
+            fields: [
+              "nom_station",
+              "consolidated_latitude",
+              "consolidated_longitude",
+            ],
+            unique: true,
+            where: {
+              id_station_itinerance: null,
+            },
+          },
+          {
+            fields: ["id_station_itinerance"],
+            unique: true,
+            where: {
+              id_station_itinerance: { [Op.ne]: null },
+            },
+          },
+        ],
       },
     );
   }
@@ -299,6 +332,10 @@ export class Station
     Station.belongsTo(Book, { foreignKey: "id_book", as: "book" });
     Station.belongsTo(Operator, { foreignKey: "id_operator", as: "operator" });
     Station.belongsTo(Compagny, { foreignKey: "id_compagny", as: "compagny" });
-    Station.hasMany(Terminal, { foreignKey: "idStation", as: "terminals" });
+    Station.hasMany(Terminal, {
+      foreignKey: "id_station",
+      as: "terminals",
+      onDelete: "CASCADE",
+    });
   }
 }

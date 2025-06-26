@@ -1,4 +1,5 @@
 import type * as GeoJSON from "geojson";
+import type { Point } from "geojson";
 
 function escapeHtml(text: string): string {
   const map: { [key: string]: string } = {
@@ -12,7 +13,7 @@ function escapeHtml(text: string): string {
 }
 
 export function normalizeString(
-  input: string | null | undefined,
+  input: string | number | null | undefined,
 ): string | null {
   if (input === null || input === undefined) {
     return null;
@@ -113,9 +114,9 @@ export function parseGeoJSONPoint(
 }
 
 export function parseSeparateGeoJSONCoordinates(
-  latitudeString: string | null | undefined,
-  longitudeString: string | null | undefined,
-): GeoJSON.Point | null {
+  latitudeString: string | number,
+  longitudeString: string | number,
+): Point | null {
   const lat = parseNumber(latitudeString);
   const lon = parseNumber(longitudeString);
 

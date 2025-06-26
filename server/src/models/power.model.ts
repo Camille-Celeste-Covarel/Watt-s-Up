@@ -3,29 +3,30 @@ import type {
   PowerAttributes,
   PowerCreationAttributes,
 } from "../types/models/models";
-import { Terminal } from "./terminal.model";
 
 export class Power
   extends Model<PowerAttributes, PowerCreationAttributes>
   implements PowerAttributes
 {
-  public declare id: number;
-  public declare name: string;
+  public id!: string;
+  public name!: number;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Power.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
-          type: DataTypes.STRING(128),
+          type: DataTypes.DOUBLE,
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -33,11 +34,10 @@ export class Power
         tableName: "power",
         timestamps: true,
         underscored: true,
+        modelName: "Power",
       },
     );
   }
 
-  static associate() {
-    Power.hasMany(Terminal, { foreignKey: "idPower", as: "terminals" });
-  }
+  static associate() {}
 }

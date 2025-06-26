@@ -1,9 +1,8 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Writable } from "node:stream";
 import type { Request, Response } from "express";
 import * as fastCsv from "fast-csv";
-import type { Transaction } from "sequelize";
+import { Op, Transaction } from "sequelize";
 import { v4 as uuidv4 } from "uuid";
 import sequelize from "../config/database";
 import { transformCsvRowToEntities } from "../data-processing/dataTransformer";
@@ -11,365 +10,320 @@ import * as Models from "../models/_index";
 import type { CsvRow } from "../types/dataProcessing/dataProcessing";
 import type {
   CustomFile,
+  StagedStationContent,
   TransformError,
-  TransformResult,
 } from "../types/dataProcessing/importProcessingTypes";
 import type {
+  ImportLogAttributes,
+  ImportLogCreationAttributes,
   StationAttributes,
   TerminalAttributes,
+  TerminalPlugAttributes,
 } from "../types/models/models";
 
 import {
+  LogLevel,
   initializeConsoleLogStream,
   logImportErrorToFile,
   redirectConsoleOutput,
   restoreConsoleOutput,
 } from "../tools/logger";
+import { sendImportNotification } from "../tools/notificationService";
 
 initializeConsoleLogStream();
 redirectConsoleOutput();
 
-console.log("[DEBUG - FILE START] importController.ts chargé.");
+console.log("importController.ts chargé.", LogLevel.DEBUG);
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "..", "CSVCache");
-const BATCH_SIZE = 500;
+const FLUSH_THRESHOLD_LINES = 5000;
 const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "..", "logs");
+const PROGRESS_LOG_LINES_INTERVAL = 1000;
+
+// NOUVEAU: Constante pour contrôler la stratégie de vidage du tampon
+// Définit le pourcentage des stations accumulées à "flusher" (traiter et retirer du tampon)
+// 1.0 (100%) -> Vidange complète du tampon (préférable pour la RAM)
+// 0.8 (80%)  -> Garde 20% des stations les plus récentes en mémoire
+const FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH = 0.7; // Par défaut, vider tout pour une meilleure gestion RAM
 
 if (!fs.existsSync(ERROR_LOG_DIR)) {
   fs.mkdirSync(ERROR_LOG_DIR, { recursive: true });
 }
 
+const stagedStationData = new Map<string, StagedStationContent>();
 const processedStationsGlobalCache = new Map<string, Models.Station>();
 
 /**
- * Traite un lot de lignes CSV, tente de persister les données dans la base de données
- * et gère les erreurs spécifiques aux transactions de lot.
- * @param {Array<Object>} batch - Le lot de lignes CSV à traiter.
- * @param {Object} errorCounts - Un objet pour compter les différents types d'erreurs.
- * @param {Writable} errorLogStream - Le stream pour écrire les logs d'erreurs spécifiques à l'importation.
- * @returns {Promise<{ success: boolean; count: number }>} Un objet indiquant le succès du lot et le nombre de lignes traitées.
+ * Génère une couleur ANSI 24 bits (True Color) interpolée entre le rouge et le vert.
+ * @param percentage Le pourcentage de progression (0 à 100).
+ * @returns {string} Le code d'échappement ANSI pour la couleur.
  */
+function getProgressBarColor(percentage: number): string {
+  const red = Math.round(255 * (1 - percentage / 100));
+  const green = Math.round(255 * (percentage / 100));
+  return `\x1b[38;2;${red};${green};0m`;
+}
 
-async function processBatch(
-  batch: {
-    rowData: CsvRow;
-    transformedResult: TransformResult;
-    rowNumber: number;
-  }[],
-  errorCounts: Record<string, number>,
-  errorLogStream: Writable,
-): Promise<{ success: boolean; count: number }> {
-  let transactionInstance: Transaction | undefined;
-  let stationLookupCriteria: { [key: string]: unknown } = {};
-  let stationIdentifier = "";
-  try {
+const ANSI_RESET_COLOR = "\x1b[0m";
+
+function getStationCompositeId(
+  stationData: Partial<StationAttributes>,
+): string {
+  if (
+    stationData.id_station_itinerance &&
+    stationData.id_station_itinerance.trim() !== ""
+  ) {
+    return `ITINERANCE_${stationData.id_station_itinerance.trim().toLowerCase()}`;
+  }
+  const name = (stationData.nom_station || "UNKNOWN_NAME").trim().toLowerCase();
+  const lat = stationData.consolidated_latitude?.toFixed(6) || "NO_LAT";
+  const lon = stationData.consolidated_longitude?.toFixed(6) || "NO_LON";
+  return `COMPOSITE_${name}_${lat}_${lon}`;
+}
+
+async function processConsolidatedStations(
+  stationsToProcess: StagedStationContent[],
+): Promise<{ successfulStations: number; errors: TransformError[] }> {
+  let successfulStations = 0;
+  const errors: TransformError[] = [];
+
+  for (const stagedStation of stationsToProcess) {
+    const compositeId = getStationCompositeId(stagedStation.stationData);
     console.log(
-      `[DEBUG - Batch] Début du traitement du lot de ${batch.length} lignes (de ${batch[0]?.rowNumber} à ${batch[batch.length - 1]?.rowNumber}).`,
+      `Début de traitement pour la station: ${compositeId}`,
+      LogLevel.DEBUG,
     );
-    transactionInstance = await sequelize.transaction();
+
+    const stationTransaction = await sequelize.transaction();
     console.log(
-      `[DEBUG - Batch] Lot ${batch[0]?.rowNumber}-${batch[batch.length - 1]?.rowNumber}: Transaction démarrée.`,
+      `Transaction démarrée pour la station: ${compositeId}`,
+      LogLevel.DEBUG,
     );
 
-    for (const item of batch) {
-      const { transformedResult } = item;
+    try {
+      const { stationData, terminals } = stagedStation;
 
-      if (!transformedResult.success) {
-        const error = (
-          item.transformedResult as { success: false; error: TransformError }
-        ).error;
-        errorCounts[error.type] = (errorCounts[error.type] || 0) + 1;
-        console.error(
-          `[DEBUG - Batch] Ligne ${item.rowNumber}: Erreur détectée par le transformateur: ${error.type} - ${error.message}.`,
-        );
-        await logImportErrorToFile(
-          {
-            type: error.type,
-            message: error.message,
-            rowData: item.rowData,
-            rowNumber: item.rowNumber,
-            details: error.details,
-          },
-          errorLogStream,
-        );
-        continue;
-      }
-      const { stationData, terminalData, plugAssociations } =
-        transformedResult.data;
       let station: Models.Station | null = null;
+      let createdStation = false;
 
-      stationIdentifier =
-        stationData.id_station_itinerance &&
-        stationData.id_station_itinerance.trim() !== ""
-          ? stationData.id_station_itinerance.trim().toLowerCase()
-          : `${stationData.nom_station}-${stationData.consolidated_latitude}-${stationData.consolidated_longitude}`
-              .trim()
-              .toLowerCase();
-
-      station = processedStationsGlobalCache.get(stationIdentifier) || null;
-
-      try {
-        if (!station) {
-          stationLookupCriteria = {};
-
-          let foundOrCreatedStation: Models.Station;
-          let created: boolean;
-
-          if (
-            stationData.id_station_itinerance &&
-            stationData.id_station_itinerance.trim() !== ""
-          ) {
-            stationLookupCriteria.id_station_itinerance =
-              stationData.id_station_itinerance.trim();
-            console.log(
-              `[DEBUG - Station] Ligne ${item.rowNumber}: Recherche station par id_station_itinerance: ${stationData.id_station_itinerance}`,
-            );
-            [foundOrCreatedStation, created] =
-              await Models.Station.findOrCreate({
-                where: stationLookupCriteria,
-                defaults: stationData as StationAttributes,
-                transaction: transactionInstance,
-              });
-          } else {
-            stationLookupCriteria.nom_station = stationData.nom_station;
-            stationLookupCriteria.consolidated_latitude =
-              stationData.consolidated_latitude;
-            stationLookupCriteria.consolidated_longitude =
-              stationData.consolidated_longitude;
-            console.log(
-              `[DEBUG - Station] Ligne ${item.rowNumber}: Recherche station par nom/coords: ${stationData.nom_station}, ${stationData.consolidated_latitude}, ${stationData.consolidated_longitude}`,
-            );
-            [foundOrCreatedStation, created] =
-              await Models.Station.findOrCreate({
-                where: stationLookupCriteria,
-                defaults: stationData as StationAttributes,
-                transaction: transactionInstance,
-              });
-          }
-
-          station = foundOrCreatedStation;
-          console.log(
-            `[DEBUG - Station] Ligne ${item.rowNumber}: Station ${created ? "créée" : "trouvée"} avec ID ${station.id}. ID_Station_Itinerance: ${station.id_station_itinerance || "N/A"}.`,
-          );
-
-          if (!created) {
-            console.log(
-              `[DEBUG - Station] Ligne ${item.rowNumber}: Station existante avec ID ${station.id}, tentative de mise à jour.`,
-            );
-            const {
-              createdAt: stationCreatedAt,
-              updatedAt: stationUpdatedAt,
-              ...updateData
-            } = stationData;
-            await station.update(updateData as StationAttributes, {
-              transaction: transactionInstance,
-            });
-            console.log(
-              `[DEBUG - Station] Ligne ${item.rowNumber}: Station mise à jour.`,
-            );
-          }
-          processedStationsGlobalCache.set(stationIdentifier, station);
-        } else {
-        }
-      } catch (stationError: unknown) {
-        console.error(
-          `[ERROR - Station] Ligne ${item.rowNumber}: Échec lors de la création/mise à jour de la station. ` +
-            `Identifiant utilisé pour le cache: "${stationIdentifier}". ` +
-            `Critères de recherche potentiels: ${JSON.stringify(stationLookupCriteria)}. ` +
-            `Données de la station: ${JSON.stringify(stationData)}. ` +
-            `Erreur: ${(stationError as Error).message}.`,
+      if (stationData.id_station_itinerance) {
+        console.log(
+          `Cherche/Crée Station par id_station_itinerance: ${stationData.id_station_itinerance}`,
+          LogLevel.DEBUG,
         );
-
-        errorCounts.STATION_UPSERT_FAILED =
-          (errorCounts.STATION_UPSERT_FAILED || 0) + 1;
-        await logImportErrorToFile(
-          {
-            type: "STATION_UPSERT_FAILED",
-            message: `Échec persistance station: ${(stationError as Error).message}`,
-            rowData: item.rowData,
-            rowNumber: item.rowNumber,
-            details: stationError as Error,
-          },
-          errorLogStream,
-        );
-        continue;
-      }
-
-      if (!station || !station.id) {
-        console.error(
-          `[ERROR - Terminal] Ligne ${item.rowNumber}: Station non disponible pour la liaison du terminal. Le terminal ne sera PAS inséré.`,
-        );
-        errorCounts.MISSING_PARENT_STATION =
-          (errorCounts.MISSING_PARENT_STATION || 0) + 1;
-        await logImportErrorToFile(
-          {
-            type: "MISSING_PARENT_STATION",
-            message:
-              "Impossible d'insérer le terminal car la station parente n'a pas été trouvée ou créée.",
-            rowData: item.rowData,
-            rowNumber: item.rowNumber,
-            details:
-              "La logique de création/mise à jour de la station a échoué pour une raison non identifiée ou la station n'est pas disponible.",
-          },
-          errorLogStream,
-        );
-        continue;
-      }
-
-      const terminalCreateData: Partial<TerminalAttributes> = {
-        ...terminalData,
-        idStation: station.id,
-      };
-
-      const {
-        createdAt: terminalCreatedAt,
-        updatedAt: terminalUpdatedAt,
-        ...filteredTerminalCreateData
-      } = terminalCreateData;
-
-      let terminal = await Models.Terminal.findOne({
-        where: {
-          id_pdc_itinerance: filteredTerminalCreateData.id_pdc_itinerance,
-        },
-        transaction: transactionInstance,
-      });
-
-      if (terminal) {
-        await terminal.update(
-          filteredTerminalCreateData as TerminalAttributes,
-          {
-            transaction: transactionInstance,
-          },
-        );
+        [station, createdStation] = await Models.Station.findOrCreate({
+          where: { id_station_itinerance: stationData.id_station_itinerance },
+          defaults: stationData as StationAttributes,
+          transaction: stationTransaction,
+        });
       } else {
-        terminal = await Models.Terminal.create(
-          filteredTerminalCreateData as TerminalAttributes,
-          { transaction: transactionInstance },
+        console.log(
+          `Cherche/Crée Station par nom/coords: ${stationData.nom_station}, ${stationData.consolidated_latitude}, ${stationData.consolidated_longitude}`,
+          LogLevel.DEBUG,
         );
-      }
-
-      await Models.TerminalPlug.destroy({
-        where: { idTerminal: terminal.id },
-        transaction: transactionInstance,
-      });
-
-      if (plugAssociations.length > 0) {
-        const terminalPlugsToCreate = plugAssociations.map(
-          (pa: { idPlug: number }) => ({
-            idTerminal: terminal.id,
-            idPlug: pa.idPlug,
-          }),
-        );
-        await Models.TerminalPlug.bulkCreate(terminalPlugsToCreate, {
-          transaction: transactionInstance,
+        [station, createdStation] = await Models.Station.findOrCreate({
+          where: {
+            nom_station: stationData.nom_station,
+            consolidated_latitude: stationData.consolidated_latitude,
+            consolidated_longitude: stationData.consolidated_longitude,
+            id_station_itinerance: null,
+          },
+          defaults: stationData as StationAttributes,
+          transaction: stationTransaction,
         });
       }
-    }
-    console.log(
-      `[DEBUG - Batch] Lot ${batch[0]?.rowNumber}-${batch[batch.length - 1]?.rowNumber}: Toutes les lignes du lot traitées. Tentative de commit.`,
-    );
-    await transactionInstance.commit();
-    console.log(
-      `[DEBUG - Batch] Lot ${batch[0]?.rowNumber}-${batch[batch.length - 1]?.rowNumber}: Transaction commitée avec succès.`,
-    );
-    return { success: true, count: batch.length };
-  } catch (batchError: unknown) {
-    if (transactionInstance) {
-      console.log(
-        `[DEBUG - Batch] Lot ${batch[0]?.rowNumber}-${batch[batch.length - 1]?.rowNumber}: Erreur de lot. Tentative de rollback.`,
-      );
-      await transactionInstance.rollback();
-      console.log(
-        `[DEBUG - Batch] Lot ${batch[0]?.rowNumber}-${batch[batch.length - 1]?.rowNumber}: Rollback effectué.`,
-      );
-    }
-    let errorType = "DATABASE_BATCH_ERROR";
-    let errorMessage = `Erreur lors du traitement d'un lot de données: ${(batchError as Error).message}`;
-    let errorDetails: unknown = batchError;
 
-    if (batchError instanceof Error) {
-      if (
-        batchError.message.includes(
-          "valeur trop longue pour le type character varying",
-        )
-      ) {
-        errorType = "VALUE_TOO_LONG";
-        const match = batchError.message.match(/column "(\w+)"/);
-        const columnName = match ? match[1] : "Unknown Column";
-        errorMessage = `Valeur trop longue pour la colonne "${columnName}".`;
-        errorDetails = {
-          message: batchError.message,
-          column: columnName,
-          originalError: batchError,
-        };
+      if (!station) {
         console.error(
-          `[DEBUG - Batch] Erreur de valeur trop longue: ${errorMessage}`,
+          `La station n'a pas pu être trouvée ou créée pour l'ID composite: ${compositeId}.`,
+          LogLevel.ERROR,
+          "Station object is null after findOrCreate.",
         );
-      } else if (batchError.message.includes("violates unique constraint")) {
-        errorType = "DATABASE_UNIQUE_CONSTRAINT_VIOLATION";
-        errorMessage = `Violation de contrainte unique: ${batchError.message}`;
-        errorDetails = {
-          message: batchError.message,
-          originalError: batchError,
-        };
-        console.error(
-          `[DEBUG - Batch] Erreur de contrainte unique: ${errorMessage}`,
+        errors.push({
+          type: "DB_STATION_UPSERT_FAILED",
+          message: `La station n'a pas pu être trouvée ou créée pour l'ID composite: ${compositeId}.`,
+          rowData: stagedStation.stationData as CsvRow,
+          rowNumber: stagedStation.lastModifiedRow,
+          details: "Station object is null after findOrCreate.",
+        });
+        await stationTransaction.rollback();
+        console.log(
+          `Transaction ROLLBACK pour la station: ${compositeId} (création/trouvée échouée)`,
+          LogLevel.DEBUG,
         );
-      } else if (
-        batchError.message.includes("violates foreign key constraint")
-      ) {
-        errorType = "DATABASE_FOREIGN_KEY_VIOLATION";
-        errorMessage = `Violation de contrainte de clé étrangère: ${batchError.message}`;
-        errorDetails = {
-          message: batchError.message,
-          originalError: batchError,
-        };
-        console.error(
-          `[DEBUG - Batch] Erreur de clé étrangère: ${errorMessage}`,
-        );
-      } else if (
-        batchError.message.includes("n'a pas de champs « updatedat »")
-      ) {
-        errorType = "MISSING_UPDATED_AT";
-        const entityMatch = batchError.message.match(/table « (\w+) »/);
-        const entityName = entityMatch ? entityMatch[1] : "Unknown Entity";
-        errorMessage = `L'enregistrement "${entityName}" n'a pas de champ "updatedat".`;
-        errorDetails = {
-          message: batchError.message,
-          entity: entityName,
-          originalError: batchError,
-        };
-        console.error(
-          `[DEBUG - Batch] Erreur 'updatedat' manquant: ${errorMessage}`,
-        );
-      } else {
-        errorDetails = batchError;
-        console.error(
-          `[DEBUG - Batch] Erreur inattendue dans le lot: ${errorMessage}`,
-          batchError,
-        );
+        continue;
       }
-    }
 
-    errorCounts[errorType] = (errorCounts[errorType] || 0) + 1;
-    console.error(`[DEBUG - Batch] Erreur critique du lot: ${errorMessage}`);
-    await logImportErrorToFile(
-      {
-        type: errorType,
-        message: errorMessage,
-        rowData: batch.length > 0 ? batch[0].rowData : ({} as CsvRow),
-        rowNumber: batch.length > 0 ? batch[0].rowNumber : -1,
-        details: errorDetails,
-      },
-      errorLogStream,
-    );
-    return { success: false, count: batch.length };
+      if (!createdStation) {
+        console.log(
+          `Mise à jour de la station existante: ${station.id}`,
+          LogLevel.DEBUG,
+        );
+        await station.update(stationData as StationAttributes, {
+          transaction: stationTransaction,
+        });
+      } else {
+        console.log(`Station créée avec succès: ${station.id}`, LogLevel.DEBUG);
+      }
+
+      let pdcCount = 0;
+      for (const terminalContent of terminals) {
+        const { terminalData, plugAssociations } = terminalContent;
+        console.log(
+          `Traitement du terminal: ${terminalData.id_pdc_itinerance}`,
+          LogLevel.DEBUG,
+        );
+
+        const [terminal, terminalCreated] = await Models.Terminal.findOrCreate({
+          where: { id_pdc_itinerance: terminalData.id_pdc_itinerance },
+          defaults: {
+            ...terminalData,
+            id_station: station.id,
+          } as TerminalAttributes,
+          transaction: stationTransaction,
+        });
+
+        if (!terminal) {
+          console.error(
+            `Le terminal n'a pas pu être trouvé ou créé: ${terminalData.id_pdc_itinerance}`,
+            LogLevel.ERROR,
+            "Terminal object is null after findOrCreate.",
+          );
+          errors.push({
+            type: "DB_TERMINAL_UPSERT_FAILED",
+            message: `Le terminal ${terminalData.id_pdc_itinerance} n'a pas pu être trouvé ou créé.`,
+            rowData: stagedStation.stationData as CsvRow,
+            rowNumber: stagedStation.lastModifiedRow,
+            details: "Terminal object is null after findOrCreate.",
+          });
+          continue;
+        }
+
+        if (!terminalCreated) {
+          console.log(
+            `Mise à jour du terminal existant: ${terminal.id}`,
+            LogLevel.DEBUG,
+          );
+          await terminal.update(
+            { ...terminalData, id_station: station.id } as TerminalAttributes,
+            {
+              transaction: stationTransaction,
+            },
+          );
+        } else {
+          console.log(
+            `Terminal créé avec succès: ${terminal.id}`,
+            LogLevel.DEBUG,
+          );
+        }
+
+        console.log(
+          `Gestion des plugs pour terminal: ${terminal.id}`,
+          LogLevel.DEBUG,
+        );
+        const existingPlugs = await Models.TerminalPlug.findAll({
+          where: { idTerminal: terminal.id },
+          transaction: stationTransaction,
+        });
+
+        const existingPlugIds = new Set(existingPlugs.map((p) => p.idPlug));
+        const newPlugIds = new Set(plugAssociations.map((pa) => pa.id_plug));
+
+        const plugsToCreate = plugAssociations.filter(
+          (pa) => !existingPlugIds.has(pa.id_plug),
+        );
+        const plugsToDelete = existingPlugs.filter(
+          (p) => !newPlugIds.has(p.idPlug),
+        );
+
+        if (plugsToDelete.length > 0) {
+          console.log(
+            `Suppression de ${plugsToDelete.length} plugs anciennes pour terminal: ${terminal.id}`,
+            LogLevel.DEBUG,
+          );
+          await Models.TerminalPlug.destroy({
+            where: { id: { [Op.in]: plugsToDelete.map((p) => p.id) } },
+            transaction: stationTransaction,
+          });
+        }
+
+        if (plugsToCreate.length > 0) {
+          console.log(
+            `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id}`,
+            LogLevel.DEBUG,
+          );
+          await Models.TerminalPlug.bulkCreate(
+            plugsToCreate.map((pa) => ({
+              idTerminal: terminal.id,
+              idPlug: pa.id_plug,
+            })),
+            { transaction: stationTransaction },
+          );
+        }
+
+        pdcCount++;
+      }
+
+      console.log(
+        `Mise à jour nbre_pdc de la station ${station.id} à ${pdcCount}`,
+        LogLevel.DEBUG,
+      );
+      await station.update(
+        { nbre_pdc: pdcCount },
+        { transaction: stationTransaction },
+      );
+
+      await stationTransaction.commit();
+      console.log(
+        `Transaction COMMIT pour la station: ${compositeId}`,
+        LogLevel.DEBUG,
+      );
+      successfulStations++;
+      console.log(
+        `Traitement de la station ${compositeId} terminé avec succès.`,
+        LogLevel.DEBUG,
+      );
+    } catch (stationProcessError: unknown) {
+      await stationTransaction.rollback();
+      console.log(
+        `Transaction ROLLBACK pour la station: ${compositeId}`,
+        LogLevel.DEBUG,
+      );
+      console.error(
+        `Erreur lors du traitement de la station ${compositeId}:`,
+        LogLevel.ERROR,
+        stationProcessError,
+      );
+
+      let errorMessage = "An unknown error occurred during station processing.";
+      if (stationProcessError instanceof Error) {
+        errorMessage = stationProcessError.message;
+      } else if (
+        typeof stationProcessError === "object" &&
+        stationProcessError !== null &&
+        "message" in stationProcessError
+      ) {
+        errorMessage = (stationProcessError as { message: string }).message;
+      }
+
+      errors.push({
+        type: "STATION_PROCESSING_ERROR",
+        message: `Échec du traitement de la station: ${errorMessage}`,
+        rowData: stagedStation.stationData as CsvRow,
+        rowNumber: stagedStation.lastModifiedRow,
+        details: stationProcessError,
+      });
+    }
   }
+  return { successfulStations, errors };
 }
 
 export const importCsv = async (req: Request, res: Response): Promise<void> => {
-  console.log("[DEBUG - IMPORT_CSV START] Fonction importCsv appelée.");
+  console.log("Fonction importCsv appelée.", LogLevel.DEBUG);
 
+  const startTime = new Date();
+
+  stagedStationData.clear();
   processedStationsGlobalCache.clear();
 
   const importUuid = uuidv4();
@@ -378,11 +332,17 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     `import_errors_${importUuid}.log`,
   );
 
-  let importCompleted: boolean;
-  importCompleted = false;
-  let totalProcessedLines = 0;
+  let importCompleted = false;
+  let totalProcessedCsvLines = 0;
   const totalLinesFromMetadata = 135913;
-  const batchPromises: Promise<{ success: boolean; count: number }>[] = [];
+  let totalSuccessfulStations = 0;
+  let totalErrorEntries = 0;
+
+  if (!fs.existsSync(ERROR_LOG_DIR)) {
+    fs.mkdirSync(ERROR_LOG_DIR, { recursive: true });
+  }
+
+  let initialImportLogEntry: Models.ImportLog | null = null;
 
   const errorLogStream = fs.createWriteStream(currentErrorLogFile, {
     flags: "a",
@@ -390,6 +350,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   errorLogStream.on("error", (err) => {
     console.error(
       `ERREUR CRITIQUE du stream de log d'erreur: Impossible d'écrire dans ${currentErrorLogFile}: ${err.message}`,
+      LogLevel.CRITICAL,
     );
   });
 
@@ -398,172 +359,327 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   }
 
   if (!req.file) {
-    console.log(
-      "[DEBUG - IMPORT_CSV] Aucun fichier fourni, renvoi erreur 400.",
-    );
+    console.log("Aucun fichier CSV fourni, renvoi erreur 400.", LogLevel.DEBUG);
     errorLogStream.end();
+    const duration_ms = new Date().getTime() - startTime.getTime();
     res.status(400).json({
       message: "Aucun fichier CSV fourni.",
       importId: importUuid,
       errorLogFile: currentErrorLogFile,
+      status: "FAILED",
+      duration_ms: duration_ms,
     });
     return;
   }
 
   const filePath = (req.file as CustomFile).path;
-  const errorCounts: Record<string, number> = {};
-  let currentBatch: {
-    rowData: CsvRow;
-    transformedResult: TransformResult;
-    rowNumber: number;
-  }[] = [];
+  const originalFileName = (req.file as CustomFile).originalname;
 
   try {
+    initialImportLogEntry = await Models.ImportLog.create({
+      import_id: importUuid,
+      file_name: originalFileName,
+      total_lines_processed: 0,
+      successful_lines: 0,
+      error_summary: { message: "Importation en cours..." },
+      error_log_file_path: currentErrorLogFile,
+      status: "IN_PROGRESS",
+      import_date: new Date(),
+    });
+    console.log("Entrée ImportLog IN_PROGRESS créée en BDD.", LogLevel.DEBUG);
+
     const csvStream = fs
       .createReadStream(filePath)
       .pipe(fastCsv.parse({ headers: true }));
 
     let lastProgressPercentage = -1;
+    let linesProcessedSinceLastFlush = 0;
+
     for await (const row of csvStream as AsyncIterable<CsvRow>) {
-      totalProcessedLines++;
+      if (importCompleted) {
+        console.log(
+          "Arrêt du traitement en raison d'une erreur de stream précédente.",
+          LogLevel.DEBUG,
+        );
+        break;
+      }
+
+      totalProcessedCsvLines++;
+      linesProcessedSinceLastFlush++;
 
       const currentProgressPercentage = Math.floor(
-        (totalProcessedLines / totalLinesFromMetadata) * 100,
+        (totalProcessedCsvLines / totalLinesFromMetadata) * 100,
       );
-      if (currentProgressPercentage > lastProgressPercentage) {
+
+      if (
+        currentProgressPercentage > lastProgressPercentage ||
+        (totalProcessedCsvLines % PROGRESS_LOG_LINES_INTERVAL === 0 &&
+          totalProcessedCsvLines > 0)
+      ) {
+        const color = getProgressBarColor(currentProgressPercentage);
         console.log(
-          `[PROGRESS] Traitement en cours : ${currentProgressPercentage}% des lignes traitées.`,
+          `${color}Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.${ANSI_RESET_COLOR}`,
+          LogLevel.INFO,
         );
         lastProgressPercentage = currentProgressPercentage;
       }
 
       const transformedResult = await transformCsvRowToEntities(
         row,
-        totalProcessedLines,
+        totalProcessedCsvLines,
       );
-      currentBatch.push({
-        rowData: row,
-        transformedResult,
-        rowNumber: totalProcessedLines,
-      });
 
-      if (currentBatch.length >= BATCH_SIZE) {
-        batchPromises.push(
-          processBatch(currentBatch, errorCounts, errorLogStream),
-        );
+      if (transformedResult.success) {
+        const { stationData, terminalData, plugAssociations } =
+          transformedResult.data;
+        const compositeId = getStationCompositeId(stationData);
+
+        if (!stagedStationData.has(compositeId)) {
+          stagedStationData.set(compositeId, {
+            stationData: stationData,
+            terminals: [],
+            lastModifiedRow: totalProcessedCsvLines,
+          });
+        }
+        const stationEntry = stagedStationData.get(compositeId);
+        if (stationEntry) {
+          stationEntry.terminals.push({ terminalData, plugAssociations });
+          stationEntry.lastModifiedRow = totalProcessedCsvLines;
+        }
+      } else {
+        totalErrorEntries++;
+        logImportErrorToFile(transformedResult.error, errorLogStream);
+      }
+
+      // MODIFICATION ICI: Vidange du tampon selon FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH
+      if (
+        linesProcessedSinceLastFlush >= FLUSH_THRESHOLD_LINES ||
+        stagedStationData.size > 2000
+      ) {
         console.log(
-          `[DEBUG - CSV STREAM] Lot de ${currentBatch.length} lignes traité, promesse ajoutée. Taille batchPromises: ${batchPromises.length}`,
+          `Seuil de flush atteint. ${stagedStationData.size} stations accumulées.`,
+          LogLevel.DEBUG,
         );
-        currentBatch = [];
+
+        const sortedStagedStations = Array.from(
+          stagedStationData.entries(),
+        ).sort(([, a], [, b]) => a.lastModifiedRow - b.lastModifiedRow);
+
+        // Calculer le nombre de stations à vider en fonction du pourcentage
+        const numberToFlush = Math.max(
+          1,
+          Math.floor(
+            sortedStagedStations.length * FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH,
+          ),
+        );
+        const stationsToFlush: StagedStationContent[] = [];
+
+        // Ajouter les stations à vider et les retirer du tampon
+        for (let i = 0; i < numberToFlush; i++) {
+          const [compositeId, stationContent] = sortedStagedStations[i];
+          stationsToFlush.push(stationContent);
+          stagedStationData.delete(compositeId); // Supprimer de la map
+        }
+
+        if (stationsToFlush.length > 0) {
+          console.log(
+            `Traitement de ${stationsToFlush.length} stations les plus anciennes.`,
+            LogLevel.DEBUG,
+          );
+          const { successfulStations, errors: processErrors } =
+            await processConsolidatedStations(stationsToFlush);
+          totalSuccessfulStations += successfulStations;
+          totalErrorEntries += processErrors.length;
+          for (const err of processErrors) {
+            logImportErrorToFile(err, errorLogStream);
+          }
+          console.log(
+            `${successfulStations} stations traitées, ${processErrors.length} erreurs dans ce flush.`,
+            LogLevel.DEBUG,
+          );
+        }
+        linesProcessedSinceLastFlush = 0;
       }
     }
 
     console.log(
-      `[DEBUG - CSV STREAM] Fin du stream CSV. Traitement du dernier lot (${currentBatch.length} lignes restantes).`,
+      `Fin du stream CSV. Traitement du dernier lot (${stagedStationData.size} stations restantes dans le tampon).`,
+      LogLevel.DEBUG,
     );
-    if (currentBatch.length > 0) {
-      batchPromises.push(
-        processBatch(currentBatch, errorCounts, errorLogStream),
-      );
-      console.log(
-        `[DEBUG - CSV STREAM] Promesse du dernier lot ajoutée. Taille batchPromises: ${batchPromises.length}`,
-      );
-    }
+    if (stagedStationData.size > 0) {
+      const stationsToFlush = Array.from(stagedStationData.values());
+      stagedStationData.clear();
 
-    console.log(
-      `[DEBUG - CSV STREAM] Attente de la résolution de toutes les promesses de lots (batchPromises contient ${batchPromises.length} lots au total) en SÉQUENTIEL.`,
-    );
-    for (const promise of batchPromises) {
-      await promise;
+      const { successfulStations, errors: processErrors } =
+        await processConsolidatedStations(stationsToFlush);
+      totalSuccessfulStations += successfulStations;
+      totalErrorEntries += processErrors.length;
+      for (const err of processErrors) {
+        logImportErrorToFile(err, errorLogStream);
+      }
+      console.log(
+        `${successfulStations} stations traitées, ${processErrors.length} erreurs dans le flush final.`,
+        LogLevel.DEBUG,
+      );
     }
-    console.log(
-      "[DEBUG - CSV STREAM] Toutes les promesses de lots résolues SÉQUENTIELLEMENT.",
-    );
 
     importCompleted = true;
     await fs.promises.unlink(filePath);
-    console.log("[DEBUG - CSV STREAM] Fichier temporaire supprimé.");
+    console.log("Fichier temporaire supprimé.", LogLevel.DEBUG);
 
     errorLogStream.end();
     console.log(
-      "[DEBUG - LOG STREAM] Commande de fermeture du stream de log d'erreur envoyée.",
+      "Commande de fermeture du stream de log d'erreur envoyée.",
+      LogLevel.DEBUG,
     );
 
-    console.log(
-      "[DEBUG - LOG STREAM] Commande de fermeture du stream global de console envoyée.",
-    );
+    const endTime = new Date();
+    const duration_ms = endTime.getTime() - startTime.getTime();
 
-    const totalErrors = Object.values(errorCounts).reduce(
-      (sum, count) => sum + count,
-      0,
-    );
-    const status =
-      totalErrors === 0
-        ? "SUCCESS"
-        : totalErrors < totalProcessedLines
+    const finalStatus: ImportLogAttributes["status"] =
+      totalErrorEntries === 0 && totalSuccessfulStations > 0
+        ? "COMPLETED"
+        : totalSuccessfulStations > 0
           ? "PARTIAL_SUCCESS"
           : "FAILED";
 
-    await Models.ImportLog.create({
-      importId: importUuid,
-      fileName: (req.file as CustomFile).originalname,
-      totalLinesProcessed: totalProcessedLines,
-      successfulLines: totalProcessedLines - totalErrors,
-      errorSummary: errorCounts,
-      errorLogFilePath: currentErrorLogFile,
-      status: status,
-      importDate: new Date(),
-    });
-    console.log("[DEBUG - IMPORT_LOG] Entrée ImportLog créée en BDD.");
+    const finalErrorSummary =
+      totalErrorEntries > 0
+        ? {
+            message: `${totalErrorEntries} erreurs rencontrées.`,
+            details: `Importation de ${totalSuccessfulStations} stations réussie sur un total de ${totalProcessedCsvLines} lignes CSV.`,
+          }
+        : null;
+
+    const importSummary: ImportLogCreationAttributes = {
+      import_id: importUuid,
+      file_name: originalFileName,
+      total_lines_processed: totalProcessedCsvLines,
+      successful_lines: totalSuccessfulStations,
+      error_summary: finalErrorSummary,
+      error_log_file_path: currentErrorLogFile,
+      status: finalStatus,
+      import_date: new Date(),
+      duration_ms: duration_ms,
+    };
+
+    if (initialImportLogEntry) {
+      await initialImportLogEntry.update(importSummary);
+      console.log("Entrée ImportLog mise à jour en BDD.", LogLevel.DEBUG);
+    } else {
+      await Models.ImportLog.create(importSummary);
+      console.log(
+        "Entrée ImportLog finale créée en BDD suite à une initialisation manquée.",
+        LogLevel.DEBUG,
+      );
+    }
+
+    await sendImportNotification(
+      initialImportLogEntry ||
+        ({
+          import_id: importUuid,
+          file_name: originalFileName,
+          total_lines_processed: totalProcessedCsvLines,
+          successful_lines: totalSuccessfulStations,
+          error_summary: finalErrorSummary,
+          error_log_file_path: currentErrorLogFile,
+          status: finalStatus,
+          import_date: new Date(),
+          duration_ms: duration_ms,
+        } as ImportLogAttributes),
+    );
 
     res.status(200).json({
       message: "Importation CSV terminée.",
       importId: importUuid,
-      totalLinesProcessed: totalProcessedLines,
-      successfulLines: totalProcessedLines - totalErrors,
-      errorSummary: errorCounts,
+      totalLinesProcessed: totalProcessedCsvLines,
+      successfulStations: totalSuccessfulStations,
+      errorCount: totalErrorEntries,
+      errorSummary: finalErrorSummary,
       errorLogFile: currentErrorLogFile,
-      status: status,
+      status: finalStatus,
+      duration_ms: duration_ms,
     });
-  } catch (streamError: unknown) {
+  } catch (generalError: unknown) {
     console.error(
-      `[DEBUG - CSV STREAM] Erreur de lecture du stream CSV ou de traitement (catch principal): ${streamError}`,
+      "Erreur de lecture du stream CSV ou de traitement (catch principal):",
+      LogLevel.ERROR,
+      generalError,
     );
     if (!importCompleted) {
       if (fs.existsSync(filePath)) {
         await fs.promises.unlink(filePath);
         console.log(
-          "[DEBUG - CSV STREAM] Fichier temporaire supprimé après erreur.",
+          "Fichier temporaire supprimé après erreur.",
+          LogLevel.DEBUG,
         );
       }
       errorLogStream.end();
 
       console.error(
-        "[DEBUG - LOG STREAM] Commande de fermeture du stream global de console envoyée suite à une erreur.",
+        "Commande de fermeture du stream global de console envoyée suite à une erreur.",
+        LogLevel.ERROR,
       );
 
-      const status = "FAILED";
-      await Models.ImportLog.create({
-        importId: importUuid,
-        fileName:
-          (req.file as CustomFile)?.originalname || "N/A (Stream Error)",
-        totalLinesProcessed: totalProcessedLines,
-        successfulLines: 0,
-        errorSummary: {
-          message: `Erreur lors de la lecture du stream CSV: ${(streamError as Error).message}`,
+      let errorMessage = "An unknown error occurred during import.";
+      if (generalError instanceof Error) {
+        errorMessage = generalError.message;
+      } else if (
+        typeof generalError === "object" &&
+        generalError !== null &&
+        "message" in generalError
+      ) {
+        errorMessage = (generalError as { message: string }).message;
+      }
+
+      const duration_ms = new Date().getTime() - startTime.getTime();
+      const status: ImportLogAttributes["status"] = "FAILED";
+      const importSummary: ImportLogCreationAttributes = {
+        import_id: importUuid,
+        file_name: originalFileName || "N/A (Stream Error)",
+        total_lines_processed: totalProcessedCsvLines,
+        successful_lines: 0,
+        error_summary: {
+          message: `Erreur lors de la lecture du stream CSV: ${errorMessage}`,
         },
-        errorLogFilePath: currentErrorLogFile,
+        error_log_file_path: currentErrorLogFile,
         status: status,
-        importDate: new Date(),
-      });
-      console.log("[DEBUG - IMPORT_LOG] Entrée ImportLog FAILED créée en BDD.");
+        import_date: new Date(),
+        duration_ms: duration_ms,
+      };
+
+      try {
+        if (initialImportLogEntry) {
+          await initialImportLogEntry.update(importSummary);
+          console.log(
+            "Entrée ImportLog FAILED mise à jour en BDD.",
+            LogLevel.DEBUG,
+          );
+        } else {
+          await Models.ImportLog.create(importSummary);
+          console.log(
+            "Entrée ImportLog FAILED créée en BDD (nouvelle entrée).",
+            LogLevel.DEBUG,
+          );
+        }
+        await sendImportNotification(
+          initialImportLogEntry || (importSummary as ImportLogAttributes),
+        );
+      } catch (logError) {
+        console.error(
+          "Erreur lors de la mise à jour/création de l'entrée de log d'échec ou de l'envoi de notification :",
+          LogLevel.CRITICAL,
+          logError,
+        );
+      }
 
       res.status(500).json({
         message: "Erreur lors de la lecture du fichier CSV.",
-        error: (streamError as Error).message,
+        error: errorMessage,
         importId: importUuid,
         errorLogFile: currentErrorLogFile,
         status: status,
+        duration_ms: duration_ms,
       });
     }
   } finally {

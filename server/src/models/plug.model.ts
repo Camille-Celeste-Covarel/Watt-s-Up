@@ -3,31 +3,30 @@ import type {
   PlugAttributes,
   PlugCreationAttributes,
 } from "../types/models/models";
-import { Terminal } from "./terminal.model";
-import { TerminalPlug } from "./terminal_plug.model";
-import { Vehicule } from "./vehicule.model";
 
 export class Plug
   extends Model<PlugAttributes, PlugCreationAttributes>
   implements PlugAttributes
 {
-  public declare id: number;
-  public declare name: string;
+  public id!: string;
+  public name!: string;
 
-  public declare readonly createdAt: Date;
-  public declare readonly updatedAt: Date;
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     Plug.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
-          type: DataTypes.STRING(128),
+          type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -35,17 +34,10 @@ export class Plug
         tableName: "plug",
         timestamps: true,
         underscored: true,
+        modelName: "Plug",
       },
     );
   }
 
-  static associate() {
-    Plug.hasMany(Vehicule, { foreignKey: "idPlug", as: "vehicules" });
-    Plug.belongsToMany(Terminal, {
-      through: TerminalPlug,
-      foreignKey: "idPlug",
-      otherKey: "idTerminal",
-      as: "terminals",
-    });
-  }
+  static associate() {}
 }
