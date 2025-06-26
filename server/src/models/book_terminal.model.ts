@@ -1,9 +1,19 @@
 import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  BookTerminalAttributes,
+  BookTerminalCreationAttributes,
+} from "../types/models/models";
+import { Book } from "./book.model";
+import { Terminal } from "./terminal.model";
 
-export class BookTerminal extends Model {
-  public id!: number;
-  public idBook!: number;
-  public idTerminal!: number;
+export class BookTerminal
+  extends Model<BookTerminalAttributes, BookTerminalCreationAttributes>
+  implements BookTerminalAttributes
+{
+  public id!: string;
+  public id_book!: string;
+  public id_terminal!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -11,17 +21,26 @@ export class BookTerminal extends Model {
     BookTerminal.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
-        },
-        idBook: {
-          type: DataTypes.INTEGER,
           allowNull: false,
         },
-        idTerminal: {
-          type: DataTypes.INTEGER,
+        id_book: {
+          type: DataTypes.UUID,
           allowNull: false,
+          references: {
+            model: Book,
+            key: "id",
+          },
+        },
+        id_terminal: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          references: {
+            model: Terminal,
+            key: "id",
+          },
         },
       },
       {
@@ -29,9 +48,22 @@ export class BookTerminal extends Model {
         tableName: "book_terminal",
         timestamps: true,
         underscored: true,
+        modelName: "BookTerminal",
+        indexes: [
+          {
+            unique: true,
+            fields: ["id_book", "id_terminal"],
+          },
+        ],
       },
     );
   }
 
-  static associate() {}
+  static associate() {
+    BookTerminal.belongsTo(Book, { foreignKey: "id_book", as: "book" });
+    BookTerminal.belongsTo(Terminal, {
+      foreignKey: "id_terminal",
+      as: "terminal",
+    });
+  }
 }

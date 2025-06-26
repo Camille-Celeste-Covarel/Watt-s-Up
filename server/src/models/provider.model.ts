@@ -1,22 +1,16 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Station } from "./station.model";
-
-interface ProviderAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface ProviderCreationAttributes
-  extends Optional<ProviderAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  ProviderAttributes,
+  ProviderCreationAttributes,
+} from "../types/models/models";
 
 export class Provider
   extends Model<ProviderAttributes, ProviderCreationAttributes>
   implements ProviderAttributes
 {
-  public id!: number;
+  public id!: string;
   public name!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -24,13 +18,15 @@ export class Provider
     Provider.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -38,11 +34,17 @@ export class Provider
         tableName: "provider",
         timestamps: true,
         underscored: true,
+        modelName: "Provider",
+        indexes: [
+          {
+            unique: true,
+            fields: ["name"],
+            name: "idx_provider_name_unique",
+          },
+        ],
       },
     );
   }
 
-  static associate() {
-    Provider.hasMany(Station, { foreignKey: "idProvider", as: "stations" });
-  }
+  static associate() {}
 }

@@ -1,24 +1,16 @@
-// src/models/power.model.ts
-
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Terminal } from "./terminal.model";
-
-interface PowerAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface PowerCreationAttributes
-  extends Optional<PowerAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  PowerAttributes,
+  PowerCreationAttributes,
+} from "../types/models/models";
 
 export class Power
   extends Model<PowerAttributes, PowerCreationAttributes>
   implements PowerAttributes
 {
-  public id!: number;
-  public name!: string;
+  public id!: string;
+  public name!: number;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -26,13 +18,15 @@ export class Power
     Power.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
-          type: DataTypes.STRING(128),
+          type: DataTypes.DOUBLE,
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -40,11 +34,10 @@ export class Power
         tableName: "power",
         timestamps: true,
         underscored: true,
+        modelName: "Power",
       },
     );
   }
 
-  static associate() {
-    Power.hasMany(Terminal, { foreignKey: "idPower", as: "terminals" });
-  }
+  static associate() {}
 }

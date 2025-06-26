@@ -1,56 +1,77 @@
 import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  TerminalPlugAttributes,
+  TerminalPlugCreationAttributes,
+} from "../types/models/models";
 import { Plug } from "./plug.model";
 import { Terminal } from "./terminal.model";
 
-interface TerminalPlugAttributes {
-  idPlug: number;
-  idTerminal: number;
-}
-
 export class TerminalPlug
-  extends Model<TerminalPlugAttributes>
+  extends Model<TerminalPlugAttributes, TerminalPlugCreationAttributes>
   implements TerminalPlugAttributes
 {
-  public idPlug!: number;
-  public idTerminal!: number;
+  public id!: string;
+  public idPlug!: string;
+  public idTerminal!: string;
+
+  public readonly createdAt!: Date;
+  public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
     TerminalPlug.init(
       {
-        idPlug: {
-          type: DataTypes.INTEGER,
+        id: {
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
           allowNull: false,
-          field: "id_plug",
+        },
+        idPlug: {
+          type: DataTypes.UUID,
+          allowNull: false,
           references: {
             model: Plug,
             key: "id",
           },
-          onUpdate: "CASCADE",
-          onDelete: "CASCADE",
+          field: "id_plug",
         },
         idTerminal: {
-          type: DataTypes.INTEGER,
-          primaryKey: true,
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_terminal",
           references: {
             model: Terminal,
             key: "id",
           },
-          onUpdate: "CASCADE",
-          onDelete: "CASCADE",
+          field: "id_terminal",
         },
       },
       {
         sequelize,
-        tableName: "terminal-plug",
-        timestamps: false,
+        tableName: "terminal_plug",
+        timestamps: true,
         underscored: true,
         modelName: "TerminalPlug",
+        indexes: [
+          {
+            unique: true,
+            fields: ["id_plug", "id_terminal"],
+            name: "idx_terminal_plug_unique_pair",
+          },
+        ],
       },
     );
   }
 
-  static associate() {}
+  static associate() {
+    TerminalPlug.belongsTo(Terminal, {
+      foreignKey: "idTerminal",
+      as: "terminal",
+      targetKey: "id",
+    });
+    TerminalPlug.belongsTo(Plug, {
+      foreignKey: "idPlug",
+      as: "plug",
+      targetKey: "id",
+    });
+  }
 }

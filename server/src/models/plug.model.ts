@@ -1,26 +1,16 @@
-// src/models/plug.model.ts
-
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Terminal } from "./terminal.model";
-import { TerminalPlug } from "./terminal_plug.model";
-import { Vehicule } from "./vehicule.model";
-
-interface PlugAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface PlugCreationAttributes
-  extends Optional<PlugAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  PlugAttributes,
+  PlugCreationAttributes,
+} from "../types/models/models";
 
 export class Plug
   extends Model<PlugAttributes, PlugCreationAttributes>
   implements PlugAttributes
 {
-  public id!: number;
+  public id!: string;
   public name!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -28,13 +18,15 @@ export class Plug
     Plug.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
-          type: DataTypes.STRING(128),
+          type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -42,17 +34,17 @@ export class Plug
         tableName: "plug",
         timestamps: true,
         underscored: true,
+        modelName: "Plug",
+        indexes: [
+          {
+            unique: true,
+            fields: ["name"],
+            name: "idx_plug_name_unique",
+          },
+        ],
       },
     );
   }
 
-  static associate() {
-    Plug.hasMany(Vehicule, { foreignKey: "idPlug", as: "vehicules" });
-    Plug.belongsToMany(Terminal, {
-      through: TerminalPlug,
-      foreignKey: "idPlug",
-      otherKey: "idTerminal",
-      as: "terminals",
-    });
-  }
+  static associate() {}
 }

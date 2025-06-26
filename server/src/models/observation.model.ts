@@ -1,27 +1,20 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Station } from "./station.model"; // Pour les associations futures
-import { User } from "./user.model"; // Pour les associations futures
-
-interface ObservationAttributes {
-  id: number;
-  comment: string;
-  idStation: number;
-  idUser: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface ObservationCreationAttributes
-  extends Optional<ObservationAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  ObservationAttributes,
+  ObservationCreationAttributes,
+} from "../types/models/models";
+import { Station } from "./station.model";
+import { User } from "./user.model";
 
 export class Observation
   extends Model<ObservationAttributes, ObservationCreationAttributes>
   implements ObservationAttributes
 {
-  public id!: number;
-  public comment!: string;
-  public idStation!: number;
-  public idUser!: number;
+  public id!: string;
+  public comment!: string | null;
+  public id_station!: string;
+  public id_user!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -29,23 +22,30 @@ export class Observation
     Observation.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         comment: {
           type: DataTypes.TEXT,
-          allowNull: false,
+          allowNull: true,
         },
-        idStation: {
-          type: DataTypes.INTEGER,
+        id_station: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_station",
+          references: {
+            model: Station,
+            key: "id",
+          },
         },
-        idUser: {
-          type: DataTypes.INTEGER,
+        id_user: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_user",
+          references: {
+            model: User,
+            key: "id",
+          },
         },
       },
       {
@@ -53,12 +53,23 @@ export class Observation
         tableName: "observation",
         timestamps: true,
         underscored: true,
+        modelName: "Observation",
+        indexes: [
+          {
+            fields: ["id_station"],
+            name: "idx_observation_id_station",
+          },
+          {
+            fields: ["id_user"],
+            name: "idx_observation_id_user",
+          },
+        ],
       },
     );
   }
 
   static associate() {
-    Observation.belongsTo(Station, { foreignKey: "idStation", as: "station" });
-    Observation.belongsTo(User, { foreignKey: "idUser", as: "user" });
+    Observation.belongsTo(Station, { foreignKey: "id_station", as: "station" });
+    Observation.belongsTo(User, { foreignKey: "id_user", as: "user" });
   }
 }
