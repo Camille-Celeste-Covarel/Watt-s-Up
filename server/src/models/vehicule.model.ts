@@ -1,4 +1,4 @@
-import { DataTypes, Model, type Sequelize } from "sequelize";
+import { DataTypes, Model, Op, type Sequelize } from "sequelize";
 import type {
   VehiculeAttributes,
   VehiculeCreationAttributes,
@@ -45,7 +45,7 @@ export class Vehicule
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "plug",
+            model: Plug,
             key: "id",
           },
         },
@@ -53,7 +53,7 @@ export class Vehicule
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "user",
+            model: User,
             key: "id",
           },
         },
@@ -64,6 +64,28 @@ export class Vehicule
         timestamps: true,
         underscored: true,
         modelName: "Vehicule",
+        indexes: [
+          {
+            fields: ["id_plug"],
+            name: "idx_vehicule_id_plug",
+          },
+          {
+            fields: ["id_user"],
+            name: "idx_vehicule_id_user",
+          },
+          {
+            fields: ["license_plate"],
+            unique: true,
+            where: {
+              license_plate: { [Op.ne]: null },
+            },
+            name: "idx_vehicule_license_plate_unique",
+          },
+          {
+            fields: ["name"],
+            name: "idx_vehicule_name",
+          },
+        ],
       },
     );
   }

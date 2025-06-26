@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Request, Response } from "express";
 import * as fastCsv from "fast-csv";
-import { Op, Transaction } from "sequelize";
+import { Op } from "sequelize";
 import { v4 as uuidv4 } from "uuid";
 import sequelize from "../config/database";
 import { transformCsvRowToEntities } from "../data-processing/dataTransformer";
@@ -44,7 +44,7 @@ const PROGRESS_LOG_LINES_INTERVAL = 1000;
 // Définit le pourcentage des stations accumulées à "flusher" (traiter et retirer du tampon)
 // 1.0 (100%) -> Vidange complète du tampon (préférable pour la RAM)
 // 0.8 (80%)  -> Garde 20% des stations les plus récentes en mémoire
-const FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH = 0.7; // Par défaut, vider tout pour une meilleure gestion RAM
+const FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH = 0.95; // Par défaut, vider tout pour une meilleure gestion RAM
 
 if (!fs.existsSync(ERROR_LOG_DIR)) {
   fs.mkdirSync(ERROR_LOG_DIR, { recursive: true });
@@ -439,6 +439,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
             stationData: stationData,
             terminals: [],
             lastModifiedRow: totalProcessedCsvLines,
+            originalCsvRow: row, // Ajout du champ manquant pour satisfaire StagedStationContent
           });
         }
         const stationEntry = stagedStationData.get(compositeId);

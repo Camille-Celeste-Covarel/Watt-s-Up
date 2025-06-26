@@ -96,6 +96,33 @@ export class User
         timestamps: true,
         underscored: true,
         modelName: "User",
+        indexes: [
+          {
+            unique: true,
+            fields: ["email"],
+            name: "idx_user_email_unique",
+          },
+          {
+            fields: ["last_name", "first_name"],
+            name: "idx_user_last_first_name",
+          },
+          {
+            fields: ["city"],
+            name: "idx_user_city",
+          },
+          {
+            fields: ["postcode"],
+            name: "idx_user_postcode",
+          },
+          {
+            fields: ["country"],
+            name: "idx_user_country",
+          },
+          {
+            fields: ["is_admin"],
+            name: "idx_user_is_admin",
+          },
+        ],
       },
     );
   }

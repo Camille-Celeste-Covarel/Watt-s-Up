@@ -35,6 +35,13 @@ export class Plug
         timestamps: true,
         underscored: true,
         modelName: "Plug",
+        indexes: [
+          {
+            unique: true,
+            fields: ["name"],
+            name: "idx_plug_name_unique",
+          },
+        ],
       },
     );
   }

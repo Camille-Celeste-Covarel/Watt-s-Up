@@ -45,7 +45,7 @@ export class Book
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "user",
+            model: User,
             key: "id",
           },
         },
@@ -56,6 +56,20 @@ export class Book
         timestamps: true,
         underscored: true,
         modelName: "Book",
+        indexes: [
+          {
+            fields: ["id_user"],
+            name: "idx_book_id_user",
+          },
+          {
+            fields: ["start_time"],
+            name: "idx_book_start_time",
+          },
+          {
+            fields: ["actived"],
+            name: "idx_book_actived",
+          },
+        ],
       },
     );
   }

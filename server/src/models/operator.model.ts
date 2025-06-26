@@ -35,6 +35,13 @@ export class Operator
         timestamps: true,
         underscored: true,
         modelName: "Operator",
+        indexes: [
+          {
+            unique: true,
+            fields: ["name"],
+            name: "idx_operator_name_unique",
+          },
+        ],
       },
     );
   }

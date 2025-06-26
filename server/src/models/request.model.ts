@@ -50,7 +50,7 @@ export class Request
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "user",
+            model: User,
             key: "id",
           },
         },
@@ -58,7 +58,7 @@ export class Request
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "terminal",
+            model: Terminal,
             key: "id",
           },
         },
@@ -69,6 +69,24 @@ export class Request
         timestamps: true,
         underscored: true,
         modelName: "Request",
+        indexes: [
+          {
+            fields: ["id_user"],
+            name: "idx_request_id_user",
+          },
+          {
+            fields: ["id_terminal"],
+            name: "idx_request_id_terminal",
+          },
+          {
+            fields: ["date_request"],
+            name: "idx_request_date_request",
+          },
+          {
+            fields: ["status"],
+            name: "idx_request_status",
+          },
+        ],
       },
     );
   }

@@ -35,6 +35,13 @@ export class Provider
         timestamps: true,
         underscored: true,
         modelName: "Provider",
+        indexes: [
+          {
+            unique: true,
+            fields: ["name"],
+            name: "idx_provider_name_unique",
+          },
+        ],
       },
     );
   }

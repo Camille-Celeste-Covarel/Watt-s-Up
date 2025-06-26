@@ -1,3 +1,5 @@
+// src/models/terminal.model.ts
+
 import type * as GeoJSON from "geojson";
 import { DataTypes, Model, Op, type Sequelize } from "sequelize";
 import type {
@@ -28,7 +30,7 @@ export class Terminal
   public prise_chademo!: boolean;
   public prise_combo_ccs!: boolean;
   public prise_autre!: string | null;
-  public status!: string;
+  public status!: string | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -46,22 +48,20 @@ export class Terminal
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "station",
+            model: Station,
             key: "id",
           },
         },
-
         id_power: {
           type: DataTypes.UUID,
           allowNull: true,
           references: {
-            model: "power",
+            model: Power,
             key: "id",
           },
         },
         id_pdc_itinerance: {
           type: DataTypes.STRING(255),
-          unique: true,
           allowNull: true,
         },
         id_pdc_local: {
@@ -125,11 +125,36 @@ export class Terminal
         modelName: "Terminal",
         indexes: [
           {
-            fields: ["id_station", "id_pdc_itinerance"],
             unique: true,
+            fields: ["id_pdc_itinerance"],
             where: {
               id_pdc_itinerance: { [Op.ne]: null },
             },
+            name: "idx_terminal_id_pdc_itinerance_unique_not_null",
+          },
+          {
+            fields: ["id_pdc_itinerance"],
+            name: "idx_terminal_id_pdc_itinerance_general",
+          },
+          {
+            fields: ["id_station"],
+            name: "idx_terminal_id_station",
+          },
+          {
+            fields: ["id_power"],
+            name: "idx_terminal_id_power",
+          },
+          {
+            fields: ["type_de_prise"],
+            name: "idx_terminal_type_de_prise",
+          },
+          {
+            fields: ["puissance_nominale"],
+            name: "idx_terminal_puissance_nominale",
+          },
+          {
+            fields: ["status"],
+            name: "idx_terminal_status",
           },
         ],
       },

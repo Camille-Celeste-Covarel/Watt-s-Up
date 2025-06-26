@@ -35,6 +35,13 @@ export class Compagny
         timestamps: true,
         underscored: true,
         modelName: "Compagny",
+        indexes: [
+          {
+            unique: true,
+            fields: ["name"],
+            name: "idx_compagny_name_unique",
+          },
+        ],
       },
     );
   }
