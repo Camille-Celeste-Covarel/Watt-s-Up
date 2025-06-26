@@ -30,7 +30,7 @@ export class TerminalPlug
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "plug",
+            model: Plug,
             key: "id",
           },
           field: "id_plug",
@@ -39,7 +39,7 @@ export class TerminalPlug
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "terminal",
+            model: Terminal,
             key: "id",
           },
           field: "id_terminal",
@@ -55,6 +55,7 @@ export class TerminalPlug
           {
             unique: true,
             fields: ["id_plug", "id_terminal"],
+            name: "idx_terminal_plug_unique_pair",
           },
         ],
       },
@@ -63,14 +64,14 @@ export class TerminalPlug
 
   static associate() {
     TerminalPlug.belongsTo(Terminal, {
-      foreignKey: "idTerminal", // <-- CHANGEMENT ICI: CAMELCASE
+      foreignKey: "idTerminal",
       as: "terminal",
-      targetKey: "id", // Assurez-vous que la clé cible est correcte
+      targetKey: "id",
     });
     TerminalPlug.belongsTo(Plug, {
-      foreignKey: "idPlug", // <-- CHANGEMENT ICI: CAMELCASE
+      foreignKey: "idPlug",
       as: "plug",
-      targetKey: "id", // Assurez-vous que la clé cible est correcte
+      targetKey: "id",
     });
   }
 }

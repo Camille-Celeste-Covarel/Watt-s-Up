@@ -4,7 +4,6 @@ import type { Writable } from "node:stream";
 import { DatabaseError } from "sequelize";
 import type { TransformError } from "../types/dataProcessing/importProcessingTypes";
 
-
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
@@ -25,24 +24,20 @@ const LOG_LEVEL_VALUES: Set<number> = new Set(
   Object.values(LogLevel).filter((v) => typeof v === "number") as number[],
 );
 
-
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
 let logStream: Writable | null = null;
 let minLogLevel: LogLevel = LogLevel.INFO;
 
-
 const LOG_DIR = process.env.LOG_DIR || "./logs";
 const MAX_LOG_AGE_DAYS = 7;
-
 
 /**
  * Initialise un stream de log pour la console globale.
  * Redirige les sorties de console.log et console.error vers ce stream
  * et une sortie fichier.
  */
-
 export function initializeConsoleLogStream() {
   const logFilePath = path.join(LOG_DIR, "console.log");
 
@@ -58,7 +53,6 @@ export function initializeConsoleLogStream() {
       LogLevel.DEBUG,
     );
     logStream.end();
-
   }
 
   logStream = fs.createWriteStream(logFilePath, { flags: "a" });
@@ -76,8 +70,6 @@ export function initializeConsoleLogStream() {
     LogLevel.DEBUG,
   );
 }
-
-};
 
 /**
  * Redirige les méthodes console.log et console.error
@@ -146,7 +138,6 @@ export function redirectConsoleOutput() {
       if (logStream) {
         // N'écrit sur le stream fichier que s'il est actif
         logStream.write(`${logMessage}\n`);
-
       }
     }
   };
@@ -162,7 +153,6 @@ export function restoreConsoleOutput() {
   if (logStream) {
     logStream.end();
     logStream = null;
-
   }
   originalConsoleLog(
     "Console output restored and log stream closed.",

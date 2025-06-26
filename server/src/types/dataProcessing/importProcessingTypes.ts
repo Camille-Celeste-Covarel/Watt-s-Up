@@ -33,4 +33,5 @@ export interface StagedStationContent {
     plugAssociations: { id_plug: string }[];
   }[];
   lastModifiedRow: number;
+  originalCsvRow: CsvRow;
 }

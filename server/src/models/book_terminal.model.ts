@@ -30,7 +30,7 @@ export class BookTerminal
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "book",
+            model: Book,
             key: "id",
           },
         },
@@ -38,7 +38,7 @@ export class BookTerminal
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "terminal",
+            model: Terminal,
             key: "id",
           },
         },

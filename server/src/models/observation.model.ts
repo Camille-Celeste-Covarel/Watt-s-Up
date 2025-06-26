@@ -35,7 +35,7 @@ export class Observation
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "station",
+            model: Station,
             key: "id",
           },
         },
@@ -43,7 +43,7 @@ export class Observation
           type: DataTypes.UUID,
           allowNull: false,
           references: {
-            model: "user",
+            model: User,
             key: "id",
           },
         },
@@ -54,6 +54,16 @@ export class Observation
         timestamps: true,
         underscored: true,
         modelName: "Observation",
+        indexes: [
+          {
+            fields: ["id_station"],
+            name: "idx_observation_id_station",
+          },
+          {
+            fields: ["id_user"],
+            name: "idx_observation_id_user",
+          },
+        ],
       },
     );
   }

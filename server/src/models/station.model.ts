@@ -4,6 +4,7 @@ import type {
   StationAttributes,
   StationCreationAttributes,
 } from "../types/models/models";
+
 import { Access } from "./access.model";
 import { Book } from "./book.model";
 import { Compagny } from "./compagny.model";
@@ -81,13 +82,12 @@ export class Station
         id_station_itinerance: {
           type: DataTypes.STRING(255),
           allowNull: true,
-          unique: true,
         },
         id_access: {
           type: DataTypes.UUID,
           allowNull: true,
           references: {
-            model: "access",
+            model: Access,
             key: "id",
           },
         },
@@ -95,7 +95,7 @@ export class Station
           type: DataTypes.UUID,
           allowNull: true,
           references: {
-            model: "provider",
+            model: Provider,
             key: "id",
           },
         },
@@ -103,7 +103,7 @@ export class Station
           type: DataTypes.UUID,
           allowNull: true,
           references: {
-            model: "book",
+            model: Book,
             key: "id",
           },
         },
@@ -127,7 +127,7 @@ export class Station
           type: DataTypes.UUID,
           allowNull: true,
           references: {
-            model: "operator",
+            model: Operator,
             key: "id",
           },
         },
@@ -147,7 +147,7 @@ export class Station
           type: DataTypes.UUID,
           allowNull: true,
           references: {
-            model: "compagny",
+            model: Compagny,
             key: "id",
           },
         },
@@ -304,22 +304,56 @@ export class Station
         modelName: "Station",
         indexes: [
           {
+            unique: true,
+            fields: ["id_station_itinerance"],
+            where: {
+              id_station_itinerance: { [Op.ne]: null },
+            },
+            name: "idx_station_id_itinerance_unique_not_null",
+          },
+          {
+            unique: true,
             fields: [
               "nom_station",
               "consolidated_latitude",
               "consolidated_longitude",
             ],
-            unique: true,
             where: {
-              id_station_itinerance: null,
+              id_station_itinerance: { [Op.eq]: null },
             },
+            name: "idx_station_composite_name_coords_unique_when_no_itinerance_id",
           },
           {
             fields: ["id_station_itinerance"],
-            unique: true,
-            where: {
-              id_station_itinerance: { [Op.ne]: null },
-            },
+            name: "idx_station_id_itinerance_general",
+          },
+          {
+            fields: ["nom_station"],
+            name: "idx_station_nom_station",
+          },
+          { fields: ["id_access"], name: "idx_station_id_access" },
+          { fields: ["id_provider"], name: "idx_station_id_provider" },
+          { fields: ["id_book"], name: "idx_station_id_book" },
+          { fields: ["id_operator"], name: "idx_station_id_operator" },
+          { fields: ["id_compagny"], name: "idx_station_id_compagny" },
+          {
+            fields: ["consolidated_code_postal"],
+            name: "idx_station_consolidated_code_postal",
+          },
+          {
+            fields: ["consolidated_commune"],
+            name: "idx_station_consolidated_commune",
+          },
+          { fields: ["adresse_station"], name: "idx_station_adresse_station" },
+          {
+            fields: ["code_insee_commune"],
+            name: "idx_station_code_insee_commune",
+          },
+          { fields: ["date_maj"], name: "idx_station_date_maj" },
+          { fields: ["last_modified"], name: "idx_station_last_modified" },
+          {
+            fields: ["consolidated_latitude", "consolidated_longitude"],
+            name: "idx_station_lat_lon",
           },
         ],
       },
