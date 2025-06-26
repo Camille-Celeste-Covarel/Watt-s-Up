@@ -1,0 +1,15 @@
+.navbar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--primary-color);
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 20px;
+  box-sizing: border-box;
+}
+
+.navbar-container img {
+  height: 35px;
+}

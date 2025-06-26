@@ -1,0 +1,8 @@
+.topbar-container {
+  background-color: var(--primary-color);
+  padding: 15px 20px;
+}
+
+.logo {
+  height: 50px;
+}
