@@ -1,5 +1,3 @@
-// src/controllers/importController.ts
-
 import fs from "node:fs";
 import path from "node:path";
 import type { Request, Response } from "express";
@@ -509,9 +507,8 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       LogLevel.DEBUG,
     );
     if (stagedStationData.size > 0) {
-      // Si des stations restent à la fin du fichier
       const stationsToFlush = Array.from(stagedStationData.values());
-      stagedStationData.clear(); // Vider le tampon final
+      stagedStationData.clear();
 
       const { successfulStations, errors: processErrors } =
         await processConsolidatedStations(stationsToFlush);
