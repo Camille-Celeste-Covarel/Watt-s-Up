@@ -1,22 +1,16 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Station } from "./station.model"; // Nécessaire pour les associations futures
-
-interface AccessAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface AccessCreationAttributes
-  extends Optional<AccessAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  AccessAttributes,
+  AccessCreationAttributes,
+} from "../types/models/models";
 
 export class Access
   extends Model<AccessAttributes, AccessCreationAttributes>
   implements AccessAttributes
 {
-  public id!: number;
+  public id!: string;
   public name!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -24,13 +18,15 @@ export class Access
     Access.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -38,11 +34,10 @@ export class Access
         tableName: "access",
         timestamps: true,
         underscored: true,
+        modelName: "Access",
       },
     );
   }
 
-  static associate() {
-    Access.hasMany(Station, { foreignKey: "idAccess", as: "stations" });
-  }
+  static associate() {}
 }

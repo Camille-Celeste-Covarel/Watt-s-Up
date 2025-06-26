@@ -1,31 +1,22 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
+import { DataTypes, Model, Op, type Sequelize } from "sequelize";
+import type {
+  VehiculeAttributes,
+  VehiculeCreationAttributes,
+} from "../types/models/models";
 import { Plug } from "./plug.model";
 import { User } from "./user.model";
-
-interface VehiculeAttributes {
-  id: number;
-  name: string;
-  licensePlate: string;
-  color: string;
-  idPlug: number;
-  idUser: number;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface VehiculeCreationAttributes
-  extends Optional<VehiculeAttributes, "id" | "createdAt" | "updatedAt"> {}
 
 export class Vehicule
   extends Model<VehiculeAttributes, VehiculeCreationAttributes>
   implements VehiculeAttributes
 {
-  public id!: number;
+  public id!: string;
   public name!: string;
-  public licensePlate!: string;
-  public color!: string;
-  public idPlug!: number;
-  public idUser!: number;
+  public license_plate!: string | null;
+  public color!: string | null;
+  public id_plug!: string;
+  public id_user!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -33,33 +24,38 @@ export class Vehicule
     Vehicule.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING(255),
           allowNull: false,
         },
-        licensePlate: {
-          type: DataTypes.STRING(128),
-          allowNull: false,
-          unique: true,
-          field: "license_plate",
+        license_plate: {
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
         color: {
-          type: DataTypes.STRING(128),
-          allowNull: false,
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
-        idPlug: {
-          type: DataTypes.INTEGER,
+        id_plug: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_plug",
+          references: {
+            model: Plug,
+            key: "id",
+          },
         },
-        idUser: {
-          type: DataTypes.INTEGER,
+        id_user: {
+          type: DataTypes.UUID,
           allowNull: false,
-          field: "id_user",
+          references: {
+            model: User,
+            key: "id",
+          },
         },
       },
       {
@@ -67,12 +63,35 @@ export class Vehicule
         tableName: "vehicule",
         timestamps: true,
         underscored: true,
+        modelName: "Vehicule",
+        indexes: [
+          {
+            fields: ["id_plug"],
+            name: "idx_vehicule_id_plug",
+          },
+          {
+            fields: ["id_user"],
+            name: "idx_vehicule_id_user",
+          },
+          {
+            fields: ["license_plate"],
+            unique: true,
+            where: {
+              license_plate: { [Op.ne]: null },
+            },
+            name: "idx_vehicule_license_plate_unique",
+          },
+          {
+            fields: ["name"],
+            name: "idx_vehicule_name",
+          },
+        ],
       },
     );
   }
 
   static associate() {
-    Vehicule.belongsTo(Plug, { foreignKey: "idPlug", as: "plug" });
-    Vehicule.belongsTo(User, { foreignKey: "idUser", as: "user" });
+    Vehicule.belongsTo(Plug, { foreignKey: "id_plug", as: "plug" });
+    Vehicule.belongsTo(User, { foreignKey: "id_user", as: "user" });
   }
 }

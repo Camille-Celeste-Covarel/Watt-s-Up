@@ -1,22 +1,16 @@
-import { DataTypes, Model, type Optional, type Sequelize } from "sequelize";
-import { Station } from "./station.model";
-
-interface CompagnyAttributes {
-  id: number;
-  name: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-
-interface CompagnyCreationAttributes
-  extends Optional<CompagnyAttributes, "id" | "createdAt" | "updatedAt"> {}
+import { DataTypes, Model, type Sequelize } from "sequelize";
+import type {
+  CompagnyAttributes,
+  CompagnyCreationAttributes,
+} from "../types/models/models";
 
 export class Compagny
   extends Model<CompagnyAttributes, CompagnyCreationAttributes>
   implements CompagnyAttributes
 {
-  public id!: number;
+  public id!: string;
   public name!: string;
+
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
 
@@ -24,13 +18,15 @@ export class Compagny
     Compagny.init(
       {
         id: {
-          type: DataTypes.INTEGER,
-          autoIncrement: true,
+          type: DataTypes.UUID,
+          defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+          allowNull: false,
         },
         name: {
           type: DataTypes.STRING(255),
           allowNull: false,
+          unique: true,
         },
       },
       {
@@ -38,11 +34,17 @@ export class Compagny
         tableName: "compagny",
         timestamps: true,
         underscored: true,
+        modelName: "Compagny",
+        indexes: [
+          {
+            unique: true,
+            fields: ["name"],
+            name: "idx_compagny_name_unique",
+          },
+        ],
       },
     );
   }
 
-  static associate() {
-    Compagny.hasMany(Station, { foreignKey: "idCompagny", as: "stations" });
-  }
+  static associate() {}
 }
