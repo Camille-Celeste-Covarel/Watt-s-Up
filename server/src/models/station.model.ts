@@ -27,7 +27,7 @@ export class Station extends Model {
   public paiement_acte?: boolean;
   public paiement_cb?: boolean;
   public paiement_autre?: string;
-  public tarification?: string;
+  public tarification?: Text;
   public condition_acces?: string;
   public reservation?: boolean;
   public horaires?: string;
@@ -101,7 +101,7 @@ export class Station extends Model {
         paiement_acte: DataTypes.BOOLEAN,
         paiement_cb: DataTypes.BOOLEAN,
         paiement_autre: DataTypes.STRING(255),
-        tarification: DataTypes.STRING(255),
+        tarification: DataTypes.TEXT,
         condition_acces: DataTypes.STRING(255),
         reservation: DataTypes.BOOLEAN,
         horaires: DataTypes.STRING(255),
