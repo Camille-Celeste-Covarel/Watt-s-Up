@@ -3,9 +3,9 @@ import upload from "./config/multer";
 import { importCsv } from "./controllers/importController";
 import bookActions from "./modules/bookActions";
 import requestActions from "./modules/requestActions";
+import stationActions from "./modules/stationActions";
 import userActions from "./modules/userActions";
 import vehiculeActions from "./modules/vehiculeActions";
-
 const router = express.Router();
 
 /* ************************************************************************* */
@@ -37,6 +37,12 @@ router.get("/api/vehicules/:id", vehiculeActions.read);
 router.post("/api/vehicules", vehiculeActions.add);
 router.put("/api/vehicules/:id", vehiculeActions.edit);
 router.delete("/api/vehicules/:id", vehiculeActions.destroy);
+
+router.get("/api/station", stationActions.browse);
+router.get("/api/station/:id", stationActions.read);
+router.post("/api/station", stationActions.add);
+router.put("/api/station/:id", stationActions.edit);
+router.delete("/api/station/:id", stationActions.destroy);
 
 /* ************************************************************************* */
 

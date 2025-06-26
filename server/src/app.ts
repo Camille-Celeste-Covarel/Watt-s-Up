@@ -1,6 +1,7 @@
 import express from "express";
 import { Sequelize } from "sequelize";
 import sequelize from "./config/database";
+import router from "./router";
 
 import { Access } from "./models/access.model";
 import { Book } from "./models/book.model";
@@ -39,6 +40,7 @@ console.log("DEBUG: PORT variable after definition:", PORT, LogLevel.DEBUG);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(router);
 
 async function startServer() {
   try {
@@ -128,7 +130,7 @@ async function startServer() {
     );
     // REMINDER: Use { force: true } once in development to clean up conflicting indexes
     // Then switch back to { alter: true } or your migration process
-    await sequelize.sync({ force: true }); // Gardez ceci en `force: true` pour le moment
+    await sequelize.sync({ alter: true }); // Gardez ceci en `force: true` pour le moment
 
     console.log(
       "🚀 Base de données synchronisée avec les modèles !",
@@ -201,9 +203,6 @@ if (process.env.CLIENT_URL != null) {
   app.use(cors({ origin: [process.env.CLIENT_URL] }));
 }
 
-import router from "./router";
-app.use(router);
-
 import fs from "node:fs";
 import path from "node:path";
 
@@ -221,11 +220,19 @@ if (fs.existsSync(clientBuildPath)) {
 }
 
 import type { ErrorRequestHandler } from "express";
+import { Pool } from "pg";
 const logErrors: ErrorRequestHandler = (err, req, res, next) => {
   console.error(err, LogLevel.ERROR);
   console.error("on req:", req.method, req.path, LogLevel.ERROR);
   next(err);
 };
 app.use(logErrors);
+
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get("*", (_, res) => {
+    res.sendFile("index.html", { root: clientBuildPath });
+  });
+}
 
 export default app;
