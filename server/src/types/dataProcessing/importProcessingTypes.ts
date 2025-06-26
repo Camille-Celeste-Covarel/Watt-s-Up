@@ -25,3 +25,12 @@ export type TransformResult =
 export interface CustomFile extends Express.Multer.File {
   path: string;
 }
+
+export interface StagedStationContent {
+  stationData: Partial<StationAttributes>;
+  terminals: {
+    terminalData: Partial<TerminalAttributes>;
+    plugAssociations: { id_plug: string }[];
+  }[];
+  lastModifiedRow: number;
+}

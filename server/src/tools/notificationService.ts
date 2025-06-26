@@ -6,45 +6,65 @@ export async function sendImportNotification(
   const {
     import_id,
     file_name,
+    status,
     total_lines_processed,
     successful_lines,
-    status,
-    import_date,
     error_summary,
+    import_date,
+    error_log_file_path,
+    duration_ms,
   } = importSummary;
 
-  let subject: string;
-  let message: string;
+  let notificationSubject = `[IMPORT CSV] Statut d'importation: ${status} - ${file_name}`;
+  let notificationBody = "";
+
+  const formatDuration = (ms: number | null | undefined): string => {
+    if (ms === null || ms === undefined) return "N/A";
+    const seconds = (ms / 1000).toFixed(2);
+    return `${seconds} secondes`;
+  };
 
   switch (status) {
     case "COMPLETED":
-      subject = `[Importation Réussie] Fichier ${file_name} (ID: ${import_id})`;
-      message = `L'importation du fichier "${file_name}" (ID: ${import_id}) démarrée le ${import_date.toLocaleString()} s'est terminée avec SUCCÈS.\\n`;
-      message += `Total de lignes traitées: ${total_lines_processed}.\\n`;
-      message += `Lignes importées avec succès: ${successful_lines}.`;
+      notificationBody += `L'importation du fichier "${file_name}" (ID: ${import_id}) est terminée avec SUCCÈS.\n`;
+      notificationBody += `  - Total lignes CSV traitées: ${total_lines_processed}\n`;
+      notificationBody += `  - Total stations importées/mises à jour: ${successful_lines}\n`;
+      notificationSubject = `✅ Importation réussie: ${file_name}`;
       break;
     case "PARTIAL_SUCCESS":
-      subject = `[Importation Partiellement Réussie] Fichier ${file_name} (ID: ${import_id})`;
-      message = `L'importation du fichier "${file_name}" (ID: ${import_id}) démarrée le ${import_date.toLocaleString()} s'est terminée avec un SUCCÈS PARTIEL.\\n`;
-      message += `Total de lignes traitées: ${total_lines_processed}.\\n`;
-      message += `Lignes importées avec succès: ${successful_lines}.\\n`;
-      message += `Nombre d'erreurs détectées: ${total_lines_processed - successful_lines}.\\n`;
-      message += `Résumé des erreurs: ${JSON.stringify(error_summary, null, 2)}`;
+      notificationBody += `L'importation du fichier "${file_name}" (ID: ${import_id}) est terminée avec SUCCÈS PARTIEL.\n`;
+      notificationBody += `  - Total lignes CSV traitées: ${total_lines_processed}\n`;
+      notificationBody += `  - Total stations importées/mises à jour: ${successful_lines}\n`;
+      notificationBody += `  - Nombre d'erreurs détectées: ${typeof error_summary?.message === "string" ? error_summary.message.split(" ")[0] : "N/A"}\n`;
+      notificationBody += `  - Détails des erreurs: ${error_summary?.details || "Aucun détail d'erreur."}\n`;
+      notificationBody += `  - Voir le fichier de log pour plus de détails: ${error_log_file_path}\n`;
+      notificationSubject = `⚠️ Importation partielle: ${file_name}`;
       break;
     case "FAILED":
-      subject = `[Importation Échouée] Fichier ${file_name} (ID: ${import_id})`;
-      message = `L'importation du fichier "${file_name}" (ID: ${import_id}) démarrée le ${import_date.toLocaleString()} a ÉCHOUÉ.\\n`;
-      message += `Total de lignes traitées avant échec: ${total_lines_processed}.\\n`;
-      message += `Résumé de l'échec: ${JSON.stringify(error_summary, null, 2)}`;
+      notificationBody += `L'importation du fichier "${file_name}" (ID: ${import_id}) a ÉCHOUÉ.\n`;
+      notificationBody += `  - Total lignes CSV traitées: ${total_lines_processed}\n`;
+      notificationBody += `  - Stations importées (avant échec): ${successful_lines}\n`;
+      notificationBody += `  - Résumé de l'échec: ${error_summary?.message || "Aucun résumé d'erreur."}\n`;
+      notificationBody += `  - Détails: ${error_summary?.details || "N/A"}\n`;
+      notificationBody += `  - Voir le fichier de log pour plus de détails: ${error_log_file_path || "N/A"}\n`;
+      notificationSubject = `❌ Importation échouée: ${file_name}`;
       break;
+    case "IN_PROGRESS":
+      console.log(
+        `[NOTIFICATION SIMULÉE - PROGRESSION] L'importation du fichier "${file_name}" (ID: ${import_id}) est en cours...`,
+      );
+      return;
     default:
-      subject = `[Importation Statut Inconnu] Fichier ${file_name} (ID: ${import_id})`;
-      message = `Le statut d'importation pour le fichier "${file_name}" (ID: ${import_id}) est inconnu: ${status}.`;
+      notificationBody += `L'importation du fichier "${file_name}" (ID: ${import_id}) a un STATUT INCONNU: ${status}.\n`;
+      notificationSubject = `❓ Importation statut inconnu: ${file_name}`;
       break;
   }
 
-  console.log(`--- NOTIFICATION D'IMPORTATION ---`, "INFO");
-  console.log(`Sujet: ${subject}`, "INFO");
-  console.log(`Message:\\n${message}`, "INFO");
-  console.log("---------------------------------", "INFO");
+  notificationBody += `  - Date d'importation: ${new Date(import_date).toLocaleString("fr-FR")}.\n`;
+  notificationBody += `  - Durée de l'importation: ${formatDuration(duration_ms)}.\n`;
+
+  console.log(`\n--- Notification d'Importation ---`);
+  console.log(`Sujet: ${notificationSubject}`);
+  console.log(`Corps:\n${notificationBody}`);
+  console.log("----------------------------------\n");
 }

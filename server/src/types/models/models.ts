@@ -59,6 +59,7 @@ export interface ImportLogAttributes {
   error_log_file_path: string | null;
   status: "IN_PROGRESS" | "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED";
   import_date: Date;
+  duration_ms?: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -271,7 +272,7 @@ export interface TerminalAttributes {
   prise_chademo: boolean;
   prise_combo_ccs: boolean;
   prise_autre: string | null;
-  status: string;
+  status: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

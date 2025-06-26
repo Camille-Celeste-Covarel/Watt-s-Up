@@ -1,14 +1,14 @@
-// Load environment variables from .env file
+import dotenv from "dotenv";
+dotenv.config();
 
-// Check database connection
-// Note: This is optional and can be removed if the database connection
-// is not required when starting the application
-
-// Import the Express application from ./app
+// Import
 import app from "./app";
+import { cleanOldLogs } from "./tools/logger";
 
 // Get the port from the environment variables
 const port = process.env.APP_PORT;
+
+cleanOldLogs();
 
 // Start the server and listen on the specified port
 app

@@ -1,10 +1,10 @@
 import fs from "node:fs";
+import path from "node:path";
 import type { Writable } from "node:stream";
-import { DatabaseError } from "sequelize"; // Importer DatabaseError de Sequelize
+import { DatabaseError } from "sequelize";
 import type { TransformError } from "../types/dataProcessing/importProcessingTypes";
 
-// Définition des niveaux de log
-enum LogLevel {
+export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
   WARN = 2,
@@ -20,11 +20,18 @@ const LOG_LEVEL_NAMES: { [key: string]: LogLevel } = {
   CRITICAL: LogLevel.CRITICAL,
 };
 
+const LOG_LEVEL_VALUES: Set<number> = new Set(
+  Object.values(LogLevel).filter((v) => typeof v === "number") as number[],
+);
+
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
 
 let logStream: Writable | null = null;
-let minLogLevel: LogLevel = LogLevel.INFO; // Niveau de log par défaut
+let minLogLevel: LogLevel = LogLevel.INFO;
+
+const LOG_DIR = process.env.LOG_DIR || "./logs";
+const MAX_LOG_AGE_DAYS = 7;
 
 /**
  * Initialise un stream de log pour la console globale.
@@ -32,20 +39,36 @@ let minLogLevel: LogLevel = LogLevel.INFO; // Niveau de log par défaut
  * et une sortie fichier.
  */
 export function initializeConsoleLogStream() {
-  const logFilePath = process.env.LOG_FILE_PATH || "./logs/console.log";
-  const logDir = process.env.LOG_DIR || "./logs";
+  const logFilePath = path.join(LOG_DIR, "console.log");
 
-  if (!fs.existsSync(logDir)) {
-    fs.mkdirSync(logDir, { recursive: true });
+  if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR, { recursive: true });
+    // Log via originalConsoleLog car la redirection n'est peut-être pas encore en place
+    originalConsoleLog(`Répertoire de logs créé: ${LOG_DIR}`, LogLevel.DEBUG);
+  }
+
+  if (logStream) {
+    originalConsoleLog(
+      "Fermeture du stream de log existant avant de le réinitialiser.",
+      LogLevel.DEBUG,
+    );
+    logStream.end();
   }
 
   logStream = fs.createWriteStream(logFilePath, { flags: "a" });
 
   logStream.on("error", (err) => {
-    // Si le stream de log échoue, revenir à console.error par défaut
-    originalConsoleError(`ERREUR CRITIQUE du stream de log : ${err.message}`);
-    logStream = null; // Désactiver le log via stream
+    originalConsoleError(
+      `ERREUR CRITIQUE du stream de log vers le fichier (${logFilePath}) : ${err.message}. Le log fichier est désactivé.`,
+      LogLevel.CRITICAL,
+      err,
+    );
+    logStream = null;
   });
+  originalConsoleLog(
+    `Stream de log de la console initialisé vers ${logFilePath}`,
+    LogLevel.DEBUG,
+  );
 }
 
 /**
@@ -60,24 +83,28 @@ export function redirectConsoleOutput() {
       ? LOG_LEVEL_NAMES[configuredLevel]
       : LogLevel.INFO;
 
-  // Typage plus précis des arguments pour console.log
   console.log = (message?: unknown, ...optionalParams: unknown[]) => {
-    const level: LogLevel =
-      typeof optionalParams[0] === "string" &&
-      LOG_LEVEL_NAMES[optionalParams[0].toUpperCase()] !== undefined
-        ? LOG_LEVEL_NAMES[optionalParams[0].toUpperCase()]
-        : LogLevel.INFO;
-    const filteredParams = optionalParams.filter(
-      (_, index) =>
-        index !== 0 ||
-        typeof optionalParams[0] !== "string" ||
-        LOG_LEVEL_NAMES[optionalParams[0].toUpperCase()] === undefined,
-    );
+    let level: LogLevel = LogLevel.INFO;
+    let filteredParams: unknown[] = optionalParams;
+
+    if (optionalParams.length > 0) {
+      const firstParam = optionalParams[0];
+      if (typeof firstParam === "number" && LOG_LEVEL_VALUES.has(firstParam)) {
+        level = firstParam;
+        filteredParams = optionalParams.slice(1);
+      } else if (
+        typeof firstParam === "string" &&
+        LOG_LEVEL_NAMES[firstParam.toUpperCase()] !== undefined
+      ) {
+        level = LOG_LEVEL_NAMES[firstParam.toUpperCase()];
+        filteredParams = optionalParams.slice(1);
+      }
+    }
 
     if (level >= minLogLevel) {
       const time = new Date().toLocaleTimeString("fr-FR");
-      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.join(" ")}`;
-      originalConsoleLog(logMessage); // Log dans la console habituelle
+      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.map((p) => String(p)).join(" ")}`;
+      originalConsoleLog(logMessage);
 
       if (logStream) {
         logStream.write(`${logMessage}\n`);
@@ -85,26 +112,31 @@ export function redirectConsoleOutput() {
     }
   };
 
-  // Typage plus précis des arguments pour console.error
   console.error = (message?: unknown, ...optionalParams: unknown[]) => {
-    const level: LogLevel =
-      typeof optionalParams[0] === "string" &&
-      LOG_LEVEL_NAMES[optionalParams[0].toUpperCase()] !== undefined
-        ? LOG_LEVEL_NAMES[optionalParams[0].toUpperCase()]
-        : LogLevel.ERROR;
-    const filteredParams = optionalParams.filter(
-      (_, index) =>
-        index !== 0 ||
-        typeof optionalParams[0] !== "string" ||
-        LOG_LEVEL_NAMES[optionalParams[0].toUpperCase()] === undefined,
-    );
+    let level: LogLevel = LogLevel.ERROR;
+    let filteredParams: unknown[] = optionalParams;
+
+    if (optionalParams.length > 0) {
+      const firstParam = optionalParams[0];
+      if (typeof firstParam === "number" && LOG_LEVEL_VALUES.has(firstParam)) {
+        level = firstParam;
+        filteredParams = optionalParams.slice(1);
+      } else if (
+        typeof firstParam === "string" &&
+        LOG_LEVEL_NAMES[firstParam.toUpperCase()] !== undefined
+      ) {
+        level = LOG_LEVEL_NAMES[firstParam.toUpperCase()];
+        filteredParams = optionalParams.slice(1);
+      }
+    }
 
     if (level >= minLogLevel) {
       const time = new Date().toLocaleTimeString("fr-FR");
-      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.join(" ")}`;
-      originalConsoleError(logMessage);
+      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.map((p) => String(p)).join(" ")}`;
+      originalConsoleError(logMessage); // Toujours logguer sur la console originale
 
       if (logStream) {
+        // N'écrit sur le stream fichier que s'il est actif
         logStream.write(`${logMessage}\n`);
       }
     }
@@ -122,6 +154,10 @@ export function restoreConsoleOutput() {
     logStream.end();
     logStream = null;
   }
+  originalConsoleLog(
+    "Console output restored and log stream closed.",
+    LogLevel.DEBUG,
+  );
 }
 
 /**
@@ -144,22 +180,22 @@ export function logImportErrorToFile(
     detailsString = `Erreur interne: ${error.originalError.message}`;
   } else if (error.originalError instanceof DatabaseError) {
     detailsString = `Erreur BDD: ${error.originalError.message}`;
-    // Sequelize's DatabaseError often has a 'column' property on the original error (e.g., PostgreSQL driver error)
-    // We can access it directly if we know the type, or safely cast.
-    // Given the previous error, we might need a slightly more robust check
-    const dbError = error.originalError as DatabaseError & { column?: string }; // Cast pour inclure 'column' si présent
+    const dbError = error.originalError as DatabaseError & { column?: string };
     if (dbError.column) {
       affectedColumns = dbError.column;
     }
-    // Vous pouvez également inspecter error.originalError.parent pour des détails plus bas niveau de la DB
   }
 
-  // Autres types d'erreurs
   if (
+    error.originalError instanceof Error &&
+    error.originalError.message.includes("value too long") &&
+    error.columnName
+  ) {
+    detailsString = `Valeur trop longue pour la colonne "${error.columnName}".`;
+  } else if (
     error.originalError &&
     typeof error.originalError === "object" &&
-    "message" in error.originalError &&
-    typeof (error.originalError as { message?: unknown }).message === "string"
+    "message" in error.originalError
   ) {
     if (
       (error.originalError as { message: string }).message.includes(
@@ -179,4 +215,63 @@ export function logImportErrorToFile(
     `${detailsString ? ` | Détails: ${detailsString}` : ""}\n`;
 
   errorLogStream.write(logEntry);
+}
+
+/**
+ * Supprime les fichiers de log plus anciens que MAX_LOG_AGE_DAYS.
+ */
+export function cleanOldLogs() {
+  originalConsoleLog(
+    `Début du nettoyage des logs anciens dans ${LOG_DIR}.`,
+    LogLevel.DEBUG,
+  );
+  const now = new Date();
+  const cutoffTime = now.setDate(now.getDate() - MAX_LOG_AGE_DAYS);
+
+  fs.readdir(LOG_DIR, (err, files) => {
+    if (err) {
+      originalConsoleError(
+        `Impossible de lire le répertoire de logs: ${err.message}`,
+        LogLevel.ERROR,
+      );
+      return;
+    }
+
+    for (const file of files) {
+      const filePath = path.join(LOG_DIR, file);
+      fs.stat(filePath, (statErr, stats) => {
+        if (statErr) {
+          originalConsoleError(
+            `Impossible d'obtenir les statistiques du fichier ${file}: ${statErr.message}`,
+            LogLevel.ERROR,
+          );
+          return;
+        }
+
+        const isConsoleLog = file === "console.log";
+        const isImportErrorLog =
+          file.startsWith("import_errors_") && file.endsWith(".log");
+
+        if (
+          (isConsoleLog || isImportErrorLog) &&
+          stats.mtime.getTime() < cutoffTime
+        ) {
+          fs.unlink(filePath, (unlinkErr) => {
+            if (unlinkErr) {
+              originalConsoleError(
+                `Impossible de supprimer le fichier ${file}: ${unlinkErr.message}`,
+                LogLevel.ERROR,
+              );
+            } else {
+              originalConsoleLog(
+                `Fichier de log ancien supprimé: ${file}`,
+                LogLevel.INFO,
+              );
+            }
+          });
+        }
+      });
+    }
+    originalConsoleLog("Nettoyage des logs anciens terminé.", LogLevel.DEBUG);
+  });
 }
