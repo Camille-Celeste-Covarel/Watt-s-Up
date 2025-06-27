@@ -1,8 +1,11 @@
 .topbar-container {
   background-color: var(--primary-color);
-  padding: 15px 20px;
+  padding: 0px 20px;
+  height: 60px;
+  display: flex;
+  align-items: center;
 }
 
 .logo {
-  height: 50px;
+  height: 30px;
 }
