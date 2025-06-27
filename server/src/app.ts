@@ -20,6 +20,8 @@ import { TerminalPlug } from "./models/terminal_plug.model";
 import { User } from "./models/user.model";
 import { Vehicule } from "./models/vehicule.model";
 
+import cors from "cors";
+
 import {
   LogLevel,
   initializeConsoleLogStream,
@@ -38,6 +40,7 @@ console.log(
 const PORT = process.env.PORT || 3000;
 console.log("DEBUG: PORT variable after definition:", PORT, LogLevel.DEBUG);
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(router);
@@ -130,7 +133,7 @@ async function startServer() {
     );
     // REMINDER: Use { force: true } once in development to clean up conflicting indexes
     // Then switch back to { alter: true } or your migration process
-    await sequelize.sync({ force: true }); // Gardez ceci en `force: true` pour le moment
+    await sequelize.sync({ alter: true }); // Gardez ceci en `force: true` pour le moment
 
     console.log(
       "🚀 Base de données synchronisée avec les modèles !",
@@ -190,12 +193,6 @@ async function startServer() {
 
 startServer();
 
-import cors from "cors";
-
-if (process.env.CLIENT_URL != null) {
-  app.use(cors({ origin: process.env.CLIENT_URL }));
-}
-
 import fs from "node:fs";
 import path from "node:path";
 
@@ -212,9 +209,7 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
-import { log } from "node:console";
 import type { ErrorRequestHandler } from "express";
-import { Pool } from "pg";
 const logErrors: ErrorRequestHandler = (err, req, res, next) => {
   console.error(err, LogLevel.ERROR);
   console.error("on req:", req.method, req.path, LogLevel.ERROR);
