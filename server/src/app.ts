@@ -213,8 +213,8 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
-import type { ErrorRequestHandler } from "express";
 import { log } from "node:console";
+import type { ErrorRequestHandler } from "express";
 const logErrors: ErrorRequestHandler = (err, req, res, next) => {
   console.error(err, LogLevel.ERROR);
   console.error("on req:", req.method, req.path, LogLevel.ERROR);
