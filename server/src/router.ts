@@ -3,9 +3,9 @@ import upload from "./config/multer";
 import { importCsv } from "./controllers/importController";
 import bookActions from "./modules/bookActions";
 import requestActions from "./modules/requestActions";
+import stationsActions from "./modules/stationsActions";
 import userActions from "./modules/userActions";
 import vehiculeActions from "./modules/vehiculeActions";
-import stationsActions from "./modules/stationsActions";
 
 const router = express.Router();
 

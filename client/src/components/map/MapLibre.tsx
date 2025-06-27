@@ -2,30 +2,29 @@ import "maplibre-gl/dist/maplibre-gl.css";
 import "./maplibre.css";
 import maplibregl from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
-import type { StationAttributes } from "../../../../server/src/types/models/models"
+import type { StationAttributes } from "../../../../server/src/types/models/models";
 
 function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const [stations, setStations] = useState<StationAttributes[]>([]);
-
   useEffect(() => {
     const fetchStations = async () => {
       try {
-        const response = await fetch("http://localhost:3310/api/stations")
+        const response = await fetch("http://localhost:3310/api/stations");
         console.log("la réponse : ", response);
 
         if (!response.ok) {
-          throw new Error("Erreur lors de la récupération")
+          throw new Error("Erreur lors de la récupération");
         }
         const data = await response.json();
-        setStations(data)
+        setStations(data);
       } catch (error) {
         console.error("Erreur:", error);
       }
-    }
+    };
 
-    fetchStations()
-  }, [])
+    fetchStations();
+  }, []);
 
   useEffect(() => {
     if (!mapContainer.current) return;
