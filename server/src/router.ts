@@ -3,6 +3,7 @@ import upload from "./config/multer";
 import { importCsv } from "./controllers/importController";
 import bookActions from "./modules/bookActions";
 import requestActions from "./modules/requestActions";
+import stationsActions from "./modules/stationsActions";
 import userActions from "./modules/userActions";
 import vehiculeActions from "./modules/vehiculeActions";
 
@@ -37,6 +38,12 @@ router.get("/api/vehicules/:id", vehiculeActions.read);
 router.post("/api/vehicules", vehiculeActions.add);
 router.put("/api/vehicules/:id", vehiculeActions.edit);
 router.delete("/api/vehicules/:id", vehiculeActions.destroy);
+
+router.get("/api/stations", stationsActions.browse);
+router.get("/api/stations/:id", stationsActions.read);
+router.post("/api/stations", stationsActions.add);
+router.put("/api/stations/:id", stationsActions.edit);
+router.delete("/api/stations/:id", stationsActions.destroy);
 
 /* ************************************************************************* */
 

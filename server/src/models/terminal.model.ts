@@ -153,6 +153,11 @@ export class Terminal
             name: "idx_terminal_puissance_nominale",
           },
           {
+            fields: [sequelize.literal("geom")],
+            using: "GIST",
+            name: "idx_terminal_geom_gist",
+          },
+          {
             fields: ["status"],
             name: "idx_terminal_status",
           },

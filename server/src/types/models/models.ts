@@ -1,5 +1,6 @@
 import type * as GeoJSON from "geojson";
 import type { Optional } from "sequelize";
+import type { Literal } from "sequelize/types/utils";
 
 export interface AccessAttributes {
   id: string;
@@ -168,6 +169,7 @@ export interface StationAttributes {
   adresse_station: string | null;
   code_insee_commune: string | null;
   nbre_pdc?: number | null;
+  puissance_max: number | null;
   gratuit: boolean | null;
   paiement_acte: boolean | null;
   paiement_cb: boolean | null;
@@ -197,7 +199,9 @@ export interface StationAttributes {
   consolidated_is_code_insee_verified: boolean | null;
   consolidated_is_code_insee_modified: boolean | null;
   coordonneesXY: string | null;
-  geom: GeoJSON.Point | null;
+  geom?: GeoJSON.Point | Literal | null;
+  latitude?: number;
+  longitude?: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -262,9 +266,9 @@ export interface TerminalAttributes {
   id_power: string | null;
   id_pdc_itinerance: string | null;
   id_pdc_local: string | null;
-  latitude: number | null;
-  longitude: number | null;
-  geom: GeoJSON.Point | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  geom?: GeoJSON.Point | Literal | null;
   type_de_prise: string;
   puissance_nominale: number;
   prise_type_2: boolean;
