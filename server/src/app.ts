@@ -173,13 +173,6 @@ async function startServer() {
     app.get("/", (req, res) => {
       res.status(200).send("API backend P3.");
     });
-
-    app.listen(PORT, () => {
-      console.log(
-        `⚡️ Serveur Express démarré sur http://localhost:${PORT}`,
-        LogLevel.INFO,
-      );
-    });
   } catch (error) {
     console.error(
       "❌ Impossible de se connecter à la base de données :",
@@ -200,7 +193,7 @@ startServer();
 import cors from "cors";
 
 if (process.env.CLIENT_URL != null) {
-  app.use(cors({ origin: [process.env.CLIENT_URL] }));
+  app.use(cors({ origin: process.env.CLIENT_URL }));
 }
 
 import fs from "node:fs";
@@ -219,6 +212,7 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
+import { log } from "node:console";
 import type { ErrorRequestHandler } from "express";
 import { Pool } from "pg";
 const logErrors: ErrorRequestHandler = (err, req, res, next) => {
