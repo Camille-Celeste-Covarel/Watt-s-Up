@@ -57,9 +57,9 @@ function SearchBar() {
             </button>
           </div>
           <h2>Puissance (kw)</h2>
-          <div className="power-icons">prout</div>
+          <div className="power-icons">power icons</div>
           <h2>type de prise</h2>
-          <div className="plug-icons">prout encore</div>
+          <div className="plug-icons">plug icons</div>
           <div className="confirm-filter">
             <button type="button">Valider</button>
             <button type="button">Réinitialiser</button>
