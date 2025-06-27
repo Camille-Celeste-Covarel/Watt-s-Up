@@ -27,8 +27,12 @@ function MapLibre() {
   }, []);
 
   useEffect(() => {
-    if (!mapContainer.current) return;
+    if (!mapContainer.current) {
+      console.log("Conteneur de carte non disponible.");
+      return;
+    }
 
+    console.log("Initialisation de la carte...");
     const map = new maplibregl.Map({
       container: mapContainer.current,
       style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
@@ -36,17 +40,23 @@ function MapLibre() {
       zoom: 14,
     });
 
+    console.log(`Tentative d'ajout de ${stations.length} marqueurs.`);
     for (const station of stations) {
-      if (station.geom?.coordinates) {
-        const [longitude, latitude] = station.geom.coordinates;
+      if (station.latitude != null && station.longitude != null) {
+        const longitude = station.longitude;
+        const latitude = station.latitude;
 
-        new maplibregl.Marker({ color: "blue" })
+        new maplibregl.Marker({ color: "orange" })
           .setLngLat([longitude, latitude])
           .addTo(map);
+      } else {
+        console.warn("Station sans coordonnées valides:", station);
       }
     }
 
-    return () => map.remove();
+    return () => {
+      map.remove();
+    };
   }, [stations]);
 
   return <div ref={mapContainer} className="map-container" />;

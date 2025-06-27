@@ -1,4 +1,6 @@
 import type * as GeoJSON from "geojson";
+import sequelize from "sequelize";
+import type { Literal } from "sequelize/types/utils";
 import type { CsvRow } from "../types/dataProcessing/dataProcessing";
 import type {
   TransformError,
@@ -219,7 +221,9 @@ export async function transformCsvRowToEntities(
         row.consolidated_is_code_insee_modified,
       ),
       coordonneesXY: normalizeString(row.coordonneesXY),
-      geom: geom,
+      geom: sequelize.literal(
+        `ST_SetSRID(ST_MakePoint(${consolidatedLongitude}, ${consolidatedLatitude}), 4326)`,
+      ) as unknown as GeoJSON.Point,
       id_access: accessName ? await findOrCreateAccessByName(accessName) : null,
       id_provider: providerName
         ? await findOrCreateProviderByName(providerName)
@@ -247,7 +251,9 @@ export async function transformCsvRowToEntities(
           : null,
       latitude: consolidatedLatitude,
       longitude: consolidatedLongitude,
-      geom: geom,
+      geom: sequelize.literal(
+        `ST_SetSRID(ST_MakePoint(${consolidatedLongitude}, ${consolidatedLatitude}), 4326)`,
+      ) as unknown as GeoJSON.Point,
       status: normalizeString(row.statut_pdc || "UNKNOWN"),
 
       puissance_nominale: puissanceNominaleTerminal || 0,

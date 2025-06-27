@@ -36,6 +36,7 @@ export class Station
   public adresse_station!: string | null;
   public code_insee_commune!: string | null;
   public nbre_pdc?: number | null;
+  public puissance_max!: number | null;
   public gratuit!: boolean | null;
   public paiement_acte!: boolean | null;
   public paiement_cb!: boolean | null;
@@ -82,30 +83,19 @@ export class Station
         id_station_itinerance: {
           type: DataTypes.STRING(255),
           allowNull: true,
+          unique: true,
         },
         id_access: {
           type: DataTypes.UUID,
           allowNull: true,
-          references: {
-            model: Access,
-            key: "id",
-          },
         },
         id_provider: {
           type: DataTypes.UUID,
           allowNull: true,
-          references: {
-            model: Provider,
-            key: "id",
-          },
         },
         id_book: {
           type: DataTypes.UUID,
           allowNull: true,
-          references: {
-            model: Book,
-            key: "id",
-          },
         },
         nom_amenageur: {
           type: DataTypes.STRING(255),
@@ -126,10 +116,6 @@ export class Station
         id_operator: {
           type: DataTypes.UUID,
           allowNull: true,
-          references: {
-            model: Operator,
-            key: "id",
-          },
         },
         contact_operateur: {
           type: DataTypes.STRING(255),
@@ -146,10 +132,6 @@ export class Station
         id_compagny: {
           type: DataTypes.UUID,
           allowNull: true,
-          references: {
-            model: Compagny,
-            key: "id",
-          },
         },
         id_station_local: {
           type: DataTypes.STRING(255),
@@ -168,11 +150,15 @@ export class Station
           allowNull: true,
         },
         code_insee_commune: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.STRING(5),
           allowNull: true,
         },
         nbre_pdc: {
           type: DataTypes.INTEGER,
+          allowNull: true,
+        },
+        puissance_max: {
+          type: DataTypes.DOUBLE,
           allowNull: true,
         },
         gratuit: {
@@ -192,7 +178,7 @@ export class Station
           allowNull: true,
         },
         tarification: {
-          type: DataTypes.TEXT,
+          type: DataTypes.STRING(255),
           allowNull: true,
         },
         condition_acces: {
@@ -204,7 +190,7 @@ export class Station
           allowNull: true,
         },
         horaires: {
-          type: DataTypes.TEXT,
+          type: DataTypes.STRING(255),
           allowNull: true,
         },
         accessibilite_pmr: {
@@ -268,7 +254,7 @@ export class Station
           allowNull: true,
         },
         consolidated_code_postal: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.STRING(10),
           allowNull: true,
         },
         consolidated_commune: {
@@ -288,7 +274,7 @@ export class Station
           allowNull: true,
         },
         coordonneesXY: {
-          type: DataTypes.TEXT,
+          type: DataTypes.STRING(255),
           allowNull: true,
         },
         geom: {
@@ -309,7 +295,11 @@ export class Station
             where: {
               id_station_itinerance: { [Op.ne]: null },
             },
-            name: "idx_station_id_itinerance_unique_not_null",
+            name: "idx_station_id_station_itinerance_unique_not_null",
+          },
+          {
+            fields: ["id_station_itinerance"],
+            name: "idx_station_id_station_itinerance_general",
           },
           {
             unique: true,
@@ -319,17 +309,9 @@ export class Station
               "consolidated_longitude",
             ],
             where: {
-              id_station_itinerance: { [Op.eq]: null },
+              id_station_itinerance: { [Op.is]: null },
             },
             name: "idx_station_composite_name_coords_unique_when_no_itinerance_id",
-          },
-          {
-            fields: ["id_station_itinerance"],
-            name: "idx_station_id_itinerance_general",
-          },
-          {
-            fields: ["nom_station"],
-            name: "idx_station_nom_station",
           },
           { fields: ["id_access"], name: "idx_station_id_access" },
           { fields: ["id_provider"], name: "idx_station_id_provider" },
@@ -355,6 +337,11 @@ export class Station
             fields: ["consolidated_latitude", "consolidated_longitude"],
             name: "idx_station_lat_lon",
           },
+          {
+            fields: [sequelize.literal("geom")],
+            using: "GIST",
+            name: "idx_station_geom_gist",
+          },
         ],
       },
     );
@@ -365,11 +352,10 @@ export class Station
     Station.belongsTo(Provider, { foreignKey: "id_provider", as: "provider" });
     Station.belongsTo(Book, { foreignKey: "id_book", as: "book" });
     Station.belongsTo(Operator, { foreignKey: "id_operator", as: "operator" });
-    Station.belongsTo(Compagny, { foreignKey: "id_compagny", as: "compagny" });
-    Station.hasMany(Terminal, {
-      foreignKey: "id_station",
-      as: "terminals",
-      onDelete: "CASCADE",
+    Station.belongsTo(Compagny, {
+      foreignKey: "id_compagny",
+      as: "compagny",
     });
+    Station.hasMany(Terminal, { foreignKey: "id_station", as: "terminals" });
   }
 }
