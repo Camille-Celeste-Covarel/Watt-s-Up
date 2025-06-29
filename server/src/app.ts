@@ -133,7 +133,7 @@ async function startServer() {
     );
     // REMINDER: Use { force: true } once in development to clean up conflicting indexes
     // Then switch back to { alter: true } or your migration process
-    await sequelize.sync({ alter: true }); // Gardez ceci en `force: true` pour le moment
+    await sequelize.sync({ [process.env.SEQSYNC_MODE || "alter"]: true });
 
     console.log(
       "🚀 Base de données synchronisée avec les modèles !",
