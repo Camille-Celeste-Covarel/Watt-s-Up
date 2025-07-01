@@ -146,7 +146,7 @@ function MapLibre() {
       map.getCanvas().style.cursor = "";
     });
 
-    return () => { };
+    return () => {};
   }, [stations]);
 
   return (
