@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import express from "express";
 import { Sequelize } from "sequelize";
 import sequelize from "./config/database";
@@ -50,6 +52,17 @@ async function startServer() {
     await sequelize.authenticate();
     console.log(
       "🎉 Connexion à la base de données PostgreSQL établie avec succès !",
+      LogLevel.INFO,
+    );
+
+    // ACTIVER L'EXTENSION POSTGIS DIRECTEMENT VIA SEQUELIZE
+    console.log(
+      "Tentative d'activation de l'extension PostGIS...",
+      LogLevel.INFO,
+    );
+    await sequelize.query("CREATE EXTENSION IF NOT EXISTS postgis;");
+    console.log(
+      "✅ Extension PostGIS activée ou déjà présente !",
       LogLevel.INFO,
     );
 
@@ -176,6 +189,7 @@ async function startServer() {
     app.get("/", (req, res) => {
       res.status(200).send("API backend P3.");
     });
+    return app;
   } catch (error) {
     console.error(
       "❌ Impossible de se connecter à la base de données :",
@@ -188,13 +202,9 @@ async function startServer() {
         console.error("Stack trace:", error.stack, LogLevel.CRITICAL);
       }
     }
+    process.exit(1);
   }
 }
-
-startServer();
-
-import fs from "node:fs";
-import path from "node:path";
 
 const publicFolderPath = path.join(__dirname, "../../server/public");
 if (fs.existsSync(publicFolderPath)) {
@@ -224,4 +234,4 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
-export default app;
+export default startServer;

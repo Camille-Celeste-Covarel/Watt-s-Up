@@ -35,9 +35,10 @@ redirectConsoleOutput();
 
 console.log("importController.ts chargé.", LogLevel.DEBUG);
 
-const UPLOAD_DIR = path.join(__dirname, "..", "..", "..", "CSVCache");
+const UPLOAD_DIR = path.join(__dirname, "..", "..", "CSVCache");
+console.log("DEBUG: UPLOAD_DIR calculated as:", UPLOAD_DIR, LogLevel.DEBUG);
 const FLUSH_THRESHOLD_LINES = 5000;
-const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "..", "logs");
+const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "logs");
 const PROGRESS_LOG_LINES_INTERVAL = 1000;
 
 // NOUVEAU: Constante pour contrôler la stratégie de vidage du tampon

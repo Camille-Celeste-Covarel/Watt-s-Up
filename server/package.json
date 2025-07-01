@@ -1,12 +1,10 @@
 {
   "name": "@js-monorepo/server",
+  "main": "src/main.ts",
   "scripts": {
     "check-types": "tsc --noEmit",
     "dev": "tsx watch --clear-screen=false ./src/main",
-    "db:migrate": "tsx ./bin/migrate",
-    "db:seed": "tsx ./bin/seed",
-    "build": "tsx ./bin/migrate",
-    "start": "tsx ./src/app.ts",
+    "start": "tsx ./src/main.ts",
     "test": "jest --verbose"
   },
   "dependencies": {
@@ -21,7 +19,8 @@
     "pg": "^8.16.0",
     "pg-hstore": "^2.3.4",
     "sequelize": "^6.37.7",
-    "uuid": "^8.3.2"
+    "uuid": "^8.3.2",
+    "fast-csv": "^5.0.2"
   },
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
