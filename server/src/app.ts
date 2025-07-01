@@ -42,7 +42,14 @@ console.log(
 const PORT = process.env.PORT || 3000;
 console.log("DEBUG: PORT variable after definition:", PORT, LogLevel.DEBUG);
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:4001",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    credentials: true,
+  }),
+);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(router);
