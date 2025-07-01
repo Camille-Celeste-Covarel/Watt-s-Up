@@ -1,6 +1,7 @@
 import express from "express";
 import { Sequelize } from "sequelize";
 import sequelize from "./config/database";
+import router from "./router";
 
 import { Access } from "./models/access.model";
 import { Book } from "./models/book.model";
@@ -18,6 +19,8 @@ import { Terminal } from "./models/terminal.model";
 import { TerminalPlug } from "./models/terminal_plug.model";
 import { User } from "./models/user.model";
 import { Vehicule } from "./models/vehicule.model";
+
+import cors from "cors";
 
 import {
   LogLevel,
@@ -37,8 +40,10 @@ console.log(
 const PORT = process.env.PORT || 3000;
 console.log("DEBUG: PORT variable after definition:", PORT, LogLevel.DEBUG);
 
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(router);
 
 async function startServer() {
   try {
@@ -188,15 +193,6 @@ async function startServer() {
 
 startServer();
 
-import cors from "cors";
-
-if (process.env.CLIENT_URL != null) {
-  app.use(cors({ origin: process.env.CLIENT_URL }));
-}
-
-import router from "./router";
-app.use(router);
-
 import fs from "node:fs";
 import path from "node:path";
 
@@ -213,7 +209,6 @@ if (fs.existsSync(clientBuildPath)) {
   });
 }
 
-import { log } from "node:console";
 import type { ErrorRequestHandler } from "express";
 const logErrors: ErrorRequestHandler = (err, req, res, next) => {
   console.error(err, LogLevel.ERROR);
@@ -221,5 +216,12 @@ const logErrors: ErrorRequestHandler = (err, req, res, next) => {
   next(err);
 };
 app.use(logErrors);
+
+if (fs.existsSync(clientBuildPath)) {
+  app.use(express.static(clientBuildPath));
+  app.get("*", (_, res) => {
+    res.sendFile("index.html", { root: clientBuildPath });
+  });
+}
 
 export default app;
