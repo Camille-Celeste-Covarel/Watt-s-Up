@@ -7,6 +7,7 @@ import type { StationAttributes } from "../../../../server/src/types/models/mode
 function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const [stations, setStations] = useState<StationAttributes[]>([]);
+
   useEffect(() => {
     const fetchStations = async () => {
       try {
