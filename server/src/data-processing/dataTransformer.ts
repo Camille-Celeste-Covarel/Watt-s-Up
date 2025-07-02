@@ -1,6 +1,5 @@
 import type * as GeoJSON from "geojson";
 import sequelize from "sequelize";
-import type { Literal } from "sequelize/types/utils";
 import type { CsvRow } from "../types/dataProcessing/dataProcessing";
 import type {
   TransformError,

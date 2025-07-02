@@ -146,19 +146,7 @@ async function startServer() {
     );
     console.log("--- FIN DÉBOGAGE INSTANCE SEQUELIZE ---", LogLevel.DEBUG);
 
-    // Perform database synchronization
-    console.log(
-      "Tentative de synchronisation de la base de données...",
-      LogLevel.INFO,
-    );
-    // REMINDER: Use { force: true } once in development to clean up conflicting indexes
-    // Then switch back to { alter: true } or your migration process
-    await sequelize.sync({ [process.env.SEQSYNC_MODE || "alter"]: true });
-
-    console.log(
-      "🚀 Base de données synchronisée avec les modèles !",
-      LogLevel.INFO,
-    );
+    console.log("🚀 sequelize.sync remplacé par les migrations", LogLevel.INFO);
 
     // --- Création d'un utilisateur de test ---
     console.log(

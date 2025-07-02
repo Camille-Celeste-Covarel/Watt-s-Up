@@ -11,6 +11,7 @@ services:
       - "4002:3310"
     environment:
       - PORT=3310
+      - DB_PORT=5432
     volumes:
       - ./server:/app
       - /app/node_modules
@@ -18,8 +19,10 @@ services:
     env_file:
       - ./server/.env.backend.local
     depends_on:
-      - postgres_db
-      - redis_cache
+      postgres_db:
+        condition: service_healthy
+      redis_cache:
+        condition: service_healthy
     restart: unless-stopped
 
   # Service Frontend (React/Vite)
@@ -50,6 +53,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   redis_cache:
     image: redis:7-alpine
@@ -58,6 +66,11 @@ services:
     volumes:
       - redis_data:/data
     restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
 
 volumes:
   postgres_data:

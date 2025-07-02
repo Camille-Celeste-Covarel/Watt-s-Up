@@ -18,7 +18,6 @@ import type {
   ImportLogCreationAttributes,
   StationAttributes,
   TerminalAttributes,
-  TerminalPlugAttributes,
 } from "../types/models/models";
 
 import {
@@ -41,11 +40,7 @@ const FLUSH_THRESHOLD_LINES = 5000;
 const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "logs");
 const PROGRESS_LOG_LINES_INTERVAL = 1000;
 
-// NOUVEAU: Constante pour contrôler la stratégie de vidage du tampon
-// Définit le pourcentage des stations accumulées à "flusher" (traiter et retirer du tampon)
-// 1.0 (100%) -> Vidange complète du tampon (préférable pour la RAM)
-// 0.8 (80%)  -> Garde 20% des stations les plus récentes en mémoire
-const FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH = 1.0; // Par défaut, vider tout pour une meilleure gestion RAM
+const FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH = 1.0;
 
 if (!fs.existsSync(ERROR_LOG_DIR)) {
   fs.mkdirSync(ERROR_LOG_DIR, { recursive: true });
@@ -54,11 +49,6 @@ if (!fs.existsSync(ERROR_LOG_DIR)) {
 const stagedStationData = new Map<string, StagedStationContent>();
 const processedStationsGlobalCache = new Map<string, Models.Station>();
 
-/**
- * Génère une couleur ANSI 24 bits (True Color) interpolée entre le rouge et le vert.
- * @param percentage Le pourcentage de progression (0 à 100).
- * @returns {string} Le code d'échappement ANSI pour la couleur.
- */
 function getProgressBarColor(percentage: number): string {
   const red = Math.round(255 * (1 - percentage / 100));
   const green = Math.round(255 * (percentage / 100));
@@ -143,7 +133,7 @@ async function processConsolidatedStations(
         errors.push({
           type: "DB_STATION_UPSERT_FAILED",
           message: `La station n'a pas pu être trouvée ou créée pour l'ID composite: ${compositeId}.`,
-          rowData: stagedStation.stationData as CsvRow,
+          rowData: stagedStation.originalCsvRow,
           rowNumber: stagedStation.lastModifiedRow,
           details: "Station object is null after findOrCreate.",
         });
@@ -171,7 +161,7 @@ async function processConsolidatedStations(
       for (const terminalContent of terminals) {
         const { terminalData, plugAssociations } = terminalContent;
         console.log(
-          `Traitement du terminal: ${terminalData.id_pdc_itinerance}`,
+          `Traitement du terminal: ${terminalData.id_pdc_itinerance || terminalData.id_pdc_local}`,
           LogLevel.DEBUG,
         );
 
@@ -193,7 +183,7 @@ async function processConsolidatedStations(
           errors.push({
             type: "DB_TERMINAL_UPSERT_FAILED",
             message: `Le terminal ${terminalData.id_pdc_itinerance} n'a pas pu être trouvé ou créé.`,
-            rowData: stagedStation.stationData as CsvRow,
+            rowData: stagedStation.originalCsvRow,
             rowNumber: stagedStation.lastModifiedRow,
             details: "Terminal object is null after findOrCreate.",
           });
@@ -253,6 +243,7 @@ async function processConsolidatedStations(
             `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id}`,
             LogLevel.DEBUG,
           );
+          // CORRECTION: Utiliser idTerminal et idPlug (camelCase) pour la création
           await Models.TerminalPlug.bulkCreate(
             plugsToCreate.map((pa) => ({
               idTerminal: terminal.id,
@@ -310,7 +301,7 @@ async function processConsolidatedStations(
       errors.push({
         type: "STATION_PROCESSING_ERROR",
         message: `Échec du traitement de la station: ${errorMessage}`,
-        rowData: stagedStation.stationData as CsvRow,
+        rowData: stagedStation.originalCsvRow,
         rowNumber: stagedStation.lastModifiedRow,
         details: stationProcessError,
       });
@@ -440,7 +431,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
             stationData: stationData,
             terminals: [],
             lastModifiedRow: totalProcessedCsvLines,
-            originalCsvRow: row, // Ajout du champ manquant pour satisfaire StagedStationContent
+            originalCsvRow: row,
           });
         }
         const stationEntry = stagedStationData.get(compositeId);
@@ -451,9 +442,14 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       } else {
         totalErrorEntries++;
         logImportErrorToFile(transformedResult.error, errorLogStream);
+        console.error(
+          `Erreur de transformation ligne ${totalProcessedCsvLines}: Type=${transformedResult.error.type}, Message=${transformedResult.error.message}, Colonne=${transformedResult.error.columnName || "N/A"}, Valeur=${transformedResult.error.culpritValue || "N/A"}`,
+          LogLevel.ERROR,
+          transformedResult.error.originalError ||
+            transformedResult.error.details,
+        );
       }
 
-      // MODIFICATION ICI: Vidange du tampon selon FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH
       if (
         linesProcessedSinceLastFlush >= FLUSH_THRESHOLD_LINES ||
         stagedStationData.size > 2000
@@ -463,42 +459,50 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
           LogLevel.DEBUG,
         );
 
-        const sortedStagedStations = Array.from(
-          stagedStationData.entries(),
-        ).sort(([, a], [, b]) => a.lastModifiedRow - b.lastModifiedRow);
+        if (stagedStationData.size > 0) {
+          const sortedStagedStations = Array.from(
+            stagedStationData.entries(),
+          ).sort(([, a], [, b]) => a.lastModifiedRow - b.lastModifiedRow);
 
-        // Calculer le nombre de stations à vider en fonction du pourcentage
-        const numberToFlush = Math.max(
-          1,
-          Math.floor(
-            sortedStagedStations.length * FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH,
-          ),
-        );
-        const stationsToFlush: StagedStationContent[] = [];
-
-        // Ajouter les stations à vider et les retirer du tampon
-        for (let i = 0; i < numberToFlush; i++) {
-          const [compositeId, stationContent] = sortedStagedStations[i];
-          stationsToFlush.push(stationContent);
-          stagedStationData.delete(compositeId); // Supprimer de la map
-        }
-
-        if (stationsToFlush.length > 0) {
-          console.log(
-            `Traitement de ${stationsToFlush.length} stations les plus anciennes.`,
-            LogLevel.DEBUG,
+          const numberToFlush = Math.max(
+            1,
+            Math.floor(
+              sortedStagedStations.length * FLUSH_STRATEGY_PERCENTAGE_TO_FLUSH,
+            ),
           );
-          const { successfulStations, errors: processErrors } =
-            await processConsolidatedStations(stationsToFlush);
-          totalSuccessfulStations += successfulStations;
-          totalErrorEntries += processErrors.length;
-          for (const err of processErrors) {
-            logImportErrorToFile(err, errorLogStream);
+          const stationsToFlush: StagedStationContent[] = [];
+
+          for (let i = 0; i < numberToFlush; i++) {
+            if (sortedStagedStations[i]) {
+              const [compositeId, stationContent] = sortedStagedStations[i];
+              stationsToFlush.push(stationContent);
+              stagedStationData.delete(compositeId);
+            } else {
+              console.warn(
+                `Tentative d'accès à un index inexistant lors du flush: ${i}. numberToFlush: ${numberToFlush}, sortedStagedStations.length: ${sortedStagedStations.length}`,
+                LogLevel.WARN,
+              );
+              break;
+            }
           }
-          console.log(
-            `${successfulStations} stations traitées, ${processErrors.length} erreurs dans ce flush.`,
-            LogLevel.DEBUG,
-          );
+
+          if (stationsToFlush.length > 0) {
+            console.log(
+              `Traitement de ${stationsToFlush.length} stations les plus anciennes.`,
+              LogLevel.DEBUG,
+            );
+            const { successfulStations, errors: processErrors } =
+              await processConsolidatedStations(stationsToFlush);
+            totalSuccessfulStations += successfulStations;
+            totalErrorEntries += processErrors.length;
+            for (const err of processErrors) {
+              logImportErrorToFile(err, errorLogStream);
+            }
+            console.log(
+              `${successfulStations} stations traitées, ${processErrors.length} erreurs dans ce flush.`,
+              LogLevel.DEBUG,
+            );
+          }
         }
         linesProcessedSinceLastFlush = 0;
       }
@@ -617,11 +621,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         );
       }
       errorLogStream.end();
-
-      console.error(
-        "Commande de fermeture du stream global de console envoyée suite à une erreur.",
-        LogLevel.ERROR,
-      );
 
       let errorMessage = "An unknown error occurred during import.";
       if (generalError instanceof Error) {
