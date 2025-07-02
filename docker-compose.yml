@@ -12,8 +12,10 @@ services:
     environment:
       - PORT=3310
       - DB_PORT=5432
+      - LOG_DIR=/app/log
     volumes:
       - ./server:/app
+      - ./server/logs:/app/logs
       - /app/node_modules
       - csv_cache_volume:/app/CSVCache
     env_file:
