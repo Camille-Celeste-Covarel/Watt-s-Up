@@ -81,7 +81,7 @@ export class Station
           allowNull: false,
         },
         id_station_itinerance: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.STRING(500),
           allowNull: true,
           unique: true,
         },
@@ -138,7 +138,7 @@ export class Station
           allowNull: true,
         },
         nom_station: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.STRING(500),
           allowNull: false,
         },
         implantation_station: {
@@ -178,7 +178,7 @@ export class Station
           allowNull: true,
         },
         tarification: {
-          type: DataTypes.STRING(255),
+          type: DataTypes.TEXT,
           allowNull: true,
         },
         condition_acces: {
