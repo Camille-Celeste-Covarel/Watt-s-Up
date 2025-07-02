@@ -72,9 +72,13 @@ function MapLibre() {
 
     const map = mapRef.current;
 
-    if (map.getLayer("stations-layer")) {
-      map.removeLayer("stations-layer");
+    const layerIds = ["clusters", "cluster-count", "unclustered-point"];
+    for (const layerId of layerIds) {
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
+      }
     }
+
     if (map.getSource("stations")) {
       map.removeSource("stations");
     }
@@ -102,12 +106,50 @@ function MapLibre() {
     map.addSource("stations", {
       type: "geojson",
       data: geoJsonData,
+      cluster: true,
+      clusterMaxZoom: 12,
+      clusterRadius: 50,
     });
 
     map.addLayer({
-      id: "stations-layer",
+      id: "clusters",
       type: "circle",
       source: "stations",
+      filter: ["has", "point_count"],
+      paint: {
+        "circle-color": [
+          "step",
+          ["get", "point_count"],
+          "#51bbd6",
+          10,
+          "#f1f075",
+          30,
+          "#f28cb1",
+        ],
+        "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
+      },
+    });
+
+    map.addLayer({
+      id: "cluster-count",
+      type: "symbol",
+      source: "stations",
+      filter: ["has", "point_count"],
+      layout: {
+        "text-field": "{point_count_abbreviated}",
+        "text-font": ["Open Sans Bold"],
+        "text-size": 12,
+      },
+      paint: {
+        "text-color": "#000",
+      },
+    });
+
+    map.addLayer({
+      id: "unclustered-point",
+      type: "circle",
+      source: "stations",
+      filter: ["!", ["has", "point_count"]],
       paint: {
         "circle-color": "#4264fb",
         "circle-radius": 6,
@@ -116,7 +158,7 @@ function MapLibre() {
       },
     });
 
-    map.on("click", "stations-layer", (e) => {
+    map.on("click", "unclustered-point", (e) => {
       if (e.features?.[0]) {
         const coordinates = (
           e.features[0].geometry as GeoJSON.Point
@@ -130,6 +172,7 @@ function MapLibre() {
         if (properties?.condition_acces) {
           description += `<p>Accès: ${properties.condition_acces}</p>`;
         }
+        description += `<button type="button" class="button-reservation-popup">Réservez votre borne</button>`;
 
         new maplibregl.Popup()
           .setLngLat(coordinates as maplibregl.LngLatLike)
@@ -138,11 +181,11 @@ function MapLibre() {
       }
     });
 
-    map.on("mouseenter", "stations-layer", () => {
+    map.on("mouseenter", "unclustered-point", () => {
       map.getCanvas().style.cursor = "pointer";
     });
 
-    map.on("mouseleave", "stations-layer", () => {
+    map.on("mouseleave", "unclustered-point", () => {
       map.getCanvas().style.cursor = "";
     });
 
