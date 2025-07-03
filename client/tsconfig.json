@@ -18,8 +18,19 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+
+    "baseUrl": "./",
+    "paths": {
+      "../../../../server/src/types/models/models": ["../server/src/types/models/models"],
+      "geojson": ["./node_modules/@types/geojson"],
+      "sequelize": ["./node_modules/sequelize"],
+      "sequelize/types/utils": ["./node_modules/sequelize/types/utils"]
+    },
+    "typeRoots": [
+      "./node_modules/@types"
+    ]
   },
-  "include": ["src"],
+  "include": ["src", "types", "../server/src/types/models/**/*.ts"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
