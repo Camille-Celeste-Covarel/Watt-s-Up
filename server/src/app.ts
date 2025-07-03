@@ -44,7 +44,7 @@ console.log("DEBUG: PORT variable after definition:", PORT, LogLevel.DEBUG);
 
 app.use(
   cors({
-    origin: "http://localhost:4001",
+    origin: `${process.env.CLIENT_URL} || 4001`,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   }),
