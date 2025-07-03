@@ -153,7 +153,6 @@ export interface StationAttributes {
   id_station_itinerance: string | null;
   id_access: string | null;
   id_provider: string | null;
-  id_book: string | null;
   nom_amenageur: string | null;
   siren_amenageur: string | null;
   contact_amenageur: string | null;
@@ -213,7 +212,6 @@ export type StationCreationAttributes = Optional<
   | "id_station_itinerance"
   | "id_access"
   | "id_provider"
-  | "id_book"
   | "nom_amenageur"
   | "siren_amenageur"
   | "contact_amenageur"
@@ -266,6 +264,7 @@ export interface TerminalAttributes {
   id_power: string | null;
   id_pdc_itinerance: string | null;
   id_pdc_local: string | null;
+  is_booked: boolean;
   latitude?: number | null;
   longitude?: number | null;
   geom?: GeoJSON.Point | Literal | null;

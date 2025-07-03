@@ -726,7 +726,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
             );
             console.log(
               `Taille du tampon après flush: ${stagedStationData.size}.`,
-              LogLevel.DEBUG,
+              LogLevel.INFO,
             );
           }
         }

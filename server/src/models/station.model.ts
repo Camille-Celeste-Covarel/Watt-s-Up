@@ -6,7 +6,6 @@ import type {
 } from "../types/models/models";
 
 import { Access } from "./access.model";
-import { Book } from "./book.model";
 import { Compagny } from "./compagny.model";
 import { Operator } from "./operator.model";
 import { Provider } from "./provider.model";
@@ -20,7 +19,6 @@ export class Station
   public id_station_itinerance!: string | null;
   public id_access!: string | null;
   public id_provider!: string | null;
-  public id_book!: string | null;
   public nom_amenageur!: string | null;
   public siren_amenageur!: string | null;
   public contact_amenageur!: string | null;
@@ -90,10 +88,6 @@ export class Station
           allowNull: true,
         },
         id_provider: {
-          type: DataTypes.UUID,
-          allowNull: true,
-        },
-        id_book: {
           type: DataTypes.UUID,
           allowNull: true,
         },
@@ -315,7 +309,6 @@ export class Station
           },
           { fields: ["id_access"], name: "idx_station_id_access" },
           { fields: ["id_provider"], name: "idx_station_id_provider" },
-          { fields: ["id_book"], name: "idx_station_id_book" },
           { fields: ["id_operator"], name: "idx_station_id_operator" },
           { fields: ["id_compagny"], name: "idx_station_id_compagny" },
           {
@@ -350,7 +343,6 @@ export class Station
   static associate() {
     Station.belongsTo(Access, { foreignKey: "id_access", as: "access" });
     Station.belongsTo(Provider, { foreignKey: "id_provider", as: "provider" });
-    Station.belongsTo(Book, { foreignKey: "id_book", as: "book" });
     Station.belongsTo(Operator, { foreignKey: "id_operator", as: "operator" });
     Station.belongsTo(Compagny, {
       foreignKey: "id_compagny",

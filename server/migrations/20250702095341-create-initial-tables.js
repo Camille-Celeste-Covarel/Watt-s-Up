@@ -499,18 +499,6 @@ module.exports = {
       },
     });
 
-    // --- Ajout de la clé étrangère id_book à la table 'station' après la création de 'book' ---
-    await queryInterface.addColumn("station", "id_book", {
-      type: Sequelize.UUID,
-      allowNull: true,
-      references: {
-        model: "book",
-        key: "id",
-      },
-      onUpdate: "CASCADE",
-      onDelete: "SET NULL",
-    });
-
     // --- Création de la table 'terminal' ---
     await queryInterface.createTable("terminal", {
       id: {
@@ -547,6 +535,11 @@ module.exports = {
         type: Sequelize.STRING(255),
         allowNull: true,
       },
+      is_booked: {
+        type: Sequelize.BOOLEAN,
+        allowNull: false,
+        defaultValue: false,
+      },
       latitude: {
         type: Sequelize.DOUBLE,
         allowNull: true,
@@ -557,6 +550,10 @@ module.exports = {
       },
       geom: {
         type: Sequelize.GEOMETRY("POINT", 4326),
+        allowNull: true,
+      },
+      num_pdc: {
+        type: DataTypes.STRING,
         allowNull: true,
       },
       type_de_prise: {
@@ -602,11 +599,7 @@ module.exports = {
       updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
-      },
-      num_pdc: {
-        type: DataTypes.STRING,
-        allowNull: true,
-      },
+      }
     });
 
     // --- Création de la table 'vehicule' ---
@@ -905,9 +898,6 @@ module.exports = {
     await queryInterface.dropTable("vehicule");
     await queryInterface.dropTable("terminal");
     await queryInterface.dropTable("book");
-
-    // --- Suppression de la colonne id_book de la table 'station' ---
-    await queryInterface.removeColumn("station", "id_book");
 
     // --- Suppression des tables parentes ---
     await queryInterface.dropTable("station");
