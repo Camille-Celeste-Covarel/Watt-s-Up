@@ -32,10 +32,10 @@ import { sendImportNotification } from "../tools/notificationService";
 initializeConsoleLogStream();
 redirectConsoleOutput();
 
-console.log("importController.ts chargé.", LogLevel.DEBUG);
+console.log("importController.ts chargé.", LogLevel.INFO);
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "CSVCache");
-console.log("DEBUG: UPLOAD_DIR calculated as:", UPLOAD_DIR, LogLevel.DEBUG);
+console.log("DEBUG: UPLOAD_DIR calculated as:", UPLOAD_DIR, LogLevel.INFO);
 const FLUSH_THRESHOLD_LINES = 5000;
 const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "logs");
 const PROGRESS_LOG_LINES_INTERVAL = 1000;
@@ -81,7 +81,11 @@ async function processConsolidatedStations(
   for (const stagedStation of stationsToProcess) {
     const compositeId = getStationCompositeId(stagedStation.stationData);
     console.log(
-      `Début de traitement pour la station: ${compositeId}`,
+      `Début de traitement pour la station: ${compositeId} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+      LogLevel.DEBUG,
+    );
+    console.log(
+      ` Station ${compositeId} a ${stagedStation.terminals.length} terminaux à traiter.`,
       LogLevel.DEBUG,
     );
 
@@ -102,43 +106,49 @@ async function processConsolidatedStations(
       // --- Traitement de la station ---
       try {
         console.log(
-          `[DEBUG] StationData pour upsert (ligne ${stagedStation.lastModifiedRow}): ${JSON.stringify(stationData)}`,
+          `StationData pour upsert (ligne ${stagedStation.lastModifiedRow}): ${JSON.stringify(stationData)}`,
           LogLevel.DEBUG,
         );
+
+        let stationWhereClause: Partial<StationAttributes>;
         if (stationData.id_station_itinerance) {
+          stationWhereClause = {
+            id_station_itinerance: stationData.id_station_itinerance,
+          };
           console.log(
-            `Cherche/Crée Station par id_station_itinerance: ${stationData.id_station_itinerance}`,
+            `Cherche/Crée Station par id_station_itinerance. WHERE: ${JSON.stringify(stationWhereClause)}`,
             LogLevel.DEBUG,
           );
           [station, createdStation] = await Models.Station.findOrCreate({
-            where: { id_station_itinerance: stationData.id_station_itinerance },
+            where: stationWhereClause,
             defaults: stationData as StationAttributes,
             transaction: stationTransaction,
           });
         } else {
+          stationWhereClause = {
+            nom_station: stationData.nom_station,
+            consolidated_latitude: stationData.consolidated_latitude,
+            consolidated_longitude: stationData.consolidated_longitude,
+            id_station_itinerance: null,
+          };
           console.log(
-            `Cherche/Crée Station par nom/coords: ${stationData.nom_station}, ${stationData.consolidated_latitude}, ${stationData.consolidated_longitude}`,
+            `Cherche/Crée Station par nom/coords. WHERE: ${JSON.stringify(stationWhereClause)}`,
             LogLevel.DEBUG,
           );
           [station, createdStation] = await Models.Station.findOrCreate({
-            where: {
-              nom_station: stationData.nom_station,
-              consolidated_latitude: stationData.consolidated_latitude,
-              consolidated_longitude: stationData.consolidated_longitude,
-              id_station_itinerance: null,
-            },
+            where: stationWhereClause,
             defaults: stationData as StationAttributes,
             transaction: stationTransaction,
           });
         }
 
         console.log(
-          `[DEBUG] Résultat findOrCreate Station: instance=${station ? station.id : "null"}, created=${createdStation}`,
+          `Résultat findOrCreate Station: instance=${station ? station.id : "null"}, created=${createdStation} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
           LogLevel.DEBUG,
         );
 
         if (!station) {
-          const errorMessage = `Station object is null after findOrCreate for compositeId: ${compositeId}. Data: ${JSON.stringify(stationData)}`;
+          const errorMessage = `Station object is null after findOrCreate for compositeId: ${compositeId}. This indicates a potential issue where Sequelize did not create or find the station without throwing an explicit error. Data: ${JSON.stringify(stationData)}`;
           console.error(`[ERROR CAPTURED] ${errorMessage}`, LogLevel.ERROR);
           errors.push({
             type: "DB_STATION_NULL_INSTANCE",
@@ -158,7 +168,7 @@ async function processConsolidatedStations(
 
         if (!createdStation) {
           console.log(
-            `Mise à jour de la station existante: ${station.id}`,
+            `Mise à jour de la station existante: ${station.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
             LogLevel.DEBUG,
           );
           await station.update(stationData as StationAttributes, {
@@ -166,18 +176,18 @@ async function processConsolidatedStations(
           });
         } else {
           console.log(
-            `Station créée avec succès: ${station.id}`,
+            `Station créée avec succès: ${station.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
             LogLevel.DEBUG,
           );
         }
       } catch (stationUpsertError: unknown) {
-        const errorMessage = `Échec de l'upsert/findOrCreate de la station '${compositeId}': ${
+        const errorMessage = `Échec de l'upsert/findOrCreate de la station '${compositeId}' (Ligne CSV: ${stagedStation.lastModifiedRow}): ${
           stationUpsertError instanceof Error
             ? stationUpsertError.message
             : String(stationUpsertError)
         }`;
         console.error(
-          "[ERROR CAPTURED] Erreur BDD station (processConsolidatedStations):",
+          `[ERROR CAPTURED] Erreur BDD station (processConsolidatedStations): ${errorMessage}`,
           LogLevel.ERROR,
           stationUpsertError,
         );
@@ -205,11 +215,11 @@ async function processConsolidatedStations(
       for (const terminalContent of terminals) {
         const { terminalData, plugAssociations } = terminalContent;
         console.log(
-          `Traitement du terminal: ${terminalData.id_pdc_itinerance || terminalData.id_pdc_local}`,
+          `Traitement du terminal: ${terminalData.id_pdc_itinerance || terminalData.id_pdc_local} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
           LogLevel.DEBUG,
         );
         console.log(
-          `[DEBUG] TerminalData pour upsert (ligne ${stagedStation.lastModifiedRow}): ${JSON.stringify(terminalData)}`,
+          `TerminalData pour upsert (ligne ${stagedStation.lastModifiedRow}): ${JSON.stringify(terminalData)}`,
           LogLevel.DEBUG,
         );
 
@@ -219,9 +229,9 @@ async function processConsolidatedStations(
         // --- Traitement du terminal ---
         if (!terminalData.id_pdc_itinerance && !terminalData.id_pdc_local) {
           const errorMessage = `Terminal manquant d'identifiant critique (id_pdc_itinerance et id_pdc_local sont vides) pour station ${compositeId}.`;
-          console.warn(
-            `[WARN - SKIPPED] ${errorMessage} Données: ${JSON.stringify(terminalData)}`,
-            LogLevel.WARN,
+          console.error(
+            `[ERROR - SKIPPED] ${errorMessage} Données: ${JSON.stringify(terminalData)} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+            LogLevel.ERROR,
           );
           errors.push({
             type: "SKIPPED_TERMINAL_MISSING_ID",
@@ -234,8 +244,15 @@ async function processConsolidatedStations(
         }
 
         try {
+          const terminalWhereClause = {
+            id_pdc_itinerance: terminalData.id_pdc_itinerance,
+          };
+          console.log(
+            `Cherche/Crée Terminal. WHERE: ${JSON.stringify(terminalWhereClause)}`,
+            LogLevel.DEBUG,
+          );
           [terminal, terminalCreated] = await Models.Terminal.findOrCreate({
-            where: { id_pdc_itinerance: terminalData.id_pdc_itinerance },
+            where: terminalWhereClause,
             defaults: {
               ...terminalData,
               id_station: station.id,
@@ -244,13 +261,16 @@ async function processConsolidatedStations(
           });
 
           console.log(
-            `[DEBUG] Résultat findOrCreate Terminal: instance=${terminal ? terminal.id : "null"}, created=${terminalCreated}`,
+            `Résultat findOrCreate Terminal: instance=${terminal ? terminal.id : "null"}, created=${terminalCreated} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
             LogLevel.DEBUG,
           );
 
           if (!terminal) {
-            const errorMessage = `Terminal object is null after findOrCreate for station ${compositeId}, terminal ID: ${terminalData.id_pdc_itinerance || terminalData.id_pdc_local}. Data: ${JSON.stringify(terminalData)}`;
-            console.error(`[ERROR CAPTURED] ${errorMessage}`, LogLevel.ERROR);
+            const errorMessage = `Terminal object is null after findOrCreate for station ${compositeId}, terminal ID: ${terminalData.id_pdc_itinerance || terminalData.id_pdc_local}. This indicates a potential issue where Sequelize did not create or find the terminal without throwing an explicit error. Data: ${JSON.stringify(terminalData)}`;
+            console.error(
+              `[ERROR CAPTURED] ${errorMessage} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              LogLevel.ERROR,
+            );
             errors.push({
               type: "DB_TERMINAL_NULL_INSTANCE",
               message: errorMessage,
@@ -263,7 +283,7 @@ async function processConsolidatedStations(
 
           if (!terminalCreated) {
             console.log(
-              `Mise à jour du terminal existant: ${terminal.id}`,
+              `Mise à jour du terminal existant: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
               LogLevel.DEBUG,
             );
             await terminal.update(
@@ -274,18 +294,18 @@ async function processConsolidatedStations(
             );
           } else {
             console.log(
-              `Terminal créé avec succès: ${terminal.id}`,
+              `Terminal créé avec succès: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
               LogLevel.DEBUG,
             );
           }
         } catch (terminalUpsertError: unknown) {
-          const errorMessage = `Échec de l'upsert/findOrCreate du terminal '${terminalData.id_pdc_itinerance || terminalData.id_pdc_local}' pour station '${compositeId}': ${
+          const errorMessage = `Échec de l'upsert/findOrCreate du terminal '${terminalData.id_pdc_itinerance || terminalData.id_pdc_local}' pour station '${compositeId}' (Ligne CSV: ${stagedStation.lastModifiedRow}): ${
             terminalUpsertError instanceof Error
               ? terminalUpsertError.message
               : String(terminalUpsertError)
           }`;
           console.error(
-            "[ERROR CAPTURED] Erreur BDD terminal (processConsolidatedStations):",
+            `[ERROR CAPTURED] Erreur BDD terminal (processConsolidatedStations): ${errorMessage}`,
             LogLevel.ERROR,
             terminalUpsertError,
           );
@@ -311,7 +331,7 @@ async function processConsolidatedStations(
 
         // --- Association Plug-Terminal ---
         console.log(
-          `Gestion des plugs pour terminal: ${terminal.id}`,
+          `Gestion des plugs pour terminal: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
           LogLevel.DEBUG,
         );
         try {
@@ -332,7 +352,7 @@ async function processConsolidatedStations(
 
           if (plugsToDelete.length > 0) {
             console.log(
-              `Suppression de ${plugsToDelete.length} plugs anciennes pour terminal: ${terminal.id}`,
+              `Suppression de ${plugsToDelete.length} plugs anciennes pour terminal: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
               LogLevel.DEBUG,
             );
             await Models.TerminalPlug.destroy({
@@ -343,7 +363,7 @@ async function processConsolidatedStations(
 
           if (plugsToCreate.length > 0) {
             console.log(
-              `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id}`,
+              `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
               LogLevel.DEBUG,
             );
             await Models.TerminalPlug.bulkCreate(
@@ -355,13 +375,13 @@ async function processConsolidatedStations(
             );
           }
         } catch (plugProcessError: unknown) {
-          const errorMessage = `Échec de la gestion des plugs pour le terminal '${terminal.id}' de la station '${compositeId}': ${
+          const errorMessage = `Échec de la gestion des plugs pour le terminal '${terminal.id}' de la station '${compositeId}' (Ligne CSV: ${stagedStation.lastModifiedRow}): ${
             plugProcessError instanceof Error
               ? plugProcessError.message
               : String(plugProcessError)
           }`;
           console.error(
-            "[ERROR CAPTURED] Erreur BDD plug (processConsolidatedStations):",
+            `[ERROR CAPTURED] Erreur BDD plug (processConsolidatedStations): ${errorMessage}`,
             LogLevel.ERROR,
             plugProcessError,
           );
@@ -389,7 +409,7 @@ async function processConsolidatedStations(
       }
 
       console.log(
-        `[DEBUG] Mise à jour nbre_pdc de la station ${station.id} à ${pdcCount} (avant update)`, // NOUVEAU LOG
+        `Mise à jour nbre_pdc de la station ${station.id} à ${pdcCount} (avant update) (Ligne CSV: ${stagedStation.lastModifiedRow})`,
         LogLevel.DEBUG,
       );
       await station.update(
@@ -400,12 +420,12 @@ async function processConsolidatedStations(
       await stationTransaction.commit();
       transactionHandled = true;
       console.log(
-        `Transaction COMMIT pour la station: ${compositeId}`,
+        `Transaction COMMIT pour la station: ${compositeId} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
         LogLevel.DEBUG,
       );
       successfulStations++;
       console.log(
-        `Traitement de la station ${compositeId} terminé avec succès.`,
+        `Traitement de la station ${compositeId} terminé avec succès. (Ligne CSV: ${stagedStation.lastModifiedRow})`,
         LogLevel.DEBUG,
       );
     } catch (generalProcessError: unknown) {
@@ -413,7 +433,7 @@ async function processConsolidatedStations(
         await stationTransaction.rollback();
         transactionHandled = true;
         console.log(
-          `Transaction ROLLBACK pour la station: ${compositeId} (erreur générale inattendue)`,
+          `Transaction ROLLBACK pour la station: ${compositeId} (erreur générale inattendue) (Ligne CSV: ${stagedStation.lastModifiedRow})`,
           LogLevel.DEBUG,
         );
       }
@@ -424,7 +444,7 @@ async function processConsolidatedStations(
           : String(generalProcessError)
       }`;
       console.error(
-        `[ERROR CAPTURED] Erreur générale lors du traitement de la station ${compositeId} (processConsolidatedStations):`,
+        `[ERROR CAPTURED] Erreur générale lors du traitement de la station ${compositeId} (processConsolidatedStations) (Ligne CSV: ${stagedStation.lastModifiedRow}): ${errorMessage}`,
         LogLevel.CRITICAL,
         generalProcessError,
       );
@@ -458,7 +478,7 @@ async function processConsolidatedStations(
 }
 
 export const importCsv = async (req: Request, res: Response): Promise<void> => {
-  console.log("Fonction importCsv appelée.", LogLevel.DEBUG);
+  console.log("Fonction importCsv appelée.", LogLevel.INFO);
 
   const startTime = new Date();
 
@@ -495,19 +515,19 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   });
   errorLogStream.on("open", () => {
     console.log(
-      `[DEBUG] Stream de log d'erreur ouvert avec succès: ${currentErrorLogFile}`,
-      LogLevel.DEBUG,
+      `Stream de log d'erreur ouvert avec succès: ${currentErrorLogFile}`,
+      LogLevel.INFO,
     );
   });
   errorLogStream.on("close", () => {
     console.log(
-      `[DEBUG] Stream de log d'erreur fermé: ${currentErrorLogFile}`,
-      LogLevel.DEBUG,
+      `Stream de log d'erreur fermé: ${currentErrorLogFile}`,
+      LogLevel.INFO,
     );
   });
   console.log(
     `Stream de log d'erreur créé (en attente d'ouverture): ${currentErrorLogFile}`,
-    LogLevel.DEBUG,
+    LogLevel.INFO,
   );
 
   if (!fs.existsSync(UPLOAD_DIR)) {
@@ -515,7 +535,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   }
 
   if (!req.file) {
-    console.log("Aucun fichier CSV fourni, renvoi erreur 400.", LogLevel.DEBUG);
+    console.log("Aucun fichier CSV fourni, renvoi erreur 400.", LogLevel.INFO);
     errorLogStream.end();
     const duration_ms = new Date().getTime() - startTime.getTime();
     res.status(400).json({
@@ -544,7 +564,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     });
     console.log("Entrée ImportLog IN_PROGRESS créée en BDD.", LogLevel.DEBUG);
 
-    // L'erreur de test forcé est maintenue pour s'assurer que la journalisation fonctionne toujours.
     const forcedError: TransformError = {
       type: "FORCED_TEST_ERROR",
       message:
@@ -607,7 +626,17 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
           transformedResult.data;
         const compositeId = getStationCompositeId(stationData);
 
+        // NOUVEAU LOG : Début de la consolidation de la ligne CSV
+        console.log(
+          `Consolidation de la ligne CSV #${totalProcessedCsvLines} pour station ${compositeId}.`,
+          LogLevel.DEBUG,
+        );
+
         if (!stagedStationData.has(compositeId)) {
+          console.log(
+            `Nouvelle station ajoutée au tampon: ${compositeId} (Ligne CSV: ${totalProcessedCsvLines}). Taille du tampon: ${stagedStationData.size + 1}`,
+            LogLevel.DEBUG,
+          );
           stagedStationData.set(compositeId, {
             stationData: stationData,
             terminals: [],
@@ -618,12 +647,16 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         const stationEntry = stagedStationData.get(compositeId);
         if (stationEntry) {
           stationEntry.terminals.push({ terminalData, plugAssociations });
+          console.log(
+            `Terminal ajouté à la station existante ${compositeId}. Total terminaux pour cette station: ${stationEntry.terminals.length} (Ligne CSV: ${totalProcessedCsvLines}).`,
+            LogLevel.DEBUG,
+          );
           stationEntry.lastModifiedRow = totalProcessedCsvLines;
         }
       } else {
         totalErrorEntries++;
         console.log(
-          `[DEBUG] Erreur de transformation détectée pour la ligne ${totalProcessedCsvLines}. Appel de logImportErrorToFile.`,
+          `Erreur de transformation détectée pour la ligne ${totalProcessedCsvLines}. Appel de logImportErrorToFile.`,
           LogLevel.DEBUG,
         );
         logImportErrorToFile(transformedResult.error, errorLogStream);
@@ -673,22 +706,26 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
           if (stationsToFlush.length > 0) {
             console.log(
-              `Traitement de ${stationsToFlush.length} stations les plus anciennes.`,
-              LogLevel.DEBUG,
+              `Début du flush de ${stationsToFlush.length} stations. Taille du tampon avant flush: ${stagedStationData.size + stationsToFlush.length}.`,
+              LogLevel.INFO,
             );
             const { successfulStations, errors: processErrors } =
               await processConsolidatedStations(stationsToFlush);
             totalSuccessfulStations += successfulStations;
             totalErrorEntries += processErrors.length;
             console.log(
-              `[DEBUG] processConsolidatedStations a retourné ${processErrors.length} erreurs pour ce flush. Écriture dans le log d'erreur.`,
-              LogLevel.DEBUG,
+              `processConsolidatedStations a retourné ${processErrors.length} erreurs pour ce flush. Écriture dans le log d'erreur.`,
+              LogLevel.INFO,
             );
             for (const err of processErrors) {
               logImportErrorToFile(err, errorLogStream);
             }
             console.log(
               `${successfulStations} stations traitées, ${processErrors.length} erreurs dans ce flush.`,
+              LogLevel.INFO,
+            );
+            console.log(
+              `Taille du tampon après flush: ${stagedStationData.size}.`,
               LogLevel.DEBUG,
             );
           }
@@ -699,18 +736,22 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
     console.log(
       `Fin du stream CSV. Traitement du dernier lot (${stagedStationData.size} stations restantes dans le tampon).`,
-      LogLevel.DEBUG,
+      LogLevel.INFO,
     );
     if (stagedStationData.size > 0) {
       const stationsToFlush = Array.from(stagedStationData.values());
       stagedStationData.clear();
 
+      console.log(
+        `Début du flush final de ${stationsToFlush.length} stations.`,
+        LogLevel.DEBUG,
+      );
       const { successfulStations, errors: processErrors } =
         await processConsolidatedStations(stationsToFlush);
       totalSuccessfulStations += successfulStations;
       totalErrorEntries += processErrors.length;
       console.log(
-        `[DEBUG] processConsolidatedStations a retourné ${processErrors.length} erreurs pour le flush final. Écriture dans le log d'erreur.`,
+        `processConsolidatedStations a retourné ${processErrors.length} erreurs pour le flush final. Écriture dans le log d'erreur.`,
         LogLevel.DEBUG,
       );
       for (const err of processErrors) {
@@ -718,7 +759,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       }
       console.log(
         `${successfulStations} stations traitées, ${processErrors.length} erreurs dans le flush final.`,
-        LogLevel.DEBUG,
+        LogLevel.INFO,
       );
     }
 
