@@ -65,7 +65,7 @@ export class Station
   public consolidated_is_lon_lat_correct!: boolean | null;
   public consolidated_is_code_insee_verified!: boolean | null;
   public consolidated_is_code_insee_modified!: boolean | null;
-  public coordonneesXY!: string | null;
+  public coordonnees_x_y!: string | null;
   public geom!: GeoJSON.Point | null;
 
   public readonly createdAt!: Date;
@@ -273,7 +273,7 @@ export class Station
           type: DataTypes.BOOLEAN,
           allowNull: true,
         },
-        coordonneesXY: {
+        coordonnees_x_y: {
           type: DataTypes.STRING(255),
           allowNull: true,
         },

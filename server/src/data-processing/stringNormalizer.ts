@@ -1,5 +1,5 @@
 import type * as GeoJSON from "geojson";
-import type { Point } from "geojson";
+import type { Point } from "geojson"; // Garder si utilisé par parseSeparateGeoJSONCoordinates
 
 function escapeHtml(text: string): string {
   const map: { [key: string]: string } = {
@@ -39,8 +39,9 @@ export function parseNumber(
   return Number.isNaN(num) ? null : num;
 }
 
+// MODIFICATION ICI : Accepte `number` comme input
 export function parseBoolean(
-  input: string | boolean | null | undefined,
+  input: string | number | boolean | null | undefined,
 ): boolean | null {
   if (
     input === null ||
@@ -52,6 +53,13 @@ export function parseBoolean(
   if (typeof input === "boolean") {
     return input;
   }
+  // Gérer les nombres 0 et 1 directement si l'input est un nombre
+  if (typeof input === "number") {
+    if (input === 1) return true;
+    if (input === 0) return false;
+    return null; // Si c'est un nombre mais pas 0 ou 1
+  }
+
   const s = String(input).trim().toLowerCase();
   if (["true", "1", "oui", "yes"].includes(s)) {
     return true;

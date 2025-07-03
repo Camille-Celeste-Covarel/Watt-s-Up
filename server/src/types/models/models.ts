@@ -164,7 +164,7 @@ export interface StationAttributes {
   nom_enseigne: string | null;
   id_compagny: string | null;
   id_station_local: string | null;
-  nom_station: string;
+  nom_station: string | null;
   implantation_station: string | null;
   adresse_station: string | null;
   code_insee_commune: string | null;
@@ -198,7 +198,7 @@ export interface StationAttributes {
   consolidated_is_lon_lat_correct: boolean | null;
   consolidated_is_code_insee_verified: boolean | null;
   consolidated_is_code_insee_modified: boolean | null;
-  coordonneesXY: string | null;
+  coordonnees_x_y: string | null;
   geom?: GeoJSON.Point | Literal | null;
   latitude?: number;
   longitude?: number;
@@ -256,7 +256,7 @@ export type StationCreationAttributes = Optional<
   | "consolidated_is_lon_lat_correct"
   | "consolidated_is_code_insee_verified"
   | "consolidated_is_code_insee_modified"
-  | "coordonneesXY"
+  | "coordonnees_x_y"
   | "geom"
 >;
 
@@ -277,6 +277,7 @@ export interface TerminalAttributes {
   prise_combo_ccs: boolean;
   prise_autre: string | null;
   status: string | null;
+  num_pdc: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -293,6 +294,7 @@ export type TerminalCreationAttributes = Optional<
   | "geom"
   | "prise_autre"
   | "status"
+  | "num_pdc"
 >;
 
 export interface TerminalPlugAttributes {

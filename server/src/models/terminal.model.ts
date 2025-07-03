@@ -1,5 +1,3 @@
-// src/models/terminal.model.ts
-
 import type * as GeoJSON from "geojson";
 import { DataTypes, Model, Op, type Sequelize } from "sequelize";
 import type {
@@ -31,6 +29,7 @@ export class Terminal
   public prise_combo_ccs!: boolean;
   public prise_autre!: string | null;
   public status!: string | null;
+  public num_pdc!: string | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -114,6 +113,10 @@ export class Terminal
         },
         status: {
           type: DataTypes.STRING(255),
+          allowNull: true,
+        },
+        num_pdc: {
+          type: DataTypes.STRING,
           allowNull: true,
         },
       },

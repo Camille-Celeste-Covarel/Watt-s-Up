@@ -9,6 +9,10 @@ WORKDIR /app
 # pour installer les dépendances en premier. Cela optimise la mise en cache de Docker.
 COPY package*.json ./
 
+# AJOUTEZ CETTE LIGNE POUR METTRE À JOUR NPM
+# Cela garantira que la version de npm utilisée pour installer les dépendances est la plus récente.
+RUN npm install -g npm@latest
+
 # Installe les dépendances
 # Utilisez 'npm ci' pour des builds reproductibles si vous avez un package-lock.json
 RUN npm install

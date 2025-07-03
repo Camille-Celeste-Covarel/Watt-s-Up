@@ -1,4 +1,5 @@
 /** @type {import('sequelize-cli').Migration} */
+const { DataTypes } = require("sequelize");
 module.exports = {
   async up(queryInterface, Sequelize) {
     // Ordre de création des tables :
@@ -601,6 +602,10 @@ module.exports = {
       updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
+      },
+      num_pdc: {
+        type: DataTypes.STRING,
+        allowNull: true,
       },
     });
 
