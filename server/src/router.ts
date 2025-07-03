@@ -40,6 +40,7 @@ router.put("/api/vehicules/:id", vehiculeActions.edit);
 router.delete("/api/vehicules/:id", vehiculeActions.destroy);
 
 router.get("/api/stations", stationsActions.browse);
+router.get("/api/stations/visible", stationsActions.browseVisible);
 router.get("/api/stations/:id", stationsActions.read);
 router.post("/api/stations", stationsActions.add);
 router.put("/api/stations/:id", stationsActions.edit);

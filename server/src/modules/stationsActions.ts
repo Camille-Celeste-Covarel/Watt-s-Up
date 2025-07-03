@@ -67,6 +67,47 @@ const browse: RequestHandler = async (req, res, next) => {
   }
 };
 
+const browseVisible: RequestHandler = async (req, res, next) => {
+  try {
+    const bboxParam = req.query.bbox as string | undefined;
+
+    if (!bboxParam) {
+      res.status(400).json({ error: "bbox parameter is required" });
+      return;
+    }
+
+    const bbox = bboxParam.split(",").map(Number);
+    if (bbox.length !== 4 || bbox.some(Number.isNaN)) {
+      res.status(400).json({ error: "bbox parameter must be 4 numbers" });
+      return;
+    }
+
+    const [minLng, minLat, maxLng, maxLat] = bbox;
+
+    const stationsInBBox = await Station.findAll({
+      attributes: [
+        "id",
+        "nom_station",
+        [sequelize.fn("ST_AsGeoJSON", sequelize.col("geom")), "geojson_geom"],
+        [sequelize.fn("ST_Y", sequelize.col("geom")), "latitude"],
+        [sequelize.fn("ST_X", sequelize.col("geom")), "longitude"],
+      ],
+      where: sequelize.where(
+        sequelize.fn(
+          "ST_Intersects",
+          sequelize.col("geom"),
+          sequelize.fn("ST_MakeEnvelope", minLng, minLat, maxLng, maxLat, 4326),
+        ),
+        true,
+      ),
+    });
+
+    res.json(stationsInBBox);
+  } catch (error) {
+    next(error);
+  }
+};
+
 // L'opération BREAD : Read (Read One)
 // Récupère une ressource spécifique par son ID.
 const read: RequestHandler = async (req, res, next) => {
@@ -185,4 +226,4 @@ const destroy: RequestHandler = async (req, res, next) => {
   }
 };
 
-export default { browse, read, add, edit, destroy };
+export default { browse, browseVisible, read, add, edit, destroy };
