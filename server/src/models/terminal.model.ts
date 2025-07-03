@@ -69,9 +69,9 @@ export class Terminal
           allowNull: true,
         },
         is_booked: {
-            type: DataTypes.BOOLEAN,
-            allowNull: false,
-              defaultValue: false,
+          type: DataTypes.BOOLEAN,
+          allowNull: false,
+          defaultValue: false,
         },
         latitude: {
           type: DataTypes.DOUBLE,

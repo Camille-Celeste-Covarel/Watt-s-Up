@@ -599,7 +599,7 @@ module.exports = {
       updated_at: {
         allowNull: false,
         type: Sequelize.DATE,
-      }
+      },
     });
 
     // --- Création de la table 'vehicule' ---
