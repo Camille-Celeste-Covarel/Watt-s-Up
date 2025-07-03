@@ -191,6 +191,37 @@ function MapLibre() {
       });
     };
 
+    map.on("click", "unclustered-point", (e) => {
+      if (e.features?.[0]) {
+        const coordinates = (
+          e.features[0].geometry as GeoJSON.Point
+        ).coordinates.slice();
+        const properties = e.features[0].properties;
+
+        let description = `<h3>${properties?.nom_station}</h3>`;
+        if (properties?.adresse_station) {
+          description += `<p>${properties.adresse_station}</p>`;
+        }
+        if (properties?.condition_acces) {
+          description += `<p>Accès: ${properties.condition_acces}</p>`;
+        }
+        description += `<button type="button" class="button-reservation-popup">Réservez votre borne</button>`;
+
+        new maplibregl.Popup({ closeButton: false })
+          .setLngLat(coordinates as maplibregl.LngLatLike)
+          .setHTML(description)
+          .addTo(map);
+      }
+    });
+
+    map.on("mouseenter", "unclustered-point", () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    map.on("mouseleave", "unclustered-point", () => {
+      map.getCanvas().style.cursor = "";
+    });
+
     updateClusterSource();
 
     map.on("zoomend", updateClusterSource);
