@@ -11,14 +11,68 @@ function MapLibre() {
   const mapRef = useRef<maplibregl.Map | null>(null);
 
   useEffect(() => {
-    const fetchStations = async () => {
-      try {
-        const response = await fetch("http://localhost:3310/api/stations");
+    if (!mapContainer.current) return;
+    if (mapRef.current) return;
 
+    const map = new maplibregl.Map({
+      container: mapContainer.current,
+      style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
+      center: [1.444, 43.6045],
+      zoom: 14,
+      attributionControl: false,
+    });
+
+    const geolocate = new maplibregl.GeolocateControl({
+      positionOptions: { enableHighAccuracy: true },
+      trackUserLocation: true,
+      showAccuracyCircle: false,
+    });
+
+    map.addControl(geolocate, "bottom-right");
+
+    mapRef.current = map;
+
+    map.on("zoomstart", () => {
+      map.setLayoutProperty("clusters", "visibility", "none");
+      map.setLayoutProperty("cluster-count", "visibility", "none");
+      map.setLayoutProperty("unclustered-point", "visibility", "none");
+    });
+
+    map.on("zoomend", () => {
+      map.setLayoutProperty("clusters", "visibility", "visible");
+      map.setLayoutProperty("cluster-count", "visibility", "visible");
+      map.setLayoutProperty("unclustered-point", "visibility", "none");
+    });
+
+    map.on("error", (e) => {
+      console.error("Erreur MapLibre :", e.error);
+    });
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!mapRef.current) return;
+    const map = mapRef.current;
+
+    const fetchStationsInBbox = async () => {
+      const bounds = map.getBounds();
+      const bbox = [
+        bounds.getWest(),
+        bounds.getSouth(),
+        bounds.getEast(),
+        bounds.getNorth(),
+      ].join(",");
+
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/stations/visible?bbox=${bbox}`,
+        );
         if (!response.ok) {
-          throw new Error(
-            `Erreur HTTP: ${response.status} lors de la récupération des stations`,
-          );
+          throw new Error(`Erreur HTTP: ${response.status}`);
         }
         const data: StationAttributes[] = await response.json();
         setStations(data);
@@ -27,56 +81,17 @@ function MapLibre() {
       }
     };
 
-    fetchStations();
-  }, []);
+    fetchStationsInBbox();
 
-  useEffect(() => {
-    if (!mapContainer.current) {
-      return;
-    }
-
-    if (mapRef.current) {
-      return;
-    }
-
-    const map = new maplibregl.Map({
-      container: mapContainer.current,
-      style: "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
-      center: [1.4497, 43.6079],
-      zoom: 10,
-    });
-
-    map.on("load", () => {
-      mapRef.current = map;
-
-      map.on("zoomstart", () => {
-        map.setLayoutProperty("clusters", "visibility", "none");
-        map.setLayoutProperty("cluster-count", "visibility", "none");
-        map.setLayoutProperty("unclustered-point", "visibility", "none");
-      });
-
-      map.on("zoomend", () => {
-        map.setLayoutProperty("clusters", "visibility", "visible");
-        map.setLayoutProperty("cluster-count", "visibility", "visible");
-        map.setLayoutProperty("unclustered-point", "visibility", "none");
-      });
-    });
-
-    map.on("error", (e) => {
-      console.error("Erreur MapLibre :", e.error);
-    });
+    map.on("moveend", fetchStationsInBbox);
 
     return () => {
-      if (mapRef.current) {
-        mapRef.current.remove();
-        mapRef.current = null;
-      }
+      map.off("moveend", fetchStationsInBbox);
     };
   }, []);
 
   useEffect(() => {
     if (!mapRef.current || stations.length === 0) return;
-
     const map = mapRef.current;
 
     const calculateClusterRadius = (zoom: number): number => {
@@ -87,12 +102,16 @@ function MapLibre() {
       const zoom = map.getZoom();
       const clusterRadius = calculateClusterRadius(zoom);
 
-      const layerIds = ["clusters", "cluster-count", "unclustered-point"];
-      for (const layerId of layerIds) {
+      for (const layerId of [
+        "clusters",
+        "cluster-count",
+        "unclustered-point",
+      ]) {
         if (map.getLayer(layerId)) {
           map.removeLayer(layerId);
         }
       }
+
       if (map.getSource("stations")) {
         map.removeSource("stations");
       }
@@ -175,7 +194,6 @@ function MapLibre() {
     updateClusterSource();
 
     map.on("zoomend", updateClusterSource);
-
     return () => {
       map.off("zoomend", updateClusterSource);
     };
