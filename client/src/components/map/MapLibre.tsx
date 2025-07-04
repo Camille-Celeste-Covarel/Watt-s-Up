@@ -1,9 +1,11 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./maplibre.css";
+import { MapLibreSearchControl } from "@stadiamaps/maplibre-search-box";
 import type * as GeoJSON from "geojson";
 import maplibregl from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
 import type { StationAttributes } from "../../../../server/src/types/models/models";
+import "@stadiamaps/maplibre-search-box/dist/maplibre-search-box.css";
 
 function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
@@ -29,6 +31,17 @@ function MapLibre() {
     });
 
     map.addControl(geolocate, "bottom-right");
+
+    map.addControl(new MapLibreSearchControl(), "top-left");
+
+    map.on("load", () => {
+      const input = document.querySelector(
+        ".input-container input",
+      ) as HTMLInputElement;
+      if (input) {
+        input.placeholder = "Rechercher un lieu";
+      }
+    });
 
     mapRef.current = map;
 
