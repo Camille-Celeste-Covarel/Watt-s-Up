@@ -1,31 +1,5 @@
-.topbar-search {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  background-color: var(--primary-color);
-  padding: 0px 20px;
-  height: 60px;
-  position: relative;
-}
-
-.searchbar {
-  padding: 10px;
-  background-color: white;
-  display: flex;
-}
-
-.loupe {
-  height: 20px;
-}
-
 .filtre {
   height: 40px;
-}
-
-.search-input {
-  border: none;
-  padding-left: 10px;
-  outline: none;
 }
 
 .filter-overlay {

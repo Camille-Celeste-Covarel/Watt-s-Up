@@ -1,7 +1,7 @@
 .map-wrap {
   position: relative;
   width: 100%;
-  height: calc(100vh - 70px - 60px - 60px);
+  height: calc(100vh - 70px - 60px);
 }
 
 .map {
@@ -12,4 +12,21 @@
 
 h3 {
   margin-top: 0;
+}
+
+.input-container input {
+  background-color: white;
+  color: var(--secondary-color);
+  border: solid 2px var(--primary-color);
+  font-weight: 600;
+  border-radius: 0;
+}
+
+.input-container input:focus {
+  border: solid 3px var(--primary-color);
+  outline: none;
+}
+
+.search-attribution {
+  display: none;
 }
