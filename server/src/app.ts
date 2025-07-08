@@ -1,5 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
+import cookieParser from "cookie-parser";
+import cors from "cors";
 import express from "express";
 import { Sequelize } from "sequelize";
 import sequelize from "./config/database";
@@ -22,8 +24,6 @@ import { TerminalPlug } from "./models/terminal_plug.model";
 import { User } from "./models/user.model";
 import { Vehicule } from "./models/vehicule.model";
 
-import cors from "cors";
-
 import {
   LogLevel,
   initializeConsoleLogStream,
@@ -44,7 +44,7 @@ console.log("DEBUG: PORT variable after definition:", PORT, LogLevel.DEBUG);
 
 app.use(
   cors({
-    origin: `${process.env.CLIENT_URL} || 4001`,
+    origin: process.env.CLIENT_URL,
     methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
     credentials: true,
   }),
@@ -52,6 +52,7 @@ app.use(
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(router);
 
 async function startServer() {

@@ -1,4 +1,6 @@
+import bcrypt from "bcrypt";
 import type { RequestHandler } from "express";
+import jwt from "jsonwebtoken";
 import { User } from "../models/_index";
 
 // L'opération BREAD : Browse (Read All)
@@ -98,4 +100,134 @@ const destroy: RequestHandler = async (req, res, next) => {
   }
 };
 
-export default { browse, read, add, edit, destroy };
+const register: RequestHandler = async (req, res, next) => {
+  try {
+    const {
+      email,
+      password,
+      first_name,
+      last_name,
+      address,
+      city,
+      postcode,
+      country,
+    } = req.body;
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      res.status(400).json({
+        error: "Un utilisateur avec cet email existe déjà",
+      });
+      return;
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    const user = await User.create({
+      email,
+      password: hashedPassword,
+      first_name,
+      last_name,
+      birthdate: new Date(),
+      address: address,
+      city: city,
+      postcode: postcode,
+      country: country,
+      is_admin: false,
+    });
+
+    res.status(201).json({
+      message: "Utilisateur créé avec succès",
+      user: {
+        id: user.id,
+        email: user.email,
+        first_name: user.first_name,
+        last_name: user.last_name,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const login: RequestHandler = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      res.status(401).json({
+        error: "Email ou mot de passe incorrect",
+      });
+      return;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      res.status(401).json({
+        error: "Email ou mot de passe incorrect",
+      });
+      return;
+    }
+
+    const jwtSecret = process.env.JWT_SECRET as string;
+
+    const token = jwt.sign(
+      {
+        userId: user.id,
+        email: user.email,
+        isAdmin: user.is_admin,
+      },
+      jwtSecret,
+      { expiresIn: process.env.JWT_EXPIRES_IN || "24h" } as jwt.SignOptions,
+    );
+
+    const userResponse = {
+      id: user.id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      is_admin: user.is_admin,
+    };
+
+    res.cookie("authToken", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000,
+    });
+
+    res.json({
+      message: "Connexion réussie",
+      user: userResponse,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const logout: RequestHandler = async (req, res, next) => {
+  try {
+    res.clearCookie("authToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+    });
+
+    res.json({
+      message: "Déconnexion réussie",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export default {
+  browse,
+  read,
+  add,
+  edit,
+  destroy,
+  register,
+  login,
+  logout,
+};
