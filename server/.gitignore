@@ -1,4 +1,6 @@
 CSVCache
 node_modules
 coverage
-.env
+*.local
+.env.
+logs

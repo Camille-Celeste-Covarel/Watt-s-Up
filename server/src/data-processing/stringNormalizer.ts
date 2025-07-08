@@ -40,7 +40,7 @@ export function parseNumber(
 }
 
 export function parseBoolean(
-  input: string | boolean | null | undefined,
+  input: string | number | boolean | null | undefined,
 ): boolean | null {
   if (
     input === null ||
@@ -52,6 +52,12 @@ export function parseBoolean(
   if (typeof input === "boolean") {
     return input;
   }
+  if (typeof input === "number") {
+    if (input === 1) return true;
+    if (input === 0) return false;
+    return null;
+  }
+
   const s = String(input).trim().toLowerCase();
   if (["true", "1", "oui", "yes"].includes(s)) {
     return true;

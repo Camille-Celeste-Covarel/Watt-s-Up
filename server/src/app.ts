@@ -1,8 +1,8 @@
-import express from "express";
-import { Sequelize } from "sequelize";
+import fs from "node:fs";
+import path from "node:path";
+import cors from "cors";
+import express, { type ErrorRequestHandler } from "express";
 import sequelize from "./config/database";
-import router from "./router";
-
 import { Access } from "./models/access.model";
 import { Book } from "./models/book.model";
 import { BookTerminal } from "./models/book_terminal.model";
@@ -13,48 +13,128 @@ import { Operator } from "./models/operator.model";
 import { Plug } from "./models/plug.model";
 import { Power } from "./models/power.model";
 import { Provider } from "./models/provider.model";
-import { Request } from "./models/request.model";
+import { request } from "./models/request.model";
 import { Station } from "./models/station.model";
 import { Terminal } from "./models/terminal.model";
 import { TerminalPlug } from "./models/terminal_plug.model";
 import { User } from "./models/user.model";
 import { Vehicule } from "./models/vehicule.model";
-
-import cors from "cors";
-
+import router from "./router";
 import {
   LogLevel,
   initializeConsoleLogStream,
   redirectConsoleOutput,
 } from "./tools/logger";
 
+// On garde uniquement l'initialisation des logs au niveau global
 initializeConsoleLogStream();
 redirectConsoleOutput();
 
-const app = express();
-console.log(
-  "DEBUG: process.env.PORT before definition:",
-  process.env.PORT,
-  LogLevel.DEBUG,
-);
-const PORT = process.env.PORT || 3000;
-console.log("DEBUG: PORT variable after definition:", PORT, LogLevel.DEBUG);
-
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(router);
-
 async function startServer() {
+  const app = express();
+
+  // --- SPY #1 : Log de toutes les requêtes entrantes ---
+  // Ce middleware s'exécutera pour CHAQUE requête, avant toute autre chose.
+  app.use((req, _res, next) => {
+    console.log(
+      `--- NOUVELLE REQUÊTE REÇUE --- METHODE: ${req.method}, URL: ${req.originalUrl}`,
+    );
+    next();
+  });
+  // --- FIN DU SPY #1 ---
+
+  // --- 1. MIDDLEWARES DE BASE ET CONFIGURATION CORS ---
+  const allowedOrigins = [process.env.CLIENT_URL].filter(Boolean) as string[];
+
+  // --- SPY #2 : Log des variables CORS ---
+  console.log("[CORS DEBUG] Origines autorisées:", allowedOrigins);
+  // --- FIN DU SPY #2 ---
+
+  const corsOptions: cors.CorsOptions = {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
+      // --- SPY #3 : Log à l'intérieur de la fonction CORS ---
+      console.log(`[CORS DEBUG] Origine de la requête: ${origin}`);
+      // --- FIN DU SPY #3 ---
+
+      if (!origin || allowedOrigins.includes(origin)) {
+        // --- SPY #4 : Log de la décision ---
+        console.log("[CORS DEBUG] Résultat: Autorisé");
+        // --- FIN DU SPY #4 ---
+        callback(null, true);
+      } else {
+        console.error(
+          `[CORS DEBUG] Résultat: Refusé. L'origine ${origin} n'est pas dans la liste blanche.`,
+        );
+        callback(new Error("This origin is not allowed by CORS"));
+      }
+    },
+    optionsSuccessStatus: 200,
+  };
+
+  app.use(cors(corsOptions));
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  // --- 2. ROUTEUR DE L'API ---
+  // Toutes les requêtes commençant par /api sont gérées par notre routeur.
+  app.use("/api", router);
+
+  // --- 3. GESTION DES FICHIERS STATIQUES (CLIENT) ---
+  // Ce code ne s'exécute que si la requête n'a pas été interceptée par le routeur API.
+  const clientBuildPath = path.join(__dirname, "../../client/dist");
+  if (fs.existsSync(clientBuildPath)) {
+    app.use(express.static(clientBuildPath));
+    // Le "catch-all" qui renvoie l'app React pour la navigation côté client
+    app.get("*", (_req, res) => {
+      res.sendFile("index.html", { root: clientBuildPath });
+    });
+  }
+
+  // --- 4. GESTIONNAIRES D'ERREURS (TOUJOURS À LA FIN) ---
+  const logErrors: ErrorRequestHandler = (err, req, _res, next) => {
+    console.error(err, LogLevel.ERROR);
+    console.error("on req:", req.method, req.path, LogLevel.ERROR);
+    next(err);
+  };
+
+  const apiErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
+    // On ne gère que les erreurs sur les routes API
+    if (req.originalUrl.startsWith("/api")) {
+      console.error("API Error:", err);
+      res.status(500).json({
+        error: "Une erreur interne du serveur est survenue.",
+        details: err.message,
+      });
+      return;
+    }
+    next(err);
+  };
+
+  app.use(logErrors);
+  app.use(apiErrorHandler);
+
   try {
+    // --- 5. CONNEXION BDD ET INITIALISATION ---
     await sequelize.authenticate();
     console.log(
       "🎉 Connexion à la base de données PostgreSQL établie avec succès !",
       LogLevel.INFO,
     );
 
-    // --- INITIALISATION DES MODÈLES PAR ORDRE DE DÉPENDANCE ---
-    // Phase 1 : Modèles sans dépendances circulaires entre eux (tables de référence, User, etc.)
+    console.log(
+      "Tentative d'activation de l'extension PostGIS...",
+      LogLevel.INFO,
+    );
+    await sequelize.query("CREATE EXTENSION IF NOT EXISTS postgis;");
+    console.log(
+      "✅ Extension PostGIS activée ou déjà présente !",
+      LogLevel.INFO,
+    );
+
+    // --- INITIALISATION DES MODÈLES ---
     User.initialize(sequelize);
     Access.initialize(sequelize);
     Book.initialize(sequelize);
@@ -63,27 +143,17 @@ async function startServer() {
     Plug.initialize(sequelize);
     Power.initialize(sequelize);
     Provider.initialize(sequelize);
-    ImportLog.initialize(sequelize); // Aucune dépendance externe connue ici
+    ImportLog.initialize(sequelize);
+    Station.initialize(sequelize);
+    Vehicule.initialize(sequelize);
+    Terminal.initialize(sequelize);
+    Observation.initialize(sequelize);
+    request.initialize(sequelize);
+    BookTerminal.initialize(sequelize);
+    TerminalPlug.initialize(sequelize);
+    console.log("Tous les modèles ont été initialisés.", LogLevel.DEBUG);
 
-    // Phase 2 : Modèles dépendant des modèles de la Phase 1
-    Station.initialize(sequelize); // Dépend de Access, Provider, Book, Operator, Compagny, Power
-    Vehicule.initialize(sequelize); // Dépend de Plug, User
-
-    // Phase 3 : Modèles dépendant des modèles de la Phase 1 et 2
-    Terminal.initialize(sequelize); // Dépend de Station, Power
-    Observation.initialize(sequelize); // Dépend de Station, User (Maintenant Station est initialisé)
-    Request.initialize(sequelize); // Dépend de User, Terminal
-
-    // Phase 4 : Tables de jonction et autres modèles avec des dépendances complexes (souvent les dernières)
-    BookTerminal.initialize(sequelize); // Dépend de Book, Terminal
-    TerminalPlug.initialize(sequelize); // Dépend de Plug, Terminal
-
-    console.log(
-      "Tous les modèles ont été initialisés avec l'instance Sequelize.",
-      LogLevel.DEBUG,
-    );
-
-    // Définition des associations (doit se faire APRES que TOUS les modèles soient initialisés)
+    // --- DÉFINITION DES ASSOCIATIONS ---
     User.associate();
     Access.associate();
     Book.associate();
@@ -94,57 +164,17 @@ async function startServer() {
     Plug.associate();
     Power.associate();
     Provider.associate();
-    Request.associate();
+    request.associate();
     Station.associate();
     Terminal.associate();
     TerminalPlug.associate();
     Vehicule.associate();
     ImportLog.associate();
+    console.log("Toutes les associations ont été définies.", LogLevel.DEBUG);
 
-    console.log(
-      "Toutes les associations de modèles ont été définies.",
-      LogLevel.DEBUG,
-    );
-
-    // --- DEBUGGING : VÉRIFICATION DE L'INSTANCE SEQUELIZE AVANT SYNCHRONISATION ---
-    console.log("--- DÉBOGAGE INSTANCE SEQUELIZE ---", LogLevel.DEBUG);
-    console.log("Type de sequelize:", typeof sequelize, LogLevel.DEBUG);
-    console.log(
-      "Est une instance de Sequelize:",
-      sequelize instanceof Sequelize,
-      LogLevel.DEBUG,
-    );
-    console.log(
-      "Valeur de sequelize (tronquée si grande):",
-      sequelize ? Object.keys(sequelize).slice(0, 5) : sequelize,
-      LogLevel.DEBUG,
-    );
-    console.log(
-      "Type de sequelize.getQueryInterface:",
-      typeof sequelize?.getQueryInterface,
-      LogLevel.DEBUG,
-    );
-    console.log("--- FIN DÉBOGAGE INSTANCE SEQUELIZE ---", LogLevel.DEBUG);
-
-    // Perform database synchronization
-    console.log(
-      "Tentative de synchronisation de la base de données...",
-      LogLevel.INFO,
-    );
-    // REMINDER: Use { force: true } once in development to clean up conflicting indexes
-    // Then switch back to { alter: true } or your migration process
-    await sequelize.sync({ [process.env.SEQSYNC_MODE || "alter"]: true });
-
-    console.log(
-      "🚀 Base de données synchronisée avec les modèles !",
-      LogLevel.INFO,
-    );
+    console.log("🚀 sequelize.sync remplacé par les migrations", LogLevel.INFO);
 
     // --- Création d'un utilisateur de test ---
-    console.log(
-      "\n--- Tentative de création d'un nouvel utilisateur ---",
-      LogLevel.INFO,
-    );
     const [user, created] = await User.findOrCreate({
       where: { email: "test.user@example.com" },
       defaults: {
@@ -163,7 +193,7 @@ async function startServer() {
 
     if (created) {
       console.log(
-        `✅ Utilisateur créé avec succès : ID ${user.id}, Email : ${user.email}`,
+        `✅ Utilisateur créé avec succès : ID ${user.id}`,
         LogLevel.INFO,
       );
     } else {
@@ -173,9 +203,7 @@ async function startServer() {
       );
     }
 
-    app.get("/", (req, res) => {
-      res.status(200).send("API backend P3.");
-    });
+    return app;
   } catch (error) {
     console.error(
       "❌ Impossible de se connecter à la base de données :",
@@ -184,44 +212,9 @@ async function startServer() {
     );
     if (error instanceof Error) {
       console.error("Détails de l'erreur:", error.message, LogLevel.CRITICAL);
-      if (error.stack) {
-        console.error("Stack trace:", error.stack, LogLevel.CRITICAL);
-      }
     }
+    process.exit(1);
   }
 }
 
-startServer();
-
-import fs from "node:fs";
-import path from "node:path";
-
-const publicFolderPath = path.join(__dirname, "../../server/public");
-if (fs.existsSync(publicFolderPath)) {
-  app.use(express.static(publicFolderPath));
-}
-
-const clientBuildPath = path.join(__dirname, "../../client/dist");
-if (fs.existsSync(clientBuildPath)) {
-  app.use(express.static(clientBuildPath));
-  app.get("*", (_, res) => {
-    res.sendFile("index.html", { root: clientBuildPath });
-  });
-}
-
-import type { ErrorRequestHandler } from "express";
-const logErrors: ErrorRequestHandler = (err, req, res, next) => {
-  console.error(err, LogLevel.ERROR);
-  console.error("on req:", req.method, req.path, LogLevel.ERROR);
-  next(err);
-};
-app.use(logErrors);
-
-if (fs.existsSync(clientBuildPath)) {
-  app.use(express.static(clientBuildPath));
-  app.get("*", (_, res) => {
-    res.sendFile("index.html", { root: clientBuildPath });
-  });
-}
-
-export default app;
+export default startServer;

@@ -153,7 +153,6 @@ export interface StationAttributes {
   id_station_itinerance: string | null;
   id_access: string | null;
   id_provider: string | null;
-  id_book: string | null;
   nom_amenageur: string | null;
   siren_amenageur: string | null;
   contact_amenageur: string | null;
@@ -164,7 +163,7 @@ export interface StationAttributes {
   nom_enseigne: string | null;
   id_compagny: string | null;
   id_station_local: string | null;
-  nom_station: string;
+  nom_station: string | null;
   implantation_station: string | null;
   adresse_station: string | null;
   code_insee_commune: string | null;
@@ -198,10 +197,12 @@ export interface StationAttributes {
   consolidated_is_lon_lat_correct: boolean | null;
   consolidated_is_code_insee_verified: boolean | null;
   consolidated_is_code_insee_modified: boolean | null;
-  coordonneesXY: string | null;
+  coordonnees_x_y: string | null;
   geom?: GeoJSON.Point | Literal | null;
+  geojson_geom?: GeoJSON.Point | null;
   latitude?: number;
   longitude?: number;
+  terminals?: TerminalAttributes[] | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -213,7 +214,6 @@ export type StationCreationAttributes = Optional<
   | "id_station_itinerance"
   | "id_access"
   | "id_provider"
-  | "id_book"
   | "nom_amenageur"
   | "siren_amenageur"
   | "contact_amenageur"
@@ -256,7 +256,7 @@ export type StationCreationAttributes = Optional<
   | "consolidated_is_lon_lat_correct"
   | "consolidated_is_code_insee_verified"
   | "consolidated_is_code_insee_modified"
-  | "coordonneesXY"
+  | "coordonnees_x_y"
   | "geom"
 >;
 
@@ -266,6 +266,7 @@ export interface TerminalAttributes {
   id_power: string | null;
   id_pdc_itinerance: string | null;
   id_pdc_local: string | null;
+  is_booked: boolean;
   latitude?: number | null;
   longitude?: number | null;
   geom?: GeoJSON.Point | Literal | null;
@@ -277,6 +278,7 @@ export interface TerminalAttributes {
   prise_combo_ccs: boolean;
   prise_autre: string | null;
   status: string | null;
+  num_pdc: string | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -293,6 +295,7 @@ export type TerminalCreationAttributes = Optional<
   | "geom"
   | "prise_autre"
   | "status"
+  | "num_pdc"
 >;
 
 export interface TerminalPlugAttributes {
@@ -302,6 +305,7 @@ export interface TerminalPlugAttributes {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
 export type TerminalPlugCreationAttributes = Optional<
   TerminalPlugAttributes,
   "id" | "createdAt" | "updatedAt"

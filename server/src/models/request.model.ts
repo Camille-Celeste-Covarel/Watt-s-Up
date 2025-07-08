@@ -6,7 +6,7 @@ import type {
 import { Terminal } from "./terminal.model";
 import { User } from "./user.model";
 
-export class Request
+export class request
   extends Model<RequestAttributes, RequestCreationAttributes>
   implements RequestAttributes
 {
@@ -22,7 +22,7 @@ export class Request
   public readonly updatedAt!: Date;
 
   static initialize(sequelize: Sequelize) {
-    Request.init(
+    request.init(
       {
         id: {
           type: DataTypes.UUID,
@@ -92,7 +92,7 @@ export class Request
   }
 
   static associate() {
-    Request.belongsTo(User, { foreignKey: "id_user", as: "user" });
-    Request.belongsTo(Terminal, { foreignKey: "id_terminal", as: "terminal" });
+    request.belongsTo(User, { foreignKey: "id_user", as: "user" });
+    request.belongsTo(Terminal, { foreignKey: "id_terminal", as: "terminal" });
   }
 }
