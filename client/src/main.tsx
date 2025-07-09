@@ -7,6 +7,7 @@ import { RouterProvider, createBrowserRouter } from "react-router";
 
 // Import the main app component
 import App from "./App";
+import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -40,7 +41,7 @@ const router = createBrowserRouter([
         index: true,
         element: <LoginPage />,
       },
-    ], // Renders the App component for the home page
+    ],
   },
   {
     path: "/register", // The root path
@@ -50,7 +51,17 @@ const router = createBrowserRouter([
         index: true,
         element: <RegisterPage />,
       },
-    ], // Renders the App component for the home page
+    ],
+  },
+  {
+    path: "/informations", // The root path
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: <InfoPage />,
+      },
+    ],
   },
   // Try adding a new route! For example, "/about" with an About component
 ]);

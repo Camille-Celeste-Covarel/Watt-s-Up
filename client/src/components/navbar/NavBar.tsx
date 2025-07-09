@@ -25,7 +25,14 @@ function NavBar() {
         <img src={profil} alt="votre profil" />
       </button>
       <img src={contact} alt="nous contacter" />
-      <img src={info} alt="informations" />
+      <button
+        type="button"
+        onClick={() => {
+          navigate("/informations");
+        }}
+      >
+        <img src={info} alt="informations" />
+      </button>
     </div>
   );
 }
