@@ -7,6 +7,7 @@ import { RouterProvider, createBrowserRouter } from "react-router";
 
 // Import the main app component
 import App from "./App";
+import ContactPage from "./pages/ContactPage";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -60,6 +61,16 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <InfoPage />,
+      },
+    ],
+  },
+  {
+    path: "/contact", // The root path
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: <ContactPage />,
       },
     ],
   },

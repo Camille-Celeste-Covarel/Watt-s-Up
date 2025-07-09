@@ -1,3 +1,7 @@
+.login-page-container {
+  padding: 20px 20px;
+}
+
 input {
   background-color: var(--primary-color);
   border: none;
