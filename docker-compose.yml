@@ -37,7 +37,7 @@ services:
       - ./client:/app
       - /app/node_modules
     environment:
-      VITE_API_URL: http://backend:3310
+      VITE_API_URL: http://backend:4001
       VITE_PUBLIC_API_URL: http://localhost:4002
     depends_on:
       - backend

@@ -199,8 +199,10 @@ export interface StationAttributes {
   consolidated_is_code_insee_modified: boolean | null;
   coordonnees_x_y: string | null;
   geom?: GeoJSON.Point | Literal | null;
+  geojson_geom?: GeoJSON.Point | null;
   latitude?: number;
   longitude?: number;
+  terminals?: TerminalAttributes[] | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -303,6 +305,7 @@ export interface TerminalPlugAttributes {
   createdAt?: Date;
   updatedAt?: Date;
 }
+
 export type TerminalPlugCreationAttributes = Optional<
   TerminalPlugAttributes,
   "id" | "createdAt" | "updatedAt"
