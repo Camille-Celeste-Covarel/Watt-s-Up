@@ -129,19 +129,19 @@ const browseVisible: RequestHandler = async (req, res, next) => {
         [sequelize.fn("ST_X", sequelize.col("Station.geom")), "longitude"],
         [
           sequelize.literal(
-              `(SELECT COUNT(*) FROM terminal WHERE terminal.id_station = "Station".id AND terminal.is_booked = FALSE)`,
+            `(SELECT COUNT(*) FROM terminal WHERE terminal.id_station = "Station".id AND terminal.is_booked = FALSE)`,
           ),
           "availableTerminalsCount",
         ],
         [
           sequelize.literal(
-              `(SELECT COUNT(*) FROM terminal WHERE terminal.id_station = "Station".id)`,
+            `(SELECT COUNT(*) FROM terminal WHERE terminal.id_station = "Station".id)`,
           ),
           "totalTerminalsCount",
         ],
       ],
       where: sequelize.literal(
-          `ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326) && "Station"."geom"`,
+        `ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326) && "Station"."geom"`,
       ),
     });
 
