@@ -1,5 +1,7 @@
-2. Plan d'Action : Commandes de Lancement de A à Z
-Voici une liste de commandes claires que vous pouvez sauvegarder. Elles partent du principe que vous êtes à la racine de votre projet (C:/Users/Nindra/Seafile/Code/Code/P3).Prérequis :•Node.js et npm installés.•Docker Desktop installé et en cours d'exécution.Environnement de Développement (Local)•Objectif : Coder sur le client et le serveur avec rechargement à chaud.•Configuration requise :1.Un fichier server/.env.development.local doit exister.2.Son contenu doit être :TOMLPORT=4002
+1.Un fichier server/.env.development.local doit exister.
+
+2.Son contenu doit être :
+TOMLPORT=4002
 CLIENT_URL=http://localhost:4001
 DB_HOST=localhost
 DB_PORT=5432
