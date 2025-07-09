@@ -14,7 +14,9 @@ module.exports = {
         defaultValue: false,
       });
     } else {
-      console.log(`Column "${columnName}" already exists in table "${tableName}". Skipping.`);
+      console.log(
+        `Column "${columnName}" already exists in table "${tableName}". Skipping.`,
+      );
     }
   },
 
@@ -28,4 +30,3 @@ module.exports = {
     }
   },
 };
-    

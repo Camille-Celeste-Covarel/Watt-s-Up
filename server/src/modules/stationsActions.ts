@@ -46,17 +46,6 @@ const browse: RequestHandler = async (_req, res, next) => {
         "observations",
         "date_maj",
         "last_modified",
-        "consolidated_Bbox",
-        "consolidated_code_postal",
-        "consolidated_commune",
-        "consolidated_is_free",
-        "consolidated_moyen_paiement",
-        "consolidated_photo",
-        "consolidated_region",
-        "consolidated_tarification",
-        "consolidated_departement",
-        "consolidated_code_departement",
-        "consolidated_code_region",
         "geom",
         [sequelize.fn("ST_AsGeoJSON", sequelize.col("geom")), "geojson_geom"],
         [sequelize.fn("ST_Y", sequelize.col("geom")), "latitude"],
@@ -140,24 +129,20 @@ const browseVisible: RequestHandler = async (req, res, next) => {
         [sequelize.fn("ST_X", sequelize.col("Station.geom")), "longitude"],
         [
           sequelize.literal(
-            `COUNT(CASE WHEN "terminals"."is_booked" = FALSE THEN 1 ELSE NULL END)`,
+              `(SELECT COUNT(*) FROM terminal WHERE terminal.id_station = "Station".id AND terminal.is_booked = FALSE)`,
           ),
           "availableTerminalsCount",
         ],
-        [sequelize.literal(`COUNT("terminals"."id")`), "totalTerminalsCount"],
-      ],
-      include: [
-        {
-          model: Terminal,
-          as: "terminals",
-          attributes: [],
-          required: false,
-        },
+        [
+          sequelize.literal(
+              `(SELECT COUNT(*) FROM terminal WHERE terminal.id_station = "Station".id)`,
+          ),
+          "totalTerminalsCount",
+        ],
       ],
       where: sequelize.literal(
-        `ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326) && "Station"."geom"`,
+          `ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326) && "Station"."geom"`,
       ),
-      group: ["Station.id", "Station.geom"],
     });
 
     res.json(stations);
@@ -224,17 +209,6 @@ const read: RequestHandler = async (req, res, next) => {
         "observations",
         "date_maj",
         "last_modified",
-        "consolidated_Bbox",
-        "consolidated_code_postal",
-        "consolidated_commune",
-        "consolidated_is_free",
-        "consolidated_moyen_paiement",
-        "consolidated_photo",
-        "consolidated_region",
-        "consolidated_tarification",
-        "consolidated_departement",
-        "consolidated_code_departement",
-        "consolidated_code_region",
         [sequelize.fn("ST_AsGeoJSON", sequelize.col("geom")), "geojson_geom"],
         [sequelize.fn("ST_Y", sequelize.col("geom")), "latitude"],
         [sequelize.fn("ST_X", sequelize.col("geom")), "longitude"],

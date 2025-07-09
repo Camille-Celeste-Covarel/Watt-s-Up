@@ -28,9 +28,6 @@ COPY . .
 # Copier et rendre notre script d'entrée exécutable DANS le conteneur
 # C'est une bonne pratique pour s'assurer des permissions
 
-# Définir le script comme point d'entrée
-ENTRYPOINT ["./entrypoint.sh"]
-
 # Si vous avez des fichiers TypeScript à compiler en JavaScript statique
 # avant le runtime, c'est ici qu'on le ferait.
 # Votre script 'start' utilise 'tsx', qui compile à la volée, donc pas besoin de 'npm run build' ici.
