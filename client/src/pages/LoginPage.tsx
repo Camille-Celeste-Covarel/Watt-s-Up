@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 
+import "../style/loginpage.css";
+
 function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -38,25 +40,34 @@ function LoginPage() {
   return (
     <div className="login-page-container">
       <form onSubmit={handleSubmit} className="login-form">
-        <label htmlFor="email">Adresse mail</label>
-        <input
-          type="email"
-          id="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder="Tapez votre adresse mail"
-        />
+        <div className="form-group">
+          <label htmlFor="email">Adresse mail</label>
+          <div className="email-input">
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Tapez votre adresse mail"
+            />
+          </div>
+        </div>
 
-        <label htmlFor="password">Mot de passe</label>
-        <input
-          type="password"
-          id="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          placeholder="Tapez votre mot de passe"
-        />
+        <div className="form-group">
+          <label htmlFor="password">Mot de passe</label>
+          <div className="password-input">
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="Tapez votre mot de passe"
+            />
+            <p>Mot de passe oublié ?</p>
+          </div>
+        </div>
 
         {error && <div className="error-message">{error}</div>}
 
@@ -64,14 +75,13 @@ function LoginPage() {
           Se connecter
         </button>
 
-        <h2>Toujours pas de compte ?</h2>
+        <div className="separator">
+          {" "}
+          {/* ✅ Séparateur */}
+          <h2>Toujours pas de compte ?</h2>
+        </div>
 
-        <button
-          type="button"
-          onClick={() => {
-            navigate("/register");
-          }}
-        >
+        <button type="button" onClick={() => navigate("/register")}>
           S'inscrire !
         </button>
       </form>
