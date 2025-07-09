@@ -107,11 +107,9 @@ const browseVisible: RequestHandler = async (req, res, next) => {
 
     const bboxParts = bbox.split(",").map(Number);
     if (bboxParts.length !== 4) {
-      res
-        .status(400)
-        .json({
-          error: "Bounding box (bbox) must have 4 comma-separated numbers.",
-        });
+      res.status(400).json({
+        error: "Bounding box (bbox) must have 4 comma-separated numbers.",
+      });
       return;
     }
     const [west, south, east, north] = bboxParts;
@@ -187,6 +185,7 @@ const read: RequestHandler = async (req, res, next) => {
           ],
         },
       ],
+
       attributes: [
         "id",
         "id_station_itinerance",
