@@ -1,5 +1,5 @@
 function RegisterPage() {
-  return <div>prout</div>;
+  return <div>test</div>;
 }
 
 export default RegisterPage;
