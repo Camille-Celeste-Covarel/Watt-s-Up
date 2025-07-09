@@ -22,6 +22,17 @@ RUN npm install
 # Pour l'instant, je suppose que tout ce qui est nécessaire pour 'server' est dans ce dossier.
 COPY . .
 
+# Copier le reste des fichiers de l'application
+COPY . .
+
+# Copier et rendre notre script d'entrée exécutable DANS le conteneur
+# C'est une bonne pratique pour s'assurer des permissions
+COPY entrypoint.sh .
+RUN chmod +x ./entrypoint.sh
+
+# Définir le script comme point d'entrée
+ENTRYPOINT ["./entrypoint.sh"]
+
 # Si vous avez des fichiers TypeScript à compiler en JavaScript statique
 # avant le runtime, c'est ici qu'on le ferait.
 # Votre script 'start' utilise 'tsx', qui compile à la volée, donc pas besoin de 'npm run build' ici.
