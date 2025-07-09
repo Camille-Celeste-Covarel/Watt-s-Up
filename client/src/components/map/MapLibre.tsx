@@ -82,7 +82,7 @@ function MapLibre() {
 
       try {
         const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/stations/visible?bbox=${bbox}`,
+          `${import.meta.env.VITE_API_URL}/stations/visible?bbox=${bbox}`,
         );
         if (!response.ok) {
           throw new Error(`Erreur HTTP: ${response.status}`);
