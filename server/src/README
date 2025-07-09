@@ -7,7 +7,9 @@ DB_HOST=localhost
 DB_PORT=5432
 DB_NAME=p3
 DB_USER=p3
-DB_PASSWORD=You're passwd3.Votre base de données PostgreSQL locale doit être lancée.•Commandes :•Terminal 1 (Serveur) :Shell Script# Aller dans le dossier serveur
+DB_PASSWORD=You're passwd3.
+
+Votre base de données PostgreSQL locale doit être lancée.•Commandes :•Terminal 1 (Serveur) :Shell Script# Aller dans le dossier serveur
 cd server
 
 # Installer les dépendances (seulement la première fois ou après un clean)
@@ -24,7 +26,9 @@ cd client
 npm install
 
 # Démarrer le client de développement
-npm run dev•Résultat : Le client est accessible sur http://localhost:4001 et le serveur sur http://localhost:4002.Environnement de Test (Local)•Objectif : Lancer la suite de tests automatisés pour le serveur.•Configuration requise :1.Un fichier server/.env.test.local doit exister.2.Son contenu doit être :Properties# Base de données dédiée aux tests
+npm run dev•
+
+Résultat : Le client est accessible sur http://localhost:4001 et le serveur sur http://localhost:4002.Environnement de Test (Local)•Objectif : Lancer la suite de tests automatisés pour le serveur.•Configuration requise :1.Un fichier server/.env.test.local doit exister.2.Son contenu doit être :Properties# Base de données dédiée aux tests
 DB_NAME=p3_test
 
 # Le reste peut être identique à .env.development.local
