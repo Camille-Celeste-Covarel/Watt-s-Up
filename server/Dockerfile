@@ -22,6 +22,15 @@ RUN npm install
 # Pour l'instant, je suppose que tout ce qui est nécessaire pour 'server' est dans ce dossier.
 COPY . .
 
+# Copier le reste des fichiers de l'application
+COPY . .
+
+# Copier et rendre notre script d'entrée exécutable DANS le conteneur
+# C'est une bonne pratique pour s'assurer des permissions
+
+# Définir le script comme point d'entrée
+ENTRYPOINT ["./entrypoint.sh"]
+
 # Si vous avez des fichiers TypeScript à compiler en JavaScript statique
 # avant le runtime, c'est ici qu'on le ferait.
 # Votre script 'start' utilise 'tsx', qui compile à la volée, donc pas besoin de 'npm run build' ici.
@@ -42,6 +51,12 @@ COPY --from=builder /app ./
 # Expose le port sur lequel votre application Express écoute.
 # D'après votre .env, c'est le port 3310.
 EXPOSE 3310
+
+COPY --from=builder /app/entrypoint.sh .
+RUN chmod +x ./entrypoint.sh
+
+# Définit le point d'entrée et la commande par défaut
+ENTRYPOINT ["./entrypoint.sh"]
 
 # Commande pour démarrer l'application
 # 'tsx ./src/app.ts' est votre script de démarrage défini dans package.json

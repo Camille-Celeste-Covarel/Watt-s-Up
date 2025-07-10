@@ -1,20 +1,31 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./maplibre.css";
+import "@stadiamaps/maplibre-search-box/dist/maplibre-search-box.css";
+
 import { MapLibreSearchControl } from "@stadiamaps/maplibre-search-box";
 import type * as GeoJSON from "geojson";
-import maplibregl from "maplibre-gl";
-import { useEffect, useRef, useState } from "react";
-import type { StationAttributes } from "../../../../server/src/types/models/models";
-import "@stadiamaps/maplibre-search-box/dist/maplibre-search-box.css";
+import maplibregl, { GlobeControl } from "maplibre-gl";
+import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import type { StationMapAttributes } from "../../types/types_maplibre.ts";
+
+function logInvalidStations(stations: StationMapAttributes[], source: string) {
+  const invalidStations = stations.filter((station) => !station.geojson_geom);
+  if (invalidStations.length > 0) {
+    console.warn(
+      `[Validation - ${source}] ${invalidStations.length} station(s) reçue(s) sans géométrie:`,
+      invalidStations,
+    );
+  }
+}
 
 function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
-  const [stations, setStations] = useState<StationAttributes[]>([]);
   const mapRef = useRef<maplibregl.Map | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    if (!mapContainer.current) return;
-    if (mapRef.current) return;
+    if (!mapContainer.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainer.current,
@@ -24,154 +35,90 @@ function MapLibre() {
       attributionControl: false,
     });
 
-    const geolocate = new maplibregl.GeolocateControl({
-      positionOptions: { enableHighAccuracy: true },
-      trackUserLocation: true,
-      showAccuracyCircle: false,
-    });
-
-    map.addControl(geolocate, "bottom-right");
-
-    map.addControl(new MapLibreSearchControl(), "top-left");
-
-    map.on("load", () => {
-      const input = document.querySelector(
-        ".input-container input",
-      ) as HTMLInputElement;
-      if (input) {
-        input.placeholder = "Rechercher un lieu";
-      }
-    });
-
     mapRef.current = map;
 
-    map.on("zoomstart", () => {
-      map.setLayoutProperty("clusters", "visibility", "none");
-      map.setLayoutProperty("cluster-count", "visibility", "none");
-      map.setLayoutProperty("unclustered-point", "visibility", "none");
-    });
+    map.addControl(
+      new maplibregl.GeolocateControl({
+        positionOptions: { enableHighAccuracy: true },
+        trackUserLocation: true,
+      }),
+      "bottom-right",
+    );
+    map.addControl(new MapLibreSearchControl({}), "top-left");
+    map.addControl(new GlobeControl(), "bottom-right");
 
-    map.on("zoomend", () => {
-      map.setLayoutProperty("clusters", "visibility", "visible");
-      map.setLayoutProperty("cluster-count", "visibility", "visible");
-      map.setLayoutProperty("unclustered-point", "visibility", "none");
-    });
-
-    map.on("error", (e) => {
-      console.error("Erreur MapLibre :", e.error);
-    });
-
-    return () => {
-      map.remove();
-      mapRef.current = null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapRef.current) return;
-    const map = mapRef.current;
-
-    const fetchStationsInBbox = async () => {
-      const bounds = map.getBounds();
-      const bbox = [
-        bounds.getWest(),
-        bounds.getSouth(),
-        bounds.getEast(),
-        bounds.getNorth(),
-      ].join(",");
-
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/stations/visible?bbox=${bbox}`,
-        );
-        if (!response.ok) {
-          throw new Error(`Erreur HTTP: ${response.status}`);
-        }
-        const data: StationAttributes[] = await response.json();
-        setStations(data);
-      } catch (error) {
-        console.error("Erreur lors du chargement des stations:", error);
-      }
-    };
-
-    fetchStationsInBbox();
-
-    map.on("moveend", fetchStationsInBbox);
-
-    return () => {
-      map.off("moveend", fetchStationsInBbox);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!mapRef.current || stations.length === 0) return;
-    const map = mapRef.current;
-
-    const calculateClusterRadius = (zoom: number): number => {
-      return Math.max(20, 150 - zoom * 6);
-    };
-
-    const updateClusterSource = () => {
-      const zoom = map.getZoom();
-      const clusterRadius = calculateClusterRadius(zoom);
-
-      for (const layerId of [
-        "clusters",
-        "cluster-count",
-        "unclustered-point",
-      ]) {
-        if (map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
-      }
-
-      if (map.getSource("stations")) {
-        map.removeSource("stations");
-      }
-
-      const geoJsonData: GeoJSON.FeatureCollection = {
-        type: "FeatureCollection",
-        features: stations
-          .filter(
-            (station) => station.latitude != null && station.longitude != null,
-          )
-          .map((station) => {
-            const { geom, latitude, longitude, ...rest } = station;
-            return {
-              type: "Feature",
-              properties: rest as GeoJSON.GeoJsonProperties,
-              geometry: {
-                type: "Point",
-                coordinates: [longitude, latitude] as GeoJSON.Position,
-              },
-            };
-          }),
-      };
-
+    map.on("load", async () => {
+      // 1. Ajouter la source de données (vide au début)
       map.addSource("stations", {
         type: "geojson",
-        data: geoJsonData,
+        data: { type: "FeatureCollection", features: [] },
         cluster: true,
-        clusterMaxZoom: 11,
-        clusterRadius: clusterRadius,
+        clusterMaxZoom: 14,
+        clusterRadius: 50,
       });
 
       map.addLayer({
-        id: "clusters",
+        id: "cluster-circles",
         type: "circle",
         source: "stations",
         filter: ["has", "point_count"],
         paint: {
           "circle-color": [
-            "step",
+            "interpolate",
+            ["linear"],
             ["get", "point_count"],
-            "#51bbd6",
             10,
-            "#f1f075",
-            30,
-            "#f28cb1",
+            "#F2D5B5",
+            100,
+            "#F2C641",
+            300,
+            "#f29f41",
+            750,
+            "#A62100",
           ],
-          "circle-radius": ["step", ["get", "point_count"], 15, 10, 20, 30, 25],
+          "circle-radius": [
+            "interpolate",
+            ["linear"],
+            ["get", "point_count"],
+            10,
+            15,
+            100,
+            25,
+            300,
+            30,
+            750,
+            35,
+          ],
+
+          /*          paint: {
+            // --- CORRECTION DU CERCLE-COLOR ---
+            "circle-color": [
+              "step",
+              ["get", "point_count"],
+              // 1. Valeur par défaut : couleur pour les plus petits clusters (0 à 49 points)
+              "#F2D5B5",
+
+              // 2. Paliers (paires de [stop, couleur])
+              50, "#ECD387",   // Si >= 50 points, utiliser cette couleur
+              100, "#F2C641",  // Si >= 100 points, utiliser cette couleur
+              250, "#D9631E",  // Si >= 250 points, utiliser cette couleur
+              500, "#D9401E",  // Si >= 500 points, utiliser cette couleur
+              750, "#A62100"   // Si >= 750 points, utiliser cette couleur (la paire manquante)
+            ],
+            // --- CORRECTION DU CERCLE-RADIUS ---
+            "circle-radius": [
+              "step",
+              ["get", "point_count"],
+              // 1. Valeur par défaut : rayon pour les plus petits clusters (0 à 49 points)
+              20,
+
+              // 2. Paliers (paires de [stop, rayon])
+              50, 25,          // Si >= 50 points, le rayon sera de 25px
+              100, 30,         // Si >= 100 points, le rayon sera de 30px
+              250, 35,         // Si >= 250 points, le rayon sera de 35px
+              500, 40,         // Si >= 500 points, le rayon sera de 40px
+              750, 45          // Si >= 750 points, le rayon sera de 45px
+            ],*/
         },
       });
 
@@ -183,71 +130,167 @@ function MapLibre() {
         layout: {
           "text-field": "{point_count_abbreviated}",
           "text-font": ["Open Sans Bold"],
-          "text-size": 12,
+          "text-size": 14,
         },
-        paint: {
-          "text-color": "#000",
-        },
+        paint: { "text-color": "#ffffff" },
       });
 
+      // Couche pour les points non clusterisés
       map.addLayer({
         id: "unclustered-point",
         type: "circle",
         source: "stations",
         filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": "#4264fb",
+          "circle-color": "#11b4da",
           "circle-radius": 6,
           "circle-stroke-width": 1,
           "circle-stroke-color": "#fff",
         },
       });
-    };
 
-    map.on("click", "unclustered-point", (e) => {
-      if (e.features?.[0]) {
-        const coordinates = (
-          e.features[0].geometry as GeoJSON.Point
-        ).coordinates.slice();
-        const properties = e.features[0].properties;
-
-        let description = `<h3>${properties?.nom_station}</h3>`;
-        if (properties?.adresse_station) {
-          description += `<p>${properties.adresse_station}</p>`;
-        }
-        if (properties?.condition_acces) {
-          description += `<p>Accès: ${properties.condition_acces}</p>`;
-        }
-        description += `<button type="button" class="button-reservation-popup">Réservez votre borne</button>`;
-
-        new maplibregl.Popup({ closeButton: false })
-          .setLngLat(coordinates as maplibregl.LngLatLike)
-          .setHTML(description)
-          .addTo(map);
+      try {
+        await fetchAndUpdateStations();
+      } catch (error) {
+        console.error("Le chargement initial des station a échoué :", error);
       }
     });
 
-    map.on("mouseenter", "unclustered-point", () => {
-      map.getCanvas().style.cursor = "pointer";
+    // --- GESTIONNAIRES DE CLICS (PLUS ROBUSTES) ---
+
+    // Clic sur un cluster
+    map.on("click", "cluster-circles", async (e) => {
+      if (!e.features?.length) return;
+      const feature = e.features[0];
+      const clusterId = feature.properties?.cluster_id;
+      if (clusterId && feature.geometry.type === "Point") {
+        const source = map.getSource("stations") as maplibregl.GeoJSONSource;
+        const zoom = await source.getClusterExpansionZoom(clusterId);
+        map.easeTo({
+          center: feature.geometry.coordinates as maplibregl.LngLatLike,
+          zoom: zoom,
+        });
+      }
     });
 
-    map.on("mouseleave", "unclustered-point", () => {
-      map.getCanvas().style.cursor = "";
+    // Clic sur un point unique
+    map.on("click", "unclustered-point", (e) => {
+      if (!e.features?.length) return;
+      const feature = e.features[0];
+      const stationId = feature.properties?.id;
+
+      // CORRECTION CRUCIALE : Vérifier que la géométrie est valide avant de l'utiliser
+      if (stationId && feature.geometry?.type === "Point") {
+        navigate(`/station/${stationId}`);
+        map.easeTo({
+          center: feature.geometry.coordinates as maplibregl.LngLatLike,
+          zoom: 16,
+        });
+      }
     });
 
-    updateClusterSource();
-
-    map.on("zoomend", updateClusterSource);
-    return () => {
-      map.off("zoomend", updateClusterSource);
+    // --- GESTIONNAIRES DE SURVOL ---
+    const setCursorToPointer = () => {
+      if (mapRef.current) {
+        mapRef.current.getCanvas().style.cursor = "pointer";
+      }
     };
-  }, [stations]);
 
-  return (
-    <div className="map-wrap">
-      <div ref={mapContainer} className="map" />
-    </div>
-  );
+    const resetCursor = () => {
+      if (mapRef.current) {
+        mapRef.current.getCanvas().style.cursor = "";
+      }
+    };
+
+    map.on("mouseenter", "cluster-circles", setCursorToPointer);
+    map.on("mouseleave", "cluster-circles", resetCursor);
+    map.on("mouseenter", "unclustered-point", setCursorToPointer);
+    map.on("mouseleave", "unclustered-point", resetCursor);
+
+    // --- LOGIQUE DE MISE A JOUR DES DONNEES ---
+    const fetchAndUpdateStations = async () => {
+      if (!mapRef.current) return;
+      const map = mapRef.current;
+      const source = map.getSource("stations") as maplibregl.GeoJSONSource;
+      if (!source) return;
+
+      try {
+        const bounds = map.getBounds();
+        const bbox = [
+          bounds.getWest(),
+          bounds.getSouth(),
+          bounds.getEast(),
+          bounds.getNorth(),
+        ].join(",");
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/stations/visible?bbox=${bbox}`,
+        );
+        if (!response.ok) {
+          console.error(
+            `HTTP error! status: ${response.status} ${response.statusText}`,
+          );
+          return;
+        }
+
+        const data: StationMapAttributes[] = await response.json();
+        logInvalidStations(data, "fetchAndUpdateStations");
+
+        // TRANSFORMATION ROBUSTE DES DONNÉES
+        const features = data
+          .map((station) => {
+            // On ne traite que les stations avec une géométrie
+            if (!station.geojson_geom) {
+              return null;
+            }
+            try {
+              const geometry = JSON.parse(
+                station.geojson_geom as unknown as string,
+              );
+              // On vérifie que la géométrie parsée est bien un Point valide
+              if (
+                geometry?.type === "Point" &&
+                Array.isArray(geometry.coordinates)
+              ) {
+                return {
+                  type: "Feature",
+                  properties: station,
+                  geometry: geometry,
+                };
+              }
+              return null; // La géométrie n'est pas un Point valide
+            } catch (e) {
+              console.warn(
+                "Impossible de parser geojson_geom pour la station:",
+                station.id,
+              );
+              return null; // Le JSON est invalide
+            }
+          })
+          .filter(Boolean); // Élimine tous les 'null' du tableau
+
+        const geoJsonData: GeoJSON.FeatureCollection = {
+          type: "FeatureCollection",
+          features: features as GeoJSON.Feature[],
+        };
+
+        source.setData(geoJsonData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des stations:", error);
+      }
+    };
+
+    // On attache le listener pour mettre à jour les données quand la carte bouge
+    map.on("moveend", fetchAndUpdateStations);
+    map.on("zoomend", fetchAndUpdateStations);
+
+    // Nettoyage au démontage du composant
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, [navigate]); // navigate est une dépendance stable, donc ce hook ne s'exécute qu'une fois.
+
+  return <div ref={mapContainer} className="map-wrap" />;
 }
 
 export default MapLibre;

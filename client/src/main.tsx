@@ -7,6 +7,7 @@ import { RouterProvider, createBrowserRouter } from "react-router";
 
 // Import the main app component
 import App from "./App";
+import { StationDetails } from "./components/stationDetails/stationDetails.tsx";
 import ContactPage from "./pages/ContactPage";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
@@ -25,7 +26,7 @@ import RegisterPage from "./pages/RegisterPage";
 // You can add more routes as you build out your app!
 const router = createBrowserRouter([
   {
-    path: "/", // The root path
+    path: "/",
     element: <App />,
     children: [
       {
@@ -71,6 +72,16 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <ContactPage />,
+      },
+    ],
+  },
+  {
+    path: "/station/:id", // The root path
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: <StationDetails />,
       },
     ],
   },
