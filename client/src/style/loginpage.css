@@ -3,7 +3,7 @@
 }
 
 input {
-  background-color: var(--primary-color);
+  background-color: var(--fondamental-color);
   border: none;
   padding: 5px;
 }
