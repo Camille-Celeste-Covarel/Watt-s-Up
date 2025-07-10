@@ -68,6 +68,7 @@ async function startServer() {
         callback(new Error("This origin is not allowed by CORS"));
       }
     },
+    credentials: true,
     optionsSuccessStatus: 200,
   };
 

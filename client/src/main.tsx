@@ -12,7 +12,9 @@ import ContactPage from "./pages/ContactPage";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
+import ProfilPage from "./pages/ProfilPage.tsx";
 import RegisterPage from "./pages/RegisterPage";
+import ProtectedRoute from "./utils/ProtectedRoute.tsx";
 
 // Import additional components for new routes
 // Try creating these components in the "pages" folder
@@ -25,67 +27,71 @@ import RegisterPage from "./pages/RegisterPage";
 // Create router configuration with routes
 // You can add more routes as you build out your app!
 const router = createBrowserRouter([
+  // ✅ ROUTES PUBLIQUES (inchangées)
   {
     path: "/",
     element: <App />,
-    children: [
-      {
-        index: true,
-        element: <LandingPage />,
-      },
-    ], // Renders the App component for the home page
+    children: [{ index: true, element: <LandingPage /> }],
   },
   {
-    path: "/login", // The root path
+    path: "/login",
+    element: <App />,
+    children: [{ index: true, element: <LoginPage /> }],
+  },
+  {
+    path: "/register",
+    element: <App />,
+    children: [{ index: true, element: <RegisterPage /> }],
+  },
+  {
+    path: "/informations",
+    element: <App />,
+    children: [{ index: true, element: <InfoPage /> }],
+  },
+
+  // ✅ ROUTES PROTÉGÉES (avec ProtectedRoute)
+  {
+    path: "/profil",
     element: <App />,
     children: [
       {
         index: true,
-        element: <LoginPage />,
+        element: (
+          <ProtectedRoute>
+            <ProfilPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
   {
-    path: "/register", // The root path
+    path: "/contact",
     element: <App />,
     children: [
       {
         index: true,
-        element: <RegisterPage />,
+        element: (
+          <ProtectedRoute>
+            <ContactPage />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
   {
-    path: "/informations", // The root path
+    path: "/station/:id",
     element: <App />,
     children: [
       {
         index: true,
-        element: <InfoPage />,
+        element: (
+          <ProtectedRoute>
+            <StationDetails />
+          </ProtectedRoute>
+        ),
       },
     ],
   },
-  {
-    path: "/contact", // The root path
-    element: <App />,
-    children: [
-      {
-        index: true,
-        element: <ContactPage />,
-      },
-    ],
-  },
-  {
-    path: "/station/:id", // The root path
-    element: <App />,
-    children: [
-      {
-        index: true,
-        element: <StationDetails />,
-      },
-    ],
-  },
-  // Try adding a new route! For example, "/about" with an About component
 ]);
 
 /* ************************************************************************* */
