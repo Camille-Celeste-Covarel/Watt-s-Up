@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
 import type {
   StationAttributes,
   TerminalAttributes,
@@ -7,10 +6,7 @@ import type {
 import "./stationDetails.css";
 import type { StationDetailsProps } from "../../types/types_maplibre.ts";
 
-export function StationDetails({ id: propId }: StationDetailsProps) {
-  const { id: paramId } = useParams<{ id: string }>();
-  const stationId = propId || paramId;
-
+export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [station, setStation] = useState<StationAttributes | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,13 +26,13 @@ export function StationDetails({ id: propId }: StationDetailsProps) {
           `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
         );
         if (!response.ok) {
-          new Error(`HTTP error! status: ${response.status}`);
+          throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data: StationAttributes = await response.json();
         setStation(data);
       } catch (err) {
         console.error("Error fetching station details:", err);
-        setError("Failed to load station details.");
+        setError("Impossible de charger les détails de la station.");
       } finally {
         setLoading(false);
       }

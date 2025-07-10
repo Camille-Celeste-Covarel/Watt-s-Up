@@ -47,9 +47,12 @@ const browse: RequestHandler = async (_req, res, next) => {
         "date_maj",
         "last_modified",
         "geom",
-        [sequelize.fn("ST_AsGeoJSON", sequelize.col("geom")), "geojson_geom"],
-        [sequelize.fn("ST_Y", sequelize.col("geom")), "latitude"],
-        [sequelize.fn("ST_X", sequelize.col("geom")), "longitude"],
+        [
+          sequelize.fn("ST_AsGeoJSON", sequelize.col("Station.geom")),
+          "geojson_geom",
+        ],
+        [sequelize.fn("ST_Y", sequelize.col("Station.geom")), "latitude"],
+        [sequelize.fn("ST_X", sequelize.col("Station.geom")), "longitude"],
         [
           sequelize.literal(
             "(SELECT COUNT(*) FROM terminal WHERE terminal.id_station = Station.id AND terminal.is_booked = FALSE)",
@@ -209,9 +212,12 @@ const read: RequestHandler = async (req, res, next) => {
         "observations",
         "date_maj",
         "last_modified",
-        [sequelize.fn("ST_AsGeoJSON", sequelize.col("geom")), "geojson_geom"],
-        [sequelize.fn("ST_Y", sequelize.col("geom")), "latitude"],
-        [sequelize.fn("ST_X", sequelize.col("geom")), "longitude"],
+        [
+          sequelize.fn("ST_AsGeoJSON", sequelize.col("Station.geom")),
+          "geojson_geom",
+        ],
+        [sequelize.fn("ST_Y", sequelize.col("Station.geom")), "latitude"],
+        [sequelize.fn("ST_X", sequelize.col("Station.geom")), "longitude"],
       ],
     });
 
