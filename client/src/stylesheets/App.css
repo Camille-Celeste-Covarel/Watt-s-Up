@@ -1,0 +1,31 @@
+@import url("https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap");
+
+/*<weight>: Use a value from 100 to 900
+<uniquifier>: Use a unique and descriptive class name
+
+    .montserrat-<uniquifier> {
+                   font-family: "Montserrat", sans-serif;
+                   font-optical-sizing: auto;
+                   font-weight: <weight>;
+                   font-style: normal;
+                 }*/
+
+body {
+  box-sizing: border-box;
+}
+
+button {
+  width: 110px;
+  height: 40px;
+  background-color: var(--quinte-color);
+  border: none;
+  color: white;
+}
+
+:root {
+  --fondamental-color: #f2c641;
+  --quinte-color: #40352c;
+  --seconde-color: #d9631e;
+  --tierce-color: #f2f2f2;
+  --quarte-color: #c8f230;
+}

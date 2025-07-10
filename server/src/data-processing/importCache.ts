@@ -6,6 +6,7 @@ import {
   Power,
   Provider,
 } from "../models/_index";
+import { LogLevel } from "../tools/logger";
 
 export async function findOrCreateAccessByName(name: string): Promise<string> {
   const [access] = await Access.findOrCreate({
@@ -54,10 +55,21 @@ export async function findOrCreatePlugByName(name: string): Promise<string> {
 }
 
 export async function findOrCreatePowerByName(name: number): Promise<string> {
-  // name est un number ici pour Power
-  const [power] = await Power.findOrCreate({
+  console.log(
+    `importCache | findOrCreatePowerByName appelé avec la valeur (type: ${typeof name}): ${name}`,
+    LogLevel.DEBUG,
+  );
+  const [power, created] = await Power.findOrCreate({
     where: { name },
     defaults: { name },
   });
+
+  if (created) {
+    console.log(
+      `importCache | Nouvelle puissance créée en BDD: ${name}`,
+      LogLevel.DEBUG,
+    );
+  }
+
   return power.id;
 }

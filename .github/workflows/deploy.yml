@@ -1,0 +1,57 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - staging
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Server Dependencies
+        run: npm install
+        working-directory: ./server
+
+      # Étape cruciale : Lancer les migrations sur la base de données de production
+      # On injecte les secrets de la base de données ici.
+      - name: Run Production Migrations
+        run: npm run migrate:prod
+        working-directory: ./server
+        env:
+          NODE_ENV: production
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+
+      # Ici, vous ajouteriez les étapes pour builder et déployer votre image Docker
+      # par exemple, sur un service comme DigitalOcean, Heroku, AWS, etc.
+      # - name: Login to Docker Hub
+      #   uses: docker/login-action@v3
+      #   with:
+      #     username: ${{ secrets.DOCKERHUB_USERNAME }}
+      #     password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # - name: Build and push Docker image
+      #   uses: docker/build-push-action@v5
+      #   with:
+      #     context: ./server
+      #     push: true
+      #     tags: yourdockerhub/your-app-name:latest
+      #     # On passe aussi les variables d'environnement au build de l'image si nécessaire
+      #     build-args: |
+      #       NODE_ENV=production
+
+      - name: Deployment step placeholder
+        run: echo "Deployment would happen here..."

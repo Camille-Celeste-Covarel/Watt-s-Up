@@ -43,7 +43,6 @@ export function initializeConsoleLogStream() {
 
   if (!fs.existsSync(LOG_DIR)) {
     fs.mkdirSync(LOG_DIR, { recursive: true });
-    // Log via originalConsoleLog car la redirection n'est peut-être pas encore en place
     originalConsoleLog(`Répertoire de logs créé: ${LOG_DIR}`, LogLevel.DEBUG);
   }
 
@@ -133,10 +132,9 @@ export function redirectConsoleOutput() {
     if (level >= minLogLevel) {
       const time = new Date().toLocaleTimeString("fr-FR");
       const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.map((p) => String(p)).join(" ")}`;
-      originalConsoleError(logMessage); // Toujours logguer sur la console originale
+      originalConsoleError(logMessage);
 
       if (logStream) {
-        // N'écrit sur le stream fichier que s'il est actif
         logStream.write(`${logMessage}\n`);
       }
     }
@@ -214,6 +212,10 @@ export function logImportErrorToFile(
     `${error.culpritValue ? ` | Valeur: "${error.culpritValue}"` : ""}` +
     `${detailsString ? ` | Détails: ${detailsString}` : ""}\n`;
 
+  originalConsoleLog(
+    `[DEBUG - logger.ts] Tentative d'écriture dans le log d'erreur pour la ligne ${error.rowNumber}. Stream writable: ${errorLogStream.writable}`,
+    LogLevel.DEBUG,
+  );
   errorLogStream.write(logEntry);
 }
 

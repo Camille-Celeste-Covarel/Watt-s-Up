@@ -1,0 +1,97 @@
+Voir :
+>> .env.development.sample pour l'environnement de dev
+>> .env.staging.sample pour l'environnement de staging
+>> .env.production.sample pour l'environnement de production
+>>  Créer les .local correspondants
+
+
+1.Un fichier server/.env.development.local doit exister.
+
+2.Son contenu doit être :
+TOMLPORT=4002
+CLIENT_URL=http://localhost:3000
+DB_HOST=localhost
+DB_PORT=5432
+DB_NAME=p3
+DB_USER=p3
+DB_PASSWORD=You're passwd3.
+
+Votre base de données PostgreSQL locale doit être lancée.
+>>> Commandes :
+>>> Terminal 1 (Serveur) :Shell Script# Aller dans le dossier serveur
+
+cd server
+
+# Installer les dépendances (seulement la première fois ou après un clean)
+npm install
+
+# Lancer les migrations pour créer les tables
+npm run migrate:dev
+
+# Démarrer le serveur de développement
+
+npm run dev
+
+>>> Terminal 2 (Client) :Shell Script# Aller dans le dossier client (depuis la racine)
+cd client
+
+# Installer les dépendances (seulement la première fois ou après un clean)
+npm install
+
+# Démarrer le client de développement
+npm run dev
+
+>>> Résultat : Le client est accessible sur http://localhost:3000 et le serveur sur http://localhost:3310
+
+.Environnement de Test (Local)
+
+>>> Objectif : Lancer la suite de tests automatisés pour le serveur.>>> Configuration requise :
+
+1.Un fichier server/.env.test.local doit exister.
+
+2.Son contenu doit être :Properties# Base de données dédiée aux tests
+DB_NAME=p3_test
+
+# Le reste peut être identique à .env.development.local
+
+PORT=4003 # Un port différent pour éviter les conflits
+CLIENT_URL=http://localhost:3000
+DB_HOST=localhost
+DB_PORT=5432
+DB_USER=p3
+DB_PASSWORD=You're passw>>> Commandes :•>>> Terminal (Serveur) :Shell Script# Aller dans le dossier serveur
+cd server
+
+# Lancer les tests. Jest s'occupera de créer/détruire la BDD de test.
+npm run test
+
+>>> Résultat : La console affichera les résultats des tests (PASS/FAIL)
+
+.Environnement de Production (Simulation avec Docker)
+
+>>> Objectif : Construire et lancer l'application complète dans des conteneurs isolés, comme en production.
+>>> Commandes (à lancer depuis la racine du projet P3) :Shell Script#
+
+1. (Optionnel) Nettoyer les anciennes installations
+node bin/clean.js
+
+# 2. Arrêter et supprimer les anciens conteneurs et volumes pour un départ à neuf
+docker-compose down -v
+
+# 3. Reconstruire les images Docker sans utiliser le cache
+docker-compose build --no-cache
+
+# 4. Démarrer tous les services (client, serveur, bdd, redis) en arrière-plan
+docker-compose up -d
+
+# 5. ATTENDRE ~10 secondes que la base de données soit prête.
+
+# 6. Exécuter les migrations DANS le conteneur du serveur
+docker-compose exec server npm run migrate:dev
+
+# 7. (Optionnel) Suivre les logs du serveur pour voir s'il a bien démarré
+
+docker-compose logs -f server
+
+>>> Résultat : L'application est accessible sur http://localhost:3000.
+Tout fonctionne de manière isolée.

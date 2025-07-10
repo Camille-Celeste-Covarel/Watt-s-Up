@@ -1,0 +1,26 @@
+.contact-form {
+  padding: 0 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.contact-form select {
+  background-color: var(--fondamental-color);
+  color: white;
+  border: 0;
+  padding: 5px;
+}
+
+.contact-form textarea {
+  margin-bottom: 1rem;
+  border: 2px solid var(--fondamental-color);
+}
+
+.contact-form textarea::placeholder {
+  color: var(--fondamental-color);
+}
+
+.contact-form textarea:focus {
+  outline: none;
+}

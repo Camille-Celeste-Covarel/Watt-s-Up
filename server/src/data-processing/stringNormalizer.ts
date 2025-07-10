@@ -40,7 +40,7 @@ export function parseNumber(
 }
 
 export function parseBoolean(
-  input: string | boolean | null | undefined,
+  input: string | number | boolean | null | undefined,
 ): boolean | null {
   if (
     input === null ||
@@ -52,6 +52,12 @@ export function parseBoolean(
   if (typeof input === "boolean") {
     return input;
   }
+  if (typeof input === "number") {
+    if (input === 1) return true;
+    if (input === 0) return false;
+    return null;
+  }
+
   const s = String(input).trim().toLowerCase();
   if (["true", "1", "oui", "yes"].includes(s)) {
     return true;
@@ -137,4 +143,30 @@ export function parseSeparateGeoJSONCoordinates(
     `[Parse Error] Lat/Lon GeoJSON séparées invalides: lat="${latitudeString}", lon="${longitudeString}"`,
   );
   return null;
+}
+
+export function getNonBooleanString(
+  input: string | number | null | undefined,
+): string | null {
+  const normalized = normalizeString(input);
+  if (normalized === null) {
+    return null;
+  }
+
+  const ignoredBooleanStrings = new Set([
+    "true",
+    "false",
+    "oui",
+    "non",
+    "yes",
+    "no",
+    "1",
+    "0",
+  ]);
+
+  if (ignoredBooleanStrings.has(normalized.toLowerCase())) {
+    return null;
+  }
+
+  return normalized;
 }

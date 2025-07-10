@@ -7,7 +7,14 @@ import { RouterProvider, createBrowserRouter } from "react-router";
 
 // Import the main app component
 import App from "./App";
+import { StationDetails } from "./components/stationDetails/stationDetails.tsx";
+import ContactPage from "./pages/ContactPage";
+import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
+import LoginPage from "./pages/LoginPage";
+import ProfilPage from "./pages/ProfilPage.tsx";
+import RegisterPage from "./pages/RegisterPage";
+import ProtectedRoute from "./utils/ProtectedRoute.tsx";
 
 // Import additional components for new routes
 // Try creating these components in the "pages" folder
@@ -20,17 +27,71 @@ import LandingPage from "./pages/LandingPage";
 // Create router configuration with routes
 // You can add more routes as you build out your app!
 const router = createBrowserRouter([
+  // ✅ ROUTES PUBLIQUES (inchangées)
   {
-    path: "/", // The root path
+    path: "/",
+    element: <App />,
+    children: [{ index: true, element: <LandingPage /> }],
+  },
+  {
+    path: "/login",
+    element: <App />,
+    children: [{ index: true, element: <LoginPage /> }],
+  },
+  {
+    path: "/register",
+    element: <App />,
+    children: [{ index: true, element: <RegisterPage /> }],
+  },
+  {
+    path: "/informations",
+    element: <App />,
+    children: [{ index: true, element: <InfoPage /> }],
+  },
+
+  // ✅ ROUTES PROTÉGÉES (avec ProtectedRoute)
+  {
+    path: "/profil",
     element: <App />,
     children: [
       {
         index: true,
-        element: <LandingPage />,
+        element: (
+          <ProtectedRoute>
+            <ProfilPage />
+          </ProtectedRoute>
+        ),
       },
-    ], // Renders the App component for the home page
+    ],
   },
-  // Try adding a new route! For example, "/about" with an About component
+  {
+    path: "/contact",
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: (
+          <ProtectedRoute>
+            <ContactPage />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/station/:id",
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: (
+          <ProtectedRoute>
+            <StationDetails />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
 ]);
 
 /* ************************************************************************* */

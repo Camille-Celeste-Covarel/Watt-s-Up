@@ -1,0 +1,53 @@
+.main-content {
+  position: relative;
+  display: flex;
+  flex-direction: column; /* Assurez-vous que l'Outlet est le flux principal */
+  height: calc(100vh - 70px - 60px); /* Hauteur moins topbar et navbar */
+  overflow: hidden; /* Empêche le défilement du contenu derrière l'overlay */
+}
+
+/* Styles pour l'overlay des détails de la station */
+.station-details-overlay {
+  position: fixed; /* Positionnement fixe par rapport à la fenêtre */
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 100vh;
+  background-color: white;
+  overflow-x: hidden;
+  transition: width 0.3s ease-in-out;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.station-details-overlay.open {
+  width: 35vw;
+}
+
+.station-details-overlay .close-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+  z-index: 1001;
+  color: var(--quinte-color);
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.station-details-overlay .station-details-content {
+  padding: 60px 20px 20px;
+  overflow-y: auto;
+  height: 100%;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}

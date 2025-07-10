@@ -1,14 +1,13 @@
-import "./searchbar.css";
+import "./filter.css";
 
 import filtre from "../../assets/images/topbar/filtre.svg";
-import loupe from "../../assets/images/topbar/loupe.svg";
 import bike from "../../assets/images/vehicleIcons/bike.svg";
 import car from "../../assets/images/vehicleIcons/car.svg";
 import truck from "../../assets/images/vehicleIcons/truck.svg";
 
 import { useState } from "react";
 
-function SearchBar() {
+function Filter() {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   const toggleFilter = () => {
@@ -16,15 +15,7 @@ function SearchBar() {
   };
 
   return (
-    <div className="topbar-search">
-      <div className="searchbar">
-        <img src={loupe} alt="" className="loupe" />
-        <input
-          type="text"
-          placeholder="Rechercher une borne..."
-          className="search-input"
-        />
-      </div>
+    <div className="filter-container">
       <img
         src={filtre}
         alt="filtre"
@@ -70,4 +61,4 @@ function SearchBar() {
   );
 }
 
-export default SearchBar;
+export default Filter;
