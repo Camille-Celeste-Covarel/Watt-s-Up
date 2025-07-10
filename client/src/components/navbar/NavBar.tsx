@@ -21,7 +21,7 @@ function NavBar() {
         <img src={borne} alt="borne" />
       </button>
       <img src={reservation} alt="reserver une borne" />
-      <button type="button" onClick={() => navigate("/login")}>
+      <button type="button" onClick={() => navigate("/profil")}>
         <img src={profil} alt="votre profil" />
       </button>
       <button

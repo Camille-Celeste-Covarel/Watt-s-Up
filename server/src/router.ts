@@ -18,6 +18,9 @@ const router = express.Router();
 router.post("/auth/login", userActions.login);
 router.post("/auth/register", userActions.register);
 router.post("/auth/logout", userActions.logout);
+router.get("/auth/check", authenticateToken, (req, res) => {
+  res.json({ authenticated: true });
+});
 
 // Routes pour la map/stations (landing page)
 router.get("/stations", stationsActions.browse);
