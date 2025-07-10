@@ -33,40 +33,35 @@ redirectConsoleOutput();
 async function startServer() {
   const app = express();
 
-  // --- SPY #1 : Log de toutes les requêtes entrantes ---
   // Ce middleware s'exécutera pour CHAQUE requête, avant toute autre chose.
   app.use((req, _res, next) => {
     console.log(
       `--- NOUVELLE REQUÊTE REÇUE --- METHODE: ${req.method}, URL: ${req.originalUrl}`,
+      LogLevel.DEBUG,
     );
     next();
   });
-  // --- FIN DU SPY #1 ---
 
   // --- 1. MIDDLEWARES DE BASE ET CONFIGURATION CORS ---
   const allowedOrigins = [process.env.CLIENT_URL].filter(Boolean) as string[];
 
-  // --- SPY #2 : Log des variables CORS ---
-  console.log("[CORS DEBUG] Origines autorisées:", allowedOrigins);
-  // --- FIN DU SPY #2 ---
+  console.log("[CORS] Origines autorisées:", allowedOrigins, LogLevel.DEBUG);
 
   const corsOptions: cors.CorsOptions = {
     origin: (
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      // --- SPY #3 : Log à l'intérieur de la fonction CORS ---
-      console.log(`[CORS DEBUG] Origine de la requête: ${origin}`);
-      // --- FIN DU SPY #3 ---
+      // Log à l'intérieur de la fonction CORS ---
+      console.log(`[CORS] Origine de la requête: ${origin}`, LogLevel.DEBUG);
 
       if (!origin || allowedOrigins.includes(origin)) {
-        // --- SPY #4 : Log de la décision ---
-        console.log("[CORS DEBUG] Résultat: Autorisé");
-        // --- FIN DU SPY #4 ---
+        console.log("[CORS] Résultat: Autorisé", LogLevel.DEBUG);
         callback(null, true);
       } else {
         console.error(
-          `[CORS DEBUG] Résultat: Refusé. L'origine ${origin} n'est pas dans la liste blanche.`,
+          `[CORS] Résultat: Refusé. L'origine ${origin} n'est pas dans la liste blanche.`,
+          LogLevel.CRITICAL,
         );
         callback(new Error("This origin is not allowed by CORS"));
       }
