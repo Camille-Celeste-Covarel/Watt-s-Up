@@ -1,4 +1,5 @@
 import { type Dialect, Sequelize } from "sequelize";
+import { LogLevel } from "../tools/logger";
 import type { DbConfig, ValidDbConfig } from "./database_types";
 
 /**
@@ -34,7 +35,7 @@ function getValidatedConfig(config: DbConfig): ValidDbConfig {
     database: config.database,
     host: config.host,
     port: Number(config.port), // Transformation sûre
-    dialect: config.dialect as Dialect, // L'assertion 'as' est acceptable ici car on a validé son existence
+    dialect: config.dialect as Dialect,
     nodeEnv: config.nodeEnv,
   };
 }
@@ -64,7 +65,10 @@ const sequelize = new Sequelize(
     host: validConfig.host,
     port: validConfig.port,
     dialect: validConfig.dialect,
-    logging: validConfig.nodeEnv === "development" ? console.log : false,
+    // logging: validConfig.nodeEnv === "development" ? console.log : false,
+    logging: (sql) => {
+      console.log(sql, LogLevel.DEBUG);
+    },
     pool: {
       max: 100,
       min: 0,

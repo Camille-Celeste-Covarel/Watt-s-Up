@@ -33,7 +33,6 @@ redirectConsoleOutput();
 async function startServer() {
   const app = express();
 
-  // --- SPY #1 : Log de toutes les requêtes entrantes ---
   // Ce middleware s'exécutera pour CHAQUE requête, avant toute autre chose.
   app.use((req, _res, next) => {
     console.log(
@@ -42,28 +41,22 @@ async function startServer() {
     );
     next();
   });
-  // --- FIN DU SPY #1 ---
 
   // --- 1. MIDDLEWARES DE BASE ET CONFIGURATION CORS ---
   const allowedOrigins = [process.env.CLIENT_URL].filter(Boolean) as string[];
 
-  // --- SPY #2 : Log des variables CORS ---
   console.log("[CORS] Origines autorisées:", allowedOrigins, LogLevel.DEBUG);
-  // --- FIN DU SPY #2 ---
 
   const corsOptions: cors.CorsOptions = {
     origin: (
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      // --- SPY #3 : Log à l'intérieur de la fonction CORS ---
+      // Log à l'intérieur de la fonction CORS ---
       console.log(`[CORS] Origine de la requête: ${origin}`, LogLevel.DEBUG);
-      // --- FIN DU SPY #3 ---
 
       if (!origin || allowedOrigins.includes(origin)) {
-        // --- SPY #4 : Log de la décision ---
         console.log("[CORS] Résultat: Autorisé", LogLevel.DEBUG);
-        // --- FIN DU SPY #4 ---
         callback(null, true);
       } else {
         console.error(
