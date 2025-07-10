@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { type ErrorRequestHandler } from "express";
 import sequelize from "./config/database";
@@ -20,6 +21,7 @@ import { TerminalPlug } from "./models/terminal_plug.model";
 import { User } from "./models/user.model";
 import { Vehicule } from "./models/vehicule.model";
 import router from "./router";
+
 import {
   LogLevel,
   initializeConsoleLogStream,
@@ -72,6 +74,7 @@ async function startServer() {
   app.use(cors(corsOptions));
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+  app.use(cookieParser());
 
   // --- 2. ROUTEUR DE L'API ---
   // Toutes les requêtes commençant par /api sont gérées par notre routeur.

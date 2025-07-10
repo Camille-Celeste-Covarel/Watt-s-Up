@@ -9,6 +9,7 @@ import TopBar from "./components/topbar/TopBar";
 import "./stylesheets/normalize.css";
 import "./stylesheets/App.css";
 import "./stylesheets/Overlay.css";
+import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
   const stationMatch = useMatch("/station/:id");
@@ -22,26 +23,28 @@ function App() {
 
   return (
     <>
-      <TopBar />
-      <div className="main-content">
-        <Outlet />
+      <AuthProvider>
+        <TopBar />
+        <div className="main-content">
+          <Outlet />
 
-        {!isMobile && stationMatch && (
-          <div
-            className={`station-details-overlay ${stationMatch ? "open" : ""}`}
-          >
-            <button
-              className="close-button"
-              onClick={handleCloseStationDetails}
-              type="button"
+          {!isMobile && stationMatch && (
+            <div
+              className={`station-details-overlay ${stationMatch ? "open" : ""}`}
             >
-              &times;
-            </button>
-            <StationDetails id={stationId} />
-          </div>
-        )}
-      </div>
-      <NavBar />
+              <button
+                className="close-button"
+                onClick={handleCloseStationDetails}
+                type="button"
+              >
+                &times;
+              </button>
+              <StationDetails id={stationId} />
+            </div>
+          )}
+        </div>
+        <NavBar />
+      </AuthProvider>
     </>
   );
 }

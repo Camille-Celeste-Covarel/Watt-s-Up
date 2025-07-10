@@ -10,3 +10,7 @@
 .logo {
   height: 30px;
 }
+
+.topbar-container button {
+  all: unset;
+}

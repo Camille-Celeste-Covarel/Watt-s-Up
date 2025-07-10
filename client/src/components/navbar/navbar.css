@@ -15,3 +15,7 @@
 .navbar-container img {
   height: 35px;
 }
+
+.navbar-container button {
+  all: unset;
+}

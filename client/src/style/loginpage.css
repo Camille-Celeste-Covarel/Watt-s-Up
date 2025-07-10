@@ -1,0 +1,13 @@
+.login-page-container {
+  padding: 20px 20px;
+}
+
+input {
+  background-color: var(--fondamental-color);
+  border: none;
+  padding: 5px;
+}
+
+input::placeholder {
+  color: white;
+}
