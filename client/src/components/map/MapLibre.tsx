@@ -6,8 +6,9 @@ import { MapLibreSearchControl } from "@stadiamaps/maplibre-search-box";
 import type * as GeoJSON from "geojson";
 import maplibregl, { GlobeControl } from "maplibre-gl";
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
 import type { StationMapAttributes } from "../../types/types_maplibre.ts";
+import { StationDetails } from "../stationDetails/stationDetails";
 
 function logInvalidStations(stations: StationMapAttributes[], source: string) {
   const invalidStations = stations.filter((station) => !station.geojson_geom);
@@ -22,7 +23,7 @@ function logInvalidStations(stations: StationMapAttributes[], source: string) {
 function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const navigate = useNavigate();
+  const { openOverlay } = useOverlay();
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -48,7 +49,6 @@ function MapLibre() {
     map.addControl(new GlobeControl(), "bottom-right");
 
     map.on("load", async () => {
-      // 1. Ajouter la source de données (vide au début)
       map.addSource("stations", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -89,36 +89,6 @@ function MapLibre() {
             750,
             35,
           ],
-
-          /*          paint: {
-            // --- CORRECTION DU CERCLE-COLOR ---
-            "circle-color": [
-              "step",
-              ["get", "point_count"],
-              // 1. Valeur par défaut : couleur pour les plus petits clusters (0 à 49 points)
-              "#F2D5B5",
-
-              // 2. Paliers (paires de [stop, couleur])
-              50, "#ECD387",   // Si >= 50 points, utiliser cette couleur
-              100, "#F2C641",  // Si >= 100 points, utiliser cette couleur
-              250, "#D9631E",  // Si >= 250 points, utiliser cette couleur
-              500, "#D9401E",  // Si >= 500 points, utiliser cette couleur
-              750, "#A62100"   // Si >= 750 points, utiliser cette couleur (la paire manquante)
-            ],
-            // --- CORRECTION DU CERCLE-RADIUS ---
-            "circle-radius": [
-              "step",
-              ["get", "point_count"],
-              // 1. Valeur par défaut : rayon pour les plus petits clusters (0 à 49 points)
-              20,
-
-              // 2. Paliers (paires de [stop, rayon])
-              50, 25,          // Si >= 50 points, le rayon sera de 25px
-              100, 30,         // Si >= 100 points, le rayon sera de 30px
-              250, 35,         // Si >= 250 points, le rayon sera de 35px
-              500, 40,         // Si >= 500 points, le rayon sera de 40px
-              750, 45          // Si >= 750 points, le rayon sera de 45px
-            ],*/
         },
       });
 
@@ -179,9 +149,8 @@ function MapLibre() {
       const feature = e.features[0];
       const stationId = feature.properties?.id;
 
-      // CORRECTION CRUCIALE : Vérifier que la géométrie est valide avant de l'utiliser
       if (stationId && feature.geometry?.type === "Point") {
-        navigate(`/station/${stationId}`);
+        openOverlay(<StationDetails id={stationId} />);
         map.easeTo({
           center: feature.geometry.coordinates as maplibregl.LngLatLike,
           zoom: 16,
@@ -288,7 +257,7 @@ function MapLibre() {
       map.remove();
       mapRef.current = null;
     };
-  }, [navigate]); // navigate est une dépendance stable, donc ce hook ne s'exécute qu'une fois.
+  }, [openOverlay]);
 
   return <div ref={mapContainer} className="map-wrap" />;
 }

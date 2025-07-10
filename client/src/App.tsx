@@ -1,9 +1,10 @@
 import { isMobile } from "react-device-detect";
 // import component
-import { Outlet, useMatch, useNavigate } from "react-router-dom";
+import { Outlet } from "react-router-dom";
+import { Overlay } from "./components/Overlay/Overlay.tsx";
 import NavBar from "./components/navbar/NavBar";
-import { StationDetails } from "./components/stationDetails/stationDetails.tsx";
 import TopBar from "./components/topbar/TopBar";
+import { OverlayProvider } from "./contexts/OverlayContext/OverlayContext.tsx";
 
 // stylesheets
 import "./stylesheets/normalize.css";
@@ -12,38 +13,16 @@ import "./stylesheets/Overlay.css";
 import { AuthProvider } from "./contexts/AuthContext";
 
 function App() {
-  const stationMatch = useMatch("/station/:id");
-  const navigate = useNavigate();
-
-  const stationId = stationMatch?.params.id;
-
-  const handleCloseStationDetails = () => {
-    navigate("/");
-  };
-
   return (
     <>
       <AuthProvider>
         <TopBar />
-        <div className="main-content">
+        <OverlayProvider>
           <Outlet />
+          <NavBar />
 
-          {!isMobile && stationMatch && (
-            <div
-              className={`station-details-overlay ${stationMatch ? "open" : ""}`}
-            >
-              <button
-                className="close-button"
-                onClick={handleCloseStationDetails}
-                type="button"
-              >
-                &times;
-              </button>
-              <StationDetails id={stationId} />
-            </div>
-          )}
-        </div>
-        <NavBar />
+          {!isMobile && <Overlay />}
+        </OverlayProvider>
       </AuthProvider>
     </>
   );
