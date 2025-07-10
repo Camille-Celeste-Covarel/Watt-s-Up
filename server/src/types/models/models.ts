@@ -107,13 +107,20 @@ export type PlugCreationAttributes = Optional<
 export interface PowerAttributes {
   id: string;
   name: number;
-  createdAt?: Date;
-  updatedAt?: Date;
+  readonly charging_type?:
+    | "Lente"
+    | "Accélérée"
+    | "Rapide"
+    | "Très Rapide"
+    | "Inconnue";
+  readonly createdAt?: Date;
+  readonly updatedAt?: Date;
 }
-export type PowerCreationAttributes = Optional<
-  PowerAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
+export interface PowerCreationAttributes
+  extends Omit<
+    PowerAttributes,
+    "id" | "createdAt" | "updatedAt" | "charging_type"
+  > {}
 
 export interface ProviderAttributes {
   id: string;

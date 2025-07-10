@@ -144,3 +144,29 @@ export function parseSeparateGeoJSONCoordinates(
   );
   return null;
 }
+
+export function getNonBooleanString(
+  input: string | number | null | undefined,
+): string | null {
+  const normalized = normalizeString(input);
+  if (normalized === null) {
+    return null;
+  }
+
+  const ignoredBooleanStrings = new Set([
+    "true",
+    "false",
+    "oui",
+    "non",
+    "yes",
+    "no",
+    "1",
+    "0",
+  ]);
+
+  if (ignoredBooleanStrings.has(normalized.toLowerCase())) {
+    return null;
+  }
+
+  return normalized;
+}
