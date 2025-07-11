@@ -1,90 +1,142 @@
-/* --- STYLES POUR LES INFORMATIONS GÉNÉRALES (ANCIENNE MISE EN PAGE) --- */
+/* --- STYLES POUR LES INFORMATIONS GÉNÉRALES --- */
 .station-info-details {
   margin-top: 20px;
   margin-bottom: 20px;
-  padding-top: 20px;
   border-top: 1px solid #eee;
+
+  p {
+    margin-bottom: 10px;
+    line-height: 1.6;
+    color: #555;
+
+    strong {
+      font-weight: 700;
+      color: #333;
+      margin-right: 8px;
+    }
+  }
 }
 
-.station-info-details p {
-  margin-bottom: 10px;
-  line-height: 1.6;
-  color: #555;
+.station-list-title {
+  font-weight: 800;
+  border-top: 1px solid #eee;
+  margin-top: 20px;
+  margin-bottom: 20px;
+  padding-top: 20px;
 }
 
-.station-info-details p strong {
-  color: #333;
-  margin-right: 8px;
-}
-
-/* --- STYLES POUR LA GRILLE DES BORNES (NOUVELLE MISE EN PAGE) --- */
+/* --- STYLES POUR LA GRILLE DES BORNES --- */
 .terminal-groups-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
   gap: 15px;
   margin-top: 20px;
-}
 
-.terminal-groups-grid h3 {
-  grid-column: 1 / -1; /* Assure que le titre prend toute la largeur */
+  h3 {
+    grid-column: 1 / -1;
+  }
 }
 
 .terminal-group-card {
-  /* Réinitialisation des styles du bouton */
+  /* Styles de base de la carte */
   font: inherit;
   color: inherit;
   text-align: inherit;
-
-  /* Styles de la carte */
   display: flex;
+  height: 12vh;
+  width: 12vh;
   flex-direction: column;
   justify-content: space-between;
   align-items: center;
   padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
+  background-color: white;
   aspect-ratio: 1 / 1;
   cursor: pointer;
-  transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out;
+  transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out, opacity
+    0.2s ease-in-out;
   border: 3px solid transparent;
+
+  /* --- États de la carte --- */
+
+  /* État : Disponible */
+  &.available {
+    border-color: var(--quarte-color);
+
+    &:hover {
+      border-color: var(--seconde-color);
+      transition-duration: 0.4s;
+    }
+
+    .group-plugs {
+      min-height: 50px;
+      .plug-icon {
+        fill: var(--fondamental-color);
+
+        .cls-1 {
+          fill: var(--fondamental-color);
+        }
+      }
+    }
+
+    .group-power,
+    .group-availability {
+      color: var(--fondamental-color);
+    }
+  }
+
+  /* État : Indisponible */
+  &.unavailable {
+    border-color: var(--seconde-color);
+    background-color: var(--seconde-color);
+
+    .group-power,
+    .group-availability {
+      color: white;
+    }
+
+    .group-plugs .plug-icon {
+      fill: white;
+    }
+  }
+
+  /* État : Désactivé (non cliquable) */
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.9;
+  }
+
+  /* État : Sélectionné */
+  &.selected {
+    border-color: var(--seconde-color);
+  }
+
+  /* --- Styles responsifs pour la carte --- */
+  @media (max-width: 768px) {
+    padding: 10px;
+  }
 }
 
-.terminal-group-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* Styles conditionnels pour la bordure */
-.terminal-group-card.available {
-  border-color: var(--quarte-color, #4caf50);
-}
-
-.terminal-group-card.unavailable {
-  border-color: var(--seconde-color, #f44336);
-  opacity: 0.7;
-}
-
-.terminal-group-card.selected {
-  border-color: var(--quinte-color, #2196f3);
-  box-shadow: 0 0 15px var(--quinte-color, #2196f3);
-}
-
-/* Styles des éléments internes de la carte */
+/* --- ÉLÉMENTS INTERNES DE LA CARTE --- */
 .group-plugs {
   display: flex;
   gap: 8px;
   margin-bottom: 10px;
-}
 
-.group-plugs .plug-icon {
-  width: 28px;
-  height: 28px;
+  .plug-icon {
+    max-height: 50px;
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .group-power {
   font-size: 1.8em;
   font-weight: bold;
   color: #333;
+
+  @media (max-width: 768px) {
+    font-size: 1.5em;
+  }
 }
 
 .group-availability {
@@ -93,12 +145,45 @@
   font-weight: 500;
 }
 
-/* Styles pour les écrans plus petits */
-@media (max-width: 768px) {
-  .terminal-group-card {
-    padding: 10px;
+/* --- STYLES POUR LES BOUTONS D'ACTION --- */
+.action-buttons-container {
+  display: flex;
+  gap: 20px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #eee;
+
+  .action-button {
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.4s ease, transform 0.4s ease;
+
+    &:hover {
+      transform: none;
+      opacity: 1;
+    }
   }
-  .group-power {
-    font-size: 1.5em;
+}
+
+.reserve-button {
+  background-color: var(--quinte-color);
+
+  &:hover {
+    background-color: var(--seconde-color);
+    transition-duration: 0.4s;
+    color: white;
+  }
+}
+
+.cancel-button {
+  background-color: white;
+  border: var(--fondamental-color) solid 3px;
+  color: var(--fondamental-color);
+
+  &:hover {
+    background-color: var(--fondamental-color);
+    transition-duration: 0.4s;
+    color: white;
   }
 }

@@ -65,7 +65,7 @@ const sequelize = new Sequelize(
     host: validConfig.host,
     port: validConfig.port,
     dialect: validConfig.dialect,
-    // logging: validConfig.nodeEnv === "development" ? console.log : false,
+    /*logging: validConfig.nodeEnv === "development" ? console.log : false,*/
     logging: (sql) => {
       console.log(sql, LogLevel.DEBUG);
     },

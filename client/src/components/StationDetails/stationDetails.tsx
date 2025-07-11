@@ -106,18 +106,30 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
     );
   }
 
+  const handleReserve = () => {
+    if (!selectedGroupKey) {
+      alert("Veuillez d'abord sélectionner un groupe de bornes.");
+      return;
+    }
+
+    // Logique future :
+    // 1. Trouver un terminal DISPONIBLE dans le groupe sélectionné.
+    // 2. Envoyer une requête POST à votre API (ex: /api/terminals/:id/book)
+    // 3. Mettre à jour l'interface si la réservation réussit.
+    alert(`Demande de réservation pour le groupe : ${selectedGroupKey}`);
+  };
+
+  const handleCancel = () => {
+    setSelectedGroupKey(null);
+  };
+
   // --- Rendu final combinant les deux mises en page ---
   return (
     <div className="station-details-content">
-      <h2>{station.nom_station}</h2>
-
-      {/* SECTION 1 : L'ANCIENNE PRÉSENTATION DES INFORMATIONS, RESTAURÉE À L'IDENTIQUE */}
+      <h2>La station</h2>
+      <p>{station.nom_station}</p>
+      {station.adresse_station && <p>{station.adresse_station}</p>}
       <div className="station-info-details">
-        {station.adresse_station && (
-          <p>
-            <strong>Adresse:</strong> {station.adresse_station}
-          </p>
-        )}
         {station.implantation_station && (
           <p>
             <strong>Implantation:</strong> {station.implantation_station}
@@ -131,7 +143,8 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
         )}
         {station.paiement_autre && (
           <p>
-            <strong>Autre paiement:</strong> {station.paiement_autre}
+            <strong>Autre paiement:</strong>{" "}
+            {station.paiement_autre ? "Oui" : "Non"}
           </p>
         )}
         {station.tarification && (
@@ -167,10 +180,9 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
         )}
       </div>
 
-      {/* SECTION 2 : LA NOUVELLE GRILLE POUR LES BORNES */}
       {terminalGroups.length > 0 && (
         <>
-          <h3>Bornes de recharge</h3>
+          <h3 className="station-list-title">Choisir ma borne</h3>
           <div className="terminal-groups-grid">
             {terminalGroups.map((group) => {
               const cardClasses = [
@@ -187,6 +199,7 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
                   type="button"
                   className={cardClasses}
                   onClick={() => handleCardInteraction(group.key)}
+                  disabled={group.availableCount === 0}
                 >
                   <div className="group-plugs">
                     {group.plugs.map((plug: Plug) => (
@@ -204,6 +217,25 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
                 </button>
               );
             })}
+          </div>
+
+          <div className="action-buttons-container">
+            <button
+              type="button"
+              className="action-button reserve-button"
+              onClick={handleReserve}
+              disabled={!selectedGroupKey}
+            >
+              Réserver
+            </button>
+            <button
+              type="button"
+              className="action-button cancel-button"
+              onClick={handleCancel}
+              disabled={!selectedGroupKey}
+            >
+              Annuler
+            </button>
           </div>
         </>
       )}

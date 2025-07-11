@@ -3,7 +3,6 @@ import type { IncludeOptions, WhereOptions } from "sequelize";
 import { Op } from "sequelize";
 import sequelize from "../config/database";
 import { Plug } from "../models/plug.model";
-import { Power } from "../models/power.model";
 import { Station } from "../models/station.model";
 import { Terminal } from "../models/terminal.model";
 
@@ -187,31 +186,40 @@ const browseVisible: RequestHandler = async (req, res, next) => {
       }
     }
 
-    // ✅ Filtrage par prises
+    // ✅ Filtrage par prises - VERSION CORRIGÉE
     if (plugs && typeof plugs === "string") {
       const plugList = plugs.split(",");
-      const plugConditions: WhereOptions[] = [];
 
-      if (plugList.includes("chademo")) {
-        plugConditions.push({ prise_chademo: true });
-      }
-      if (plugList.includes("combo-css")) {
-        plugConditions.push({ prise_combo_ccs: true });
-      }
-      if (plugList.includes("type-ef")) {
-        plugConditions.push({ prise_type_ef: true });
-      }
-      if (plugList.includes("type-2")) {
-        plugConditions.push({ prise_type_2: true });
-      }
+      if (plugList.length > 0) {
+        const plugInclude: IncludeOptions = {
+          model: Plug,
+          as: "plugs",
+          attributes: [],
+          where: {
+            name: {
+              [Op.or]: plugList.map((plugName) => {
+                switch (plugName) {
+                  case "chademo":
+                    return "Chademo";
+                  case "combo-css":
+                    return "Combo CCS";
+                  case "type-ef":
+                    return "Type EF";
+                  case "type-2":
+                    return "Type 2";
+                  default:
+                    return plugName;
+                }
+              }),
+            },
+          },
+          required: true,
+        };
 
-      if (plugConditions.length > 0) {
-        const existingWhere = (terminalInclude.where as WhereOptions) || {};
-
-        terminalInclude.where = {
-          ...existingWhere,
-          [Op.and]: [existingWhere, { [Op.or]: plugConditions }],
-        } as WhereOptions;
+        if (!terminalInclude.include) {
+          terminalInclude.include = [];
+        }
+        (terminalInclude.include as IncludeOptions[]).push(plugInclude);
 
         terminalInclude.required = true;
       }
