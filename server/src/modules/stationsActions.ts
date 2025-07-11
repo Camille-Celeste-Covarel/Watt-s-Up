@@ -1,6 +1,9 @@
 import type { RequestHandler } from "express";
+import type { IncludeOptions, WhereOptions } from "sequelize";
+import { Op } from "sequelize";
 import sequelize from "../config/database";
 import { Plug } from "../models/plug.model";
+import { Power } from "../models/power.model";
 import { Station } from "../models/station.model";
 import { Terminal } from "../models/terminal.model";
 
@@ -92,7 +95,8 @@ const browse: RequestHandler = async (_req, res, next) => {
 // L'opération BREAD : Browse Visible (Read All visible in bbox)
 const browseVisible: RequestHandler = async (req, res, next) => {
   try {
-    const { bbox } = req.query;
+    const { bbox, vehicles, powers, plugs } = req.query;
+
     if (!bbox || typeof bbox !== "string") {
       res.status(400).json({ error: "Bounding box (bbox) is required." });
       return;
@@ -117,6 +121,104 @@ const browseVisible: RequestHandler = async (req, res, next) => {
     ) {
       res.status(400).json({ error: "Invalid bbox coordinates." });
       return;
+    }
+
+    const whereConditions: Array<
+      object | ReturnType<typeof sequelize.literal>
+    > = [
+      sequelize.literal(
+        `ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326) && "Station"."geom"`,
+      ),
+    ];
+
+    // ✅ Filtrage par véhicules (deux roues)
+    if (vehicles && typeof vehicles === "string") {
+      const vehicleList = vehicles.split(",");
+
+      if (vehicleList.includes("bike")) {
+        whereConditions.push({ station_deux_roues: true });
+      }
+    }
+
+    const includeTerminals: IncludeOptions[] = [];
+
+    const terminalInclude: IncludeOptions = {
+      model: Terminal,
+      as: "terminals",
+      attributes: [],
+      required: false,
+    };
+
+    // ✅ Filtrage par puissance - Version directe
+    if (powers && typeof powers === "string") {
+      const powerList = powers.split(",");
+      const powerConditions: WhereOptions[] = [];
+
+      if (powerList.includes("slow")) {
+        powerConditions.push({ puissance_nominale: { [Op.lte]: 7.4 } });
+      }
+      if (powerList.includes("accelerated")) {
+        powerConditions.push({
+          puissance_nominale: {
+            [Op.and]: [{ [Op.gt]: 7.4 }, { [Op.lte]: 22.08 }],
+          },
+        });
+      }
+      if (powerList.includes("fast")) {
+        powerConditions.push({
+          puissance_nominale: {
+            [Op.and]: [{ [Op.gt]: 22.08 }, { [Op.lte]: 150 }],
+          },
+        });
+      }
+      if (powerList.includes("ultrafast")) {
+        powerConditions.push({ puissance_nominale: { [Op.gt]: 150 } });
+      }
+
+      if (powerConditions.length > 0) {
+        const existingWhere = (terminalInclude.where as WhereOptions) || {};
+
+        terminalInclude.where = {
+          ...existingWhere,
+          [Op.or]: powerConditions,
+        } as WhereOptions;
+
+        terminalInclude.required = true;
+      }
+    }
+
+    // ✅ Filtrage par prises
+    if (plugs && typeof plugs === "string") {
+      const plugList = plugs.split(",");
+      const plugConditions: WhereOptions[] = [];
+
+      if (plugList.includes("chademo")) {
+        plugConditions.push({ prise_chademo: true });
+      }
+      if (plugList.includes("combo-css")) {
+        plugConditions.push({ prise_combo_ccs: true });
+      }
+      if (plugList.includes("type-ef")) {
+        plugConditions.push({ prise_type_ef: true });
+      }
+      if (plugList.includes("type-2")) {
+        plugConditions.push({ prise_type_2: true });
+      }
+
+      if (plugConditions.length > 0) {
+        const existingWhere = (terminalInclude.where as WhereOptions) || {};
+
+        terminalInclude.where = {
+          ...existingWhere,
+          [Op.and]: [existingWhere, { [Op.or]: plugConditions }],
+        } as WhereOptions;
+
+        terminalInclude.required = true;
+      }
+    }
+
+    if (terminalInclude.required || terminalInclude.where) {
+      includeTerminals.push(terminalInclude);
     }
 
     const stations = await Station.findAll({
@@ -144,9 +246,18 @@ const browseVisible: RequestHandler = async (req, res, next) => {
           "totalTerminalsCount",
         ],
       ],
-      where: sequelize.literal(
-        `ST_MakeEnvelope(${west}, ${south}, ${east}, ${north}, 4326) && "Station"."geom"`,
-      ),
+      where: sequelize.and(...whereConditions),
+      include: includeTerminals,
+      group:
+        includeTerminals.length > 0
+          ? [
+              "Station.id",
+              "Station.nom_station",
+              "Station.adresse_station",
+              "Station.condition_acces",
+              "Station.geom",
+            ]
+          : undefined,
     });
 
     res.json(stations);
