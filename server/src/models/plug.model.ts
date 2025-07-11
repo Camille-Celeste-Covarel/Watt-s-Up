@@ -3,6 +3,8 @@ import type {
   PlugAttributes,
   PlugCreationAttributes,
 } from "../types/models/models";
+import { Terminal } from "./terminal.model";
+import { TerminalPlug } from "./terminal_plug.model";
 
 export class Plug
   extends Model<PlugAttributes, PlugCreationAttributes>
@@ -46,5 +48,12 @@ export class Plug
     );
   }
 
-  static associate() {}
+  static associate() {
+    Plug.belongsToMany(Terminal, {
+      through: TerminalPlug,
+      foreignKey: "id_plug",
+      otherKey: "id_terminal",
+      as: "terminals",
+    });
+  }
 }

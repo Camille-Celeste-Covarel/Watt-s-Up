@@ -195,13 +195,7 @@ export async function transformCsvRowToEntities(
       );
     }
 
-    const priseType2 = parseBoolean(row.prise_type_2 || null);
-    const priseTypeEf = parseBoolean(row.prise_type_ef || null);
-    const priseChademo = parseBoolean(row.prise_chademo || null);
-    const priseComboCcs = parseBoolean(row.prise_combo_ccs || null);
-    const priseAutre = normalizeString(row.prise_type_autre || null);
     const statutPdc = normalizeString(row.statut_pdc || null);
-
     const amenageurName = normalizeString(row.nom_amenageur || null);
     const operateurName = normalizeString(row.nom_operateur || null);
     const enseigneName = normalizeString(row.nom_enseigne || null);
@@ -326,13 +320,7 @@ export async function transformCsvRowToEntities(
       latitude: consolidatedLatitude,
       longitude: consolidatedLongitude,
       geom: geom,
-      type_de_prise: priseAutre || "UNKNOWN",
       puissance_nominale: puissanceNominale || 0,
-      prise_type_2: priseType2 || false,
-      prise_type_ef: priseTypeEf || false,
-      prise_chademo: priseChademo || false,
-      prise_combo_ccs: priseComboCcs || false,
-      prise_autre: priseAutre,
       status: statutPdc,
       num_pdc: normalizeString(row.num_pdc || null),
       id_power: idPower,
