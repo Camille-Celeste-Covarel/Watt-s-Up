@@ -7,7 +7,7 @@ import { RouterProvider, createBrowserRouter } from "react-router";
 
 // Import the main app component
 import App from "./App";
-import { StationDetails } from "./components/stationDetails/stationDetails.tsx";
+import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
 import ContactPage from "./pages/ContactPage";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";

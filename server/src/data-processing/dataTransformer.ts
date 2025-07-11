@@ -344,8 +344,8 @@ export async function transformCsvRowToEntities(
     const plugColumnMapping: { [key: string]: string } = {
       prise_type_ef: "Type EF",
       prise_type_2: "Type 2",
-      prise_combo_ccs: "Combo CCS",
-      prise_chademo: "Chademo",
+      prise_type_combo_ccs: "Combo CCS",
+      prise_type_chademo: "Chademo",
     };
 
     for (const columnName in plugColumnMapping) {
