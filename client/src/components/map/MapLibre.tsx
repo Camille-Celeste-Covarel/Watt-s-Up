@@ -32,6 +32,12 @@ function MapLibre() {
     plugs: [] as string[],
   });
 
+  const currentFiltersRef = useRef(filterData);
+
+  useEffect(() => {
+    currentFiltersRef.current = filterData;
+  }, [filterData]);
+
   const fetchAndUpdateStations = useCallback(
     async (filters?: typeof filterData) => {
       if (!mapRef.current) return;
@@ -118,7 +124,7 @@ function MapLibre() {
 
   const applyFiltersToStations = useCallback(
     async (filters: typeof filterData) => {
-      console.log("Application des filtres:", filters);
+      console.log("🎯 Application des filtres:", filters);
       await fetchAndUpdateStations(filters);
     },
     [fetchAndUpdateStations],
@@ -129,7 +135,7 @@ function MapLibre() {
     powers: string[];
     plugs: string[];
   }) => {
-    console.log("Filtres reçus:", filters);
+    console.log("🔍 Filtres reçus:", filters);
     setFilterData(filters);
     applyFiltersToStations(filters);
   };
@@ -279,14 +285,14 @@ function MapLibre() {
     map.on("mouseenter", "unclustered-point", setCursorToPointer);
     map.on("mouseleave", "unclustered-point", resetCursor);
 
-    map.on("moveend", () => fetchAndUpdateStations(filterData));
-    map.on("zoomend", () => fetchAndUpdateStations(filterData));
+    map.on("moveend", () => fetchAndUpdateStations(currentFiltersRef.current));
+    map.on("zoomend", () => fetchAndUpdateStations(currentFiltersRef.current));
 
     return () => {
       map.remove();
       mapRef.current = null;
     };
-  }, [openOverlay, fetchAndUpdateStations, filterData]);
+  }, [openOverlay, fetchAndUpdateStations]);
 
   return (
     <div ref={mapContainer} className="map-wrap">
