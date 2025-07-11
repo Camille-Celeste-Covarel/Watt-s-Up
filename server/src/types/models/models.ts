@@ -277,13 +277,7 @@ export interface TerminalAttributes {
   latitude?: number | null;
   longitude?: number | null;
   geom?: GeoJSON.Point | Literal | null;
-  type_de_prise: string;
   puissance_nominale: number;
-  prise_type_2: boolean;
-  prise_type_ef: boolean;
-  prise_chademo: boolean;
-  prise_combo_ccs: boolean;
-  prise_autre: string | null;
   status: string | null;
   num_pdc: string | null;
   createdAt?: Date;
@@ -300,7 +294,6 @@ export type TerminalCreationAttributes = Optional<
   | "latitude"
   | "longitude"
   | "geom"
-  | "prise_autre"
   | "status"
   | "num_pdc"
 >;

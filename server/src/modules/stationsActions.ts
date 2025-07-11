@@ -2,6 +2,7 @@ import type { RequestHandler } from "express";
 import type { IncludeOptions, WhereOptions } from "sequelize";
 import { Op } from "sequelize";
 import sequelize from "../config/database";
+import { Plug } from "../models/plug.model";
 import { Power } from "../models/power.model";
 import { Station } from "../models/station.model";
 import { Terminal } from "../models/terminal.model";
@@ -275,12 +276,14 @@ const read: RequestHandler = async (req, res, next) => {
         {
           model: Terminal,
           as: "terminals",
-          attributes: [
-            "id",
-            "type_de_prise",
-            "puissance_nominale",
-            "is_booked",
-            "status",
+          attributes: ["id", "puissance_nominale", "is_booked", "status"],
+          include: [
+            {
+              model: Plug,
+              as: "plugs",
+              attributes: ["id", "name"],
+              through: { attributes: [] },
+            },
           ],
         },
       ],
