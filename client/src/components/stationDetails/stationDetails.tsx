@@ -69,25 +69,9 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
           <strong>Adresse:</strong> {station.adresse_station}
         </p>
       )}
-      {station.code_insee_commune && (
-        <p>
-          <strong>Code INSEE:</strong> {station.code_insee_commune}
-        </p>
-      )}
       {station.implantation_station && (
         <p>
           <strong>Implantation:</strong> {station.implantation_station}
-        </p>
-      )}
-      {station.gratuit !== null && (
-        <p>
-          <strong>Gratuit:</strong> {station.gratuit ? "Oui" : "Non"}
-        </p>
-      )}
-      {station.paiement_acte !== null && (
-        <p>
-          <strong>Paiement à l'acte:</strong>{" "}
-          {station.paiement_acte ? "Oui" : "Non"}
         </p>
       )}
       {station.paiement_cb !== null && (
@@ -104,16 +88,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
       {station.tarification && (
         <p>
           <strong>Tarification:</strong> {station.tarification}
-        </p>
-      )}
-      {station.condition_acces && (
-        <p>
-          <strong>Conditions d'accès:</strong> {station.condition_acces}
-        </p>
-      )}
-      {station.reservation !== null && (
-        <p>
-          <strong>Réservation:</strong> {station.reservation ? "Oui" : "Non"}
         </p>
       )}
       {station.horaires && (
@@ -135,12 +109,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
       {station.puissance_max !== null && (
         <p>
           <strong>Puissance maximale:</strong> {station.puissance_max} kW
-        </p>
-      )}
-      {station.date_mise_en_service && (
-        <p>
-          <strong>Mise en service:</strong>{" "}
-          {new Date(station.date_mise_en_service).toLocaleDateString()}
         </p>
       )}
       {station.observations && (

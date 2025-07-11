@@ -14,7 +14,6 @@
   width: 0;
   height: 100vh;
   background-color: white;
-  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.3);
   overflow-x: hidden;
   transition: width 0.3s ease-in-out;
   z-index: 1000;
@@ -47,4 +46,8 @@
   padding: 60px 20px 20px;
   overflow-y: auto;
   height: 100%;
+  font-family: "Montserrat", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
 }
