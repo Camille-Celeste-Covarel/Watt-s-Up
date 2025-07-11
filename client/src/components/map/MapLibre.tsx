@@ -1,11 +1,12 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./maplibre.css";
 import "@stadiamaps/maplibre-search-box/dist/maplibre-search-box.css";
+import Filter from "../filter/Filter.tsx";
 
 import { MapLibreSearchControl } from "@stadiamaps/maplibre-search-box";
 import type * as GeoJSON from "geojson";
 import maplibregl, { GlobeControl } from "maplibre-gl";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
 import type { StationMapAttributes } from "../../types/types_maplibre.ts";
 import { StationDetails } from "../stationDetails/stationDetails";
@@ -24,6 +25,114 @@ function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const { openOverlay } = useOverlay();
+
+  const [filterData, setFilterData] = useState({
+    vehicles: [] as string[],
+    powers: [] as string[],
+    plugs: [] as string[],
+  });
+
+  const fetchAndUpdateStations = useCallback(
+    async (filters?: typeof filterData) => {
+      if (!mapRef.current) return;
+      const map = mapRef.current;
+      const source = map.getSource("stations") as maplibregl.GeoJSONSource;
+      if (!source) return;
+
+      try {
+        const bounds = map.getBounds();
+        const bbox = [
+          bounds.getWest(),
+          bounds.getSouth(),
+          bounds.getEast(),
+          bounds.getNorth(),
+        ].join(",");
+
+        let url = `${import.meta.env.VITE_API_URL}/api/stations/visible?bbox=${bbox}`;
+
+        if (filters) {
+          if (filters.vehicles.length > 0) {
+            url += `&vehicles=${filters.vehicles.join(",")}`;
+          }
+          if (filters.powers.length > 0) {
+            url += `&powers=${filters.powers.join(",")}`;
+          }
+          if (filters.plugs.length > 0) {
+            url += `&plugs=${filters.plugs.join(",")}`;
+          }
+        }
+
+        const response = await fetch(url);
+        if (!response.ok) {
+          console.error(
+            `HTTP error! status: ${response.status} ${response.statusText}`,
+          );
+          return;
+        }
+
+        const data: StationMapAttributes[] = await response.json();
+        logInvalidStations(data, "fetchAndUpdateStations");
+
+        const features = data
+          .map((station) => {
+            if (!station.geojson_geom) {
+              return null;
+            }
+            try {
+              const geometry = JSON.parse(
+                station.geojson_geom as unknown as string,
+              );
+              if (
+                geometry?.type === "Point" &&
+                Array.isArray(geometry.coordinates)
+              ) {
+                return {
+                  type: "Feature",
+                  properties: station,
+                  geometry: geometry,
+                };
+              }
+              return null;
+            } catch (e) {
+              console.warn(
+                "Impossible de parser geojson_geom pour la station:",
+                station.id,
+              );
+              return null;
+            }
+          })
+          .filter(Boolean);
+
+        const geoJsonData: GeoJSON.FeatureCollection = {
+          type: "FeatureCollection",
+          features: features as GeoJSON.Feature[],
+        };
+
+        source.setData(geoJsonData);
+      } catch (error) {
+        console.error("Erreur lors du chargement des stations:", error);
+      }
+    },
+    [],
+  );
+
+  const applyFiltersToStations = useCallback(
+    async (filters: typeof filterData) => {
+      console.log("Application des filtres:", filters);
+      await fetchAndUpdateStations(filters);
+    },
+    [fetchAndUpdateStations],
+  );
+
+  const handleFilterValidation = (filters: {
+    vehicles: string[];
+    powers: string[];
+    plugs: string[];
+  }) => {
+    console.log("Filtres reçus:", filters);
+    setFilterData(filters);
+    applyFiltersToStations(filters);
+  };
 
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
@@ -105,7 +214,6 @@ function MapLibre() {
         paint: { "text-color": "#ffffff" },
       });
 
-      // Couche pour les points non clusterisés
       map.addLayer({
         id: "unclustered-point",
         type: "circle",
@@ -126,9 +234,6 @@ function MapLibre() {
       }
     });
 
-    // --- GESTIONNAIRES DE CLICS (PLUS ROBUSTES) ---
-
-    // Clic sur un cluster
     map.on("click", "cluster-circles", async (e) => {
       if (!e.features?.length) return;
       const feature = e.features[0];
@@ -143,7 +248,6 @@ function MapLibre() {
       }
     });
 
-    // Clic sur un point unique
     map.on("click", "unclustered-point", (e) => {
       if (!e.features?.length) return;
       const feature = e.features[0];
@@ -158,7 +262,6 @@ function MapLibre() {
       }
     });
 
-    // --- GESTIONNAIRES DE SURVOL ---
     const setCursorToPointer = () => {
       if (mapRef.current) {
         mapRef.current.getCanvas().style.cursor = "pointer";
@@ -176,90 +279,20 @@ function MapLibre() {
     map.on("mouseenter", "unclustered-point", setCursorToPointer);
     map.on("mouseleave", "unclustered-point", resetCursor);
 
-    // --- LOGIQUE DE MISE A JOUR DES DONNEES ---
-    const fetchAndUpdateStations = async () => {
-      if (!mapRef.current) return;
-      const map = mapRef.current;
-      const source = map.getSource("stations") as maplibregl.GeoJSONSource;
-      if (!source) return;
+    map.on("moveend", () => fetchAndUpdateStations(filterData));
+    map.on("zoomend", () => fetchAndUpdateStations(filterData));
 
-      try {
-        const bounds = map.getBounds();
-        const bbox = [
-          bounds.getWest(),
-          bounds.getSouth(),
-          bounds.getEast(),
-          bounds.getNorth(),
-        ].join(",");
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/stations/visible?bbox=${bbox}`,
-        );
-        if (!response.ok) {
-          console.error(
-            `HTTP error! status: ${response.status} ${response.statusText}`,
-          );
-          return;
-        }
-
-        const data: StationMapAttributes[] = await response.json();
-        logInvalidStations(data, "fetchAndUpdateStations");
-
-        // TRANSFORMATION ROBUSTE DES DONNÉES
-        const features = data
-          .map((station) => {
-            // On ne traite que les stations avec une géométrie
-            if (!station.geojson_geom) {
-              return null;
-            }
-            try {
-              const geometry = JSON.parse(
-                station.geojson_geom as unknown as string,
-              );
-              // On vérifie que la géométrie parsée est bien un Point valide
-              if (
-                geometry?.type === "Point" &&
-                Array.isArray(geometry.coordinates)
-              ) {
-                return {
-                  type: "Feature",
-                  properties: station,
-                  geometry: geometry,
-                };
-              }
-              return null; // La géométrie n'est pas un Point valide
-            } catch (e) {
-              console.warn(
-                "Impossible de parser geojson_geom pour la station:",
-                station.id,
-              );
-              return null; // Le JSON est invalide
-            }
-          })
-          .filter(Boolean); // Élimine tous les 'null' du tableau
-
-        const geoJsonData: GeoJSON.FeatureCollection = {
-          type: "FeatureCollection",
-          features: features as GeoJSON.Feature[],
-        };
-
-        source.setData(geoJsonData);
-      } catch (error) {
-        console.error("Erreur lors du chargement des stations:", error);
-      }
-    };
-
-    // On attache le listener pour mettre à jour les données quand la carte bouge
-    map.on("moveend", fetchAndUpdateStations);
-    map.on("zoomend", fetchAndUpdateStations);
-
-    // Nettoyage au démontage du composant
     return () => {
       map.remove();
       mapRef.current = null;
     };
-  }, [openOverlay]);
+  }, [openOverlay, fetchAndUpdateStations, filterData]);
 
-  return <div ref={mapContainer} className="map-wrap" />;
+  return (
+    <div ref={mapContainer} className="map-wrap">
+      <Filter onFilterValidation={handleFilterValidation} />
+    </div>
+  );
 }
 
 export default MapLibre;
