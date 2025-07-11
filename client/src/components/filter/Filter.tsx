@@ -109,8 +109,9 @@ function Filter({ onFilterValidation }: FilterProps) {
               <img src={bike} alt="" />
               <span>Compatibilité deux roues</span>
             </div>
-            <label className="switch">
+            <label className="switch" htmlFor="vehicle-bike">
               <input
+                id="vehicle-bike"
                 type="checkbox"
                 checked={selectedVehicles.includes("bike")}
                 onChange={() => toggleVehicle("bike")}
@@ -127,8 +128,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={powerIcon} alt="" />
                 <span>Recharge Lente (moins de 7.4 kW)</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="power-slow">
                 <input
+                  id="power-slow"
                   type="checkbox"
                   checked={selectedPowers.includes("slow")}
                   onChange={() => togglePower("slow")}
@@ -143,8 +145,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={powerIcon} alt="" />
                 <span>Recharge Accélérée (7.4 - 22.08 kW)</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="power-accelerated">
                 <input
+                  id="power-accelerated"
                   type="checkbox"
                   checked={selectedPowers.includes("accelerated")}
                   onChange={() => togglePower("accelerated")}
@@ -159,8 +162,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={powerIcon} alt="" />
                 <span>Recharge Rapide (22.08 - 150 kW)</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="power-fast">
                 <input
+                  id="power-fast"
                   type="checkbox"
                   checked={selectedPowers.includes("fast")}
                   onChange={() => togglePower("fast")}
@@ -175,8 +179,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={powerIcon} alt="" />
                 <span>Recharge Très Rapide (plus de 150 kW)</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="power-ultrafast">
                 <input
+                  id="power-ultrafast"
                   type="checkbox"
                   checked={selectedPowers.includes("ultrafast")}
                   onChange={() => togglePower("ultrafast")}
@@ -193,8 +198,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={chademoIcon} alt="" />
                 <span>Chademo</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="plug-chademo">
                 <input
+                  id="plug-chademo"
                   type="checkbox"
                   checked={selectedPlugs.includes("chademo")}
                   onChange={() => togglePlug("chademo")}
@@ -209,8 +215,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={comboCssIcon} alt="" />
                 <span>Combo CSS</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="plug-combo-css">
                 <input
+                  id="plug-combo-css"
                   type="checkbox"
                   checked={selectedPlugs.includes("combo-css")}
                   onChange={() => togglePlug("combo-css")}
@@ -225,8 +232,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={efIcon} alt="" />
                 <span>Type EF</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="plug-type-ef">
                 <input
+                  id="plug-type-ef"
                   type="checkbox"
                   checked={selectedPlugs.includes("type-ef")}
                   onChange={() => togglePlug("type-ef")}
@@ -241,8 +249,9 @@ function Filter({ onFilterValidation }: FilterProps) {
                 <img src={type2Icon} alt="" />
                 <span>Type 2</span>
               </div>
-              <label className="switch">
+              <label className="switch" htmlFor="plug-type-2">
                 <input
+                  id="plug-type-2"
                   type="checkbox"
                   checked={selectedPlugs.includes("type-2")}
                   onChange={() => togglePlug("type-2")}
