@@ -11,11 +11,13 @@ import type {
 } from "../types/models/models";
 
 import {
+  getNonBooleanString,
   normalizeString,
   parseBoolean,
   parseDate,
   parseGeoJSONPoint,
   parseNumber,
+  parseSeparateGeoJSONCoordinates,
 } from "./stringNormalizer";
 
 import {
@@ -101,11 +103,13 @@ export async function transformCsvRowToEntities(
         );
       }
     } else if (row.consolidated_latitude && row.consolidated_longitude) {
-      const latNum = parseNumber(row.consolidated_latitude);
-      const lonNum = parseNumber(row.consolidated_longitude);
-      if (latNum !== null && lonNum !== null) {
-        consolidatedLatitude = latNum;
-        consolidatedLongitude = lonNum;
+      const point = parseSeparateGeoJSONCoordinates(
+        row.consolidated_latitude,
+        row.consolidated_longitude,
+      );
+
+      if (point) {
+        [consolidatedLongitude, consolidatedLatitude] = point.coordinates;
         geom = sequelize.literal(
           `ST_SetSRID(ST_MakePoint(${consolidatedLongitude}, ${consolidatedLatitude}), 4326)`,
         ) as unknown as GeoJSON.Point;
@@ -180,9 +184,17 @@ export async function transformCsvRowToEntities(
 
     const idPdcItinerance = normalizeString(row.id_pdc_itinerance || null);
     const idPdcLocal = normalizeString(row.id_pdc_local || null);
-    const puissanceNominaleTerminal = parseNumber(
-      row.puissance_nominale_terminal || null,
-    );
+    const puissanceNominaleRaw = row.puissance_nominale;
+    const puissanceNominale = parseNumber(puissanceNominaleRaw || null);
+
+    // verification de la puissance nominale du terminal
+    if (puissanceNominale === null && puissanceNominaleRaw) {
+      console.log(
+        `[dataTransformer] Ligne #${rowNumber}: Impossible de parser la puissance nominale. Valeur reçue: "${puissanceNominaleRaw}"`,
+        LogLevel.WARN,
+      );
+    }
+
     const priseType2 = parseBoolean(row.prise_type_2 || null);
     const priseTypeEf = parseBoolean(row.prise_type_ef || null);
     const priseChademo = parseBoolean(row.prise_chademo || null);
@@ -208,8 +220,8 @@ export async function transformCsvRowToEntities(
       ? await findOrCreateCompagnyByName(enseigneName)
       : null;
     const idPower =
-      puissanceNominaleTerminal !== null
-        ? await findOrCreatePowerByName(puissanceNominaleTerminal)
+      puissanceNominale !== null
+        ? await findOrCreatePowerByName(puissanceNominale)
         : null;
 
     // Validation des champs critiques pour une station
@@ -315,7 +327,7 @@ export async function transformCsvRowToEntities(
       longitude: consolidatedLongitude,
       geom: geom,
       type_de_prise: priseAutre || "UNKNOWN",
-      puissance_nominale: puissanceNominaleTerminal || 0,
+      puissance_nominale: puissanceNominale || 0,
       prise_type_2: priseType2 || false,
       prise_type_ef: priseTypeEf || false,
       prise_chademo: priseChademo || false,
@@ -327,29 +339,40 @@ export async function transformCsvRowToEntities(
     };
 
     const plugAssociations: { id_plug: string }[] = [];
+    const addedPlugIds = new Set<string>();
 
-    if (priseTypeEf)
-      plugAssociations.push({
-        id_plug: await findOrCreatePlugByName("Type EF"),
-      });
-    if (priseType2)
-      plugAssociations.push({
-        id_plug: await findOrCreatePlugByName("Type 2"),
-      });
-    if (priseComboCcs)
-      plugAssociations.push({
-        id_plug: await findOrCreatePlugByName("Combo CCS"),
-      });
-    if (priseChademo)
-      plugAssociations.push({
-        id_plug: await findOrCreatePlugByName("Chademo"),
-      });
+    const plugColumnMapping: { [key: string]: string } = {
+      prise_type_ef: "Type EF",
+      prise_type_2: "Type 2",
+      prise_type_combo_ccs: "Combo CCS",
+      prise_type_chademo: "Chademo",
+    };
 
-    if (priseAutre && priseAutre !== "false") {
-      const idAutrePlug = await findOrCreatePlugByName(priseAutre);
-      if (!plugAssociations.some((p) => p.id_plug === idAutrePlug)) {
-        plugAssociations.push({ id_plug: idAutrePlug });
+    for (const columnName in plugColumnMapping) {
+      if (Object.prototype.hasOwnProperty.call(row, columnName)) {
+        const value = row[columnName as keyof CsvRow];
+        if (parseBoolean(value) === true) {
+          const plugName = plugColumnMapping[columnName];
+          const plugId = await findOrCreatePlugByName(plugName);
+          addedPlugIds.add(plugId);
+        }
       }
+    }
+
+    const validOtherPlugName = getNonBooleanString(row.prise_type_autre);
+
+    if (validOtherPlugName) {
+      console.log(
+        `[dataTransformer] Ligne #${rowNumber}: Détection d'un nom de prise non standard dans 'prise_type_autre': "${validOtherPlugName}".`,
+        LogLevel.INFO,
+      );
+      const plugId = await findOrCreatePlugByName(validOtherPlugName);
+      addedPlugIds.add(plugId);
+    }
+
+    // Transformer le Set d'IDs en tableau d'objets pour le résultat final
+    for (const plugId of addedPlugIds) {
+      plugAssociations.push({ id_plug: plugId });
     }
     console.log(
       `[DEBUG - dataTransformer] Transformation réussie pour la ligne #${rowNumber}.`,

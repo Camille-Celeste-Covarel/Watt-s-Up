@@ -9,7 +9,7 @@ import maplibregl, { GlobeControl } from "maplibre-gl";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
 import type { StationMapAttributes } from "../../types/types_maplibre.ts";
-import { StationDetails } from "../stationDetails/stationDetails";
+import { StationDetails } from "../StationDetails/stationDetails";
 
 function logInvalidStations(stations: StationMapAttributes[], source: string) {
   const invalidStations = stations.filter((station) => !station.geojson_geom);
