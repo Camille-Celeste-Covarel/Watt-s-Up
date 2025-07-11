@@ -33,6 +33,7 @@ function MapLibre() {
   });
 
   const currentFiltersRef = useRef(filterData);
+  const debounceTimerRef = useRef<number | null>(null);
 
   useEffect(() => {
     currentFiltersRef.current = filterData;
@@ -137,7 +138,9 @@ function MapLibre() {
   }) => {
     console.log("🔍 Filtres reçus:", filters);
     setFilterData(filters);
-    applyFiltersToStations(filters);
+    applyFiltersToStations(filters).catch((error) => {
+      console.error("Erreur lors de l'application des filtres:", error);
+    });
   };
 
   useEffect(() => {
@@ -172,6 +175,7 @@ function MapLibre() {
         clusterRadius: 50,
       });
 
+      // --- Couche des cercles de clusters ---
       map.addLayer({
         id: "cluster-circles",
         type: "circle",
@@ -204,9 +208,11 @@ function MapLibre() {
             750,
             35,
           ],
+          "circle-opacity-transition": { duration: 500 },
         },
-      });
+      } as maplibregl.CircleLayerSpecification);
 
+      // --- Couche du nombre dans les clusters ---
       map.addLayer({
         id: "cluster-count",
         type: "symbol",
@@ -217,21 +223,26 @@ function MapLibre() {
           "text-font": ["Open Sans Bold"],
           "text-size": 14,
         },
-        paint: { "text-color": "#ffffff" },
-      });
+        paint: {
+          "text-color": "#ffffff",
+          "text-opacity-transition": { duration: 500 },
+        },
+      } as maplibregl.SymbolLayerSpecification);
 
+      // --- Couche des points non-clusterisés ---
       map.addLayer({
         id: "unclustered-point",
         type: "circle",
         source: "stations",
         filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": "#11b4da",
+          "circle-color": "#F2C641FF",
           "circle-radius": 6,
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#fff",
+          "circle-stroke-width": 3,
+          "circle-stroke-color": "#40352c",
+          "circle-opacity-transition": { duration: 500 },
         },
-      });
+      } as maplibregl.CircleLayerSpecification);
 
       try {
         await fetchAndUpdateStations();
@@ -285,10 +296,24 @@ function MapLibre() {
     map.on("mouseenter", "unclustered-point", setCursorToPointer);
     map.on("mouseleave", "unclustered-point", resetCursor);
 
-    map.on("moveend", () => fetchAndUpdateStations(currentFiltersRef.current));
-    map.on("zoomend", () => fetchAndUpdateStations(currentFiltersRef.current));
+    const debouncedFetch = () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+      debounceTimerRef.current = window.setTimeout(() => {
+        fetchAndUpdateStations(currentFiltersRef.current).catch((error) => {
+          console.error("Erreur lors du rafraîchissement de la carte:", error);
+        });
+      }, 250);
+    };
+
+    map.on("moveend", debouncedFetch);
+    map.on("zoomend", debouncedFetch);
 
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
       map.remove();
       mapRef.current = null;
     };
