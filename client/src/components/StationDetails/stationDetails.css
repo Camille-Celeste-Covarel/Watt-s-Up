@@ -33,14 +33,11 @@
   margin-top: 20px;
 }
 
-/* CORRECTION : Utiliser une classe spécifique pour le titre h3 */
 .terminal-groups-grid__title {
   grid-column: 1 / -1;
 }
 
-/* ... Le reste du fichier (.terminal-group-card, etc.) ne change pas ... */
 .terminal-group-card {
-  /* Styles de base de la carte */
   font: inherit;
   color: inherit;
   text-align: inherit;
