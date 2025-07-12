@@ -127,62 +127,75 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   return (
     <div className="station-details-content">
       <h2>La station</h2>
-      <p>{station.nom_station}</p>
-      {station.adresse_station && <p>{station.adresse_station}</p>}
+      {/* CORRECTION : Utilisation de la nouvelle classe CSS */}
+      <p className="station-info__text">{station.nom_station}</p>
+      {station.adresse_station && (
+        <p className="station-info__text">{station.adresse_station}</p>
+      )}
       <div className="station-info-details">
         {station.implantation_station && (
-          <p>
-            <strong>Implantation:</strong> {station.implantation_station}
+          <p className="station-info__text">
+            <strong className="station-info__label">Implantation:</strong>{" "}
+            {station.implantation_station}
           </p>
         )}
         {station.paiement_cb !== null && (
-          <p>
-            <strong>Paiement par CB:</strong>{" "}
+          <p className="station-info__text">
+            <strong className="station-info__label">Paiement par CB:</strong>{" "}
             {station.paiement_cb ? "Oui" : "Non"}
           </p>
         )}
         {station.paiement_autre && (
-          <p>
-            <strong>Autre paiement:</strong>{" "}
+          <p className="station-info__text">
+            <strong className="station-info__label">Autre paiement:</strong>{" "}
             {station.paiement_autre ? "Oui" : "Non"}
           </p>
         )}
         {station.tarification && (
-          <p>
-            <strong>Tarification:</strong> {station.tarification}
+          <p className="station-info__text">
+            <strong className="station-info__label">Tarification:</strong>{" "}
+            {station.tarification}
           </p>
         )}
         {station.horaires && (
-          <p>
-            <strong>Horaires:</strong> {station.horaires}
+          <p className="station-info__text">
+            <strong className="station-info__label">Horaires:</strong>{" "}
+            {station.horaires}
           </p>
         )}
         {station.accessibilite_pmr !== null && (
-          <p>
-            <strong>Accès PMR:</strong>{" "}
+          <p className="station-info__text">
+            <strong className="station-info__label">Accès PMR:</strong>{" "}
             {station.accessibilite_pmr ? "Oui" : "Non"}
           </p>
         )}
         {station.nbre_pdc !== null && (
-          <p>
-            <strong>Nombre de points de charge:</strong> {station.nbre_pdc}
+          <p className="station-info__text">
+            <strong className="station-info__label">
+              Nombre de points de charge:
+            </strong>{" "}
+            {station.nbre_pdc}
           </p>
         )}
         {station.puissance_max !== null && (
-          <p>
-            <strong>Puissance maximale:</strong> {station.puissance_max} kW
+          <p className="station-info__text">
+            <strong className="station-info__label">Puissance maximale:</strong>{" "}
+            {station.puissance_max} kW
           </p>
         )}
         {station.observations && (
-          <p>
-            <strong>Observations:</strong> {station.observations}
+          <p className="station-info__text">
+            <strong className="station-info__label">Observations:</strong>{" "}
+            {station.observations}
           </p>
         )}
       </div>
 
       {terminalGroups.length > 0 && (
         <>
-          <h3 className="station-list-title">Choisir ma borne</h3>
+          <h3 className="station-list-title terminal-groups-grid__title">
+            Choisir ma borne
+          </h3>
           <div className="terminal-groups-grid">
             {terminalGroups.map((group) => {
               const cardClasses = [
