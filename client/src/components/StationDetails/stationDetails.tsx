@@ -16,7 +16,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
 
-  // Le hook useEffect est correct.
   useEffect(() => {
     if (!stationId) {
       setError("Station ID is missing.");
@@ -127,7 +126,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   return (
     <div className="station-details-content">
       <h2>La station</h2>
-      {/* CORRECTION : Utilisation de la nouvelle classe CSS */}
       <p className="station-info__text">{station.nom_station}</p>
       {station.adresse_station && (
         <p className="station-info__text">{station.adresse_station}</p>
