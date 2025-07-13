@@ -1,3 +1,5 @@
+// C:/Users/Nindra/Seafile/Code/Code/P3/client/src/components/map/MapLibre.tsx
+
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./maplibre.css";
 import "@stadiamaps/maplibre-search-box/dist/maplibre-search-box.css";
@@ -38,23 +40,24 @@ function MapLibre() {
   });
 
   const [bbox, setBbox] = useState<string | null>(null);
+  // --- AJOUT : État pour le niveau de zoom ---
+  const [zoom, setZoom] = useState<number>(14);
 
-  // --- LE CŒUR : REACT QUERY ---
-  const { data: stationsData, isLoading } = useQuery({
-    queryKey: ["stations", "visible", bbox, filters],
+  // --- LE CŒUR : REACT QUERY  ---
+  const { data: stationsData, isLoading } = useQuery<StationMapAttributes[]>({
+    queryKey: ["stations", "visible", bbox, filters, zoom],
     queryFn: () => {
       if (!bbox) {
         return Promise.reject(new Error("Bbox is required to fetch stations."));
       }
-      return fetchVisibleStations(bbox, filters);
+      return fetchVisibleStations(bbox, filters, zoom);
     },
     enabled: !!bbox,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
 
-  // --- EFFETS DE BORD ---
-  // Met à jour la source de la carte quand les données de React Query changent.
+  // --- EFFETS DE BORD (inchangé) ---
   useEffect(() => {
     if (!stationsData || !mapRef.current) return;
 
@@ -97,7 +100,7 @@ function MapLibre() {
     source.setData(geoJsonData);
   }, [stationsData]);
 
-  // --- GESTIONNAIRES D'ÉVÉNEMENTS ---
+  // --- GESTIONNAIRES D'ÉVÉNEMENTS (inchangé) ---
   const handleFilterValidation = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
@@ -146,7 +149,7 @@ function MapLibre() {
         clusterRadius: 50,
       });
 
-      // Couches (layers)
+      // Couches (layers) - inchangées
       map.addLayer({
         id: "cluster-circles",
         type: "circle",
@@ -221,9 +224,11 @@ function MapLibre() {
           bounds.getNorth(),
         ].join(","),
       );
+      // On initialise aussi le zoom
+      setZoom(map.getZoom());
     });
 
-    // Interactions avec la carte
+    // Interactions avec la carte (inchangées)
     map.on("click", "unclustered-point", (e) => {
       if (!e.features?.length) return;
       const stationId = e.features[0].properties?.id;
@@ -237,8 +242,8 @@ function MapLibre() {
     map.on("mouseenter", "unclustered-point", setCursorToPointer);
     map.on("mouseleave", "unclustered-point", resetCursor);
 
-    // Le debounce met à jour l'état `bbox`, ce qui déclenche la magie de React Query
-    const debouncedUpdateBbox = () => {
+    // --- MODIFICATION : Le debounce met à jour bbox ET zoom ---
+    const debouncedUpdateMapState = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = window.setTimeout(() => {
         if (!mapRef.current) return;
@@ -251,15 +256,21 @@ function MapLibre() {
             bounds.getNorth(),
           ].join(","),
         );
+        // On met aussi à jour le niveau de zoom
+        setZoom(mapRef.current.getZoom());
       }, 250);
     };
 
-    map.on("moveend", debouncedUpdateBbox);
-    map.on("zoomend", debouncedUpdateBbox);
+    map.on("moveend", debouncedUpdateMapState);
+    map.on("zoomend", debouncedUpdateMapState);
 
     // Nettoyage
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      // --- AJOUT : Nettoyage des nouveaux listeners ---
+      map.off("moveend", debouncedUpdateMapState);
+      map.off("zoomend", debouncedUpdateMapState);
+      // ---
       map.off("mouseenter", "cluster-circles", setCursorToPointer);
       map.off("mouseleave", "cluster-circles", resetCursor);
       map.off("mouseenter", "unclustered-point", setCursorToPointer);
