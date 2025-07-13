@@ -125,6 +125,18 @@ function MapLibre() {
     map.addControl(new MapLibreSearchControl({}), "top-left");
     map.addControl(new GlobeControl(), "bottom-right");
 
+    const setCursorToPointer = () => {
+      if (mapRef.current) {
+        mapRef.current.getCanvas().style.cursor = "pointer";
+      }
+    };
+
+    const resetCursor = () => {
+      if (mapRef.current) {
+        mapRef.current.getCanvas().style.cursor = "";
+      }
+    };
+
     map.on("load", () => {
       map.addSource("stations", {
         type: "geojson",
@@ -220,6 +232,11 @@ function MapLibre() {
       }
     });
 
+    map.on("mouseenter", "cluster-circles", setCursorToPointer);
+    map.on("mouseleave", "cluster-circles", resetCursor);
+    map.on("mouseenter", "unclustered-point", setCursorToPointer);
+    map.on("mouseleave", "unclustered-point", resetCursor);
+
     // Le debounce met à jour l'état `bbox`, ce qui déclenche la magie de React Query
     const debouncedUpdateBbox = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
@@ -243,6 +260,10 @@ function MapLibre() {
     // Nettoyage
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      map.off("mouseenter", "cluster-circles", setCursorToPointer);
+      map.off("mouseleave", "cluster-circles", resetCursor);
+      map.off("mouseenter", "unclustered-point", setCursorToPointer);
+      map.off("mouseleave", "unclustered-point", resetCursor);
       map.remove();
       mapRef.current = null;
     };
