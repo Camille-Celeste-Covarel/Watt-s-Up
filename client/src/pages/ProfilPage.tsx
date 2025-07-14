@@ -24,7 +24,6 @@ const vehicule = {
 function ProfilPage() {
   return (
     <div className="profil-container">
-      {/* Section Profil */}
       <section className="profil-section">
         <h2>Mon profil</h2>
         <div className="profil-avatar-block">
@@ -69,8 +68,6 @@ function ProfilPage() {
           </div>
         </div>
       </section>
-
-      {/* Section Véhicule */}
       <section className="profil-vehicle-section">
         <h2>Mes véhicules</h2>
         <div className="profil-vehicle-infos">
