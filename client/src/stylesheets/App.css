@@ -12,13 +12,14 @@
 
 body {
   box-sizing: border-box;
+  font-family: "Montserrat", sans-serif;
 }
 
 button {
-  width: 110px;
-  height: 40px;
+  max-width: 130px;
   background-color: var(--quinte-color);
   border: none;
+  padding: 10px;
   color: white;
 }
 
@@ -28,4 +29,14 @@ button {
   --seconde-color: #d9631e;
   --tierce-color: #f2f2f2;
   --quarte-color: #c8f230;
+}
+
+h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
 }
