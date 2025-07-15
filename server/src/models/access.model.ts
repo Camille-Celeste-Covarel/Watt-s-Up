@@ -39,5 +39,5 @@ export class Access
     );
   }
 
-  static associate() {}
+  static associate(sequelize: Sequelize) {}
 }

@@ -46,5 +46,5 @@ export class Operator
     );
   }
 
-  static associate() {}
+  static associate(sequelize: Sequelize) {}
 }

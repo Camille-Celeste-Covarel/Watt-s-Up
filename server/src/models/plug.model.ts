@@ -48,7 +48,7 @@ export class Plug
     );
   }
 
-  static associate() {
+  static associate(sequelize: Sequelize) {
     Plug.belongsToMany(Terminal, {
       through: TerminalPlug,
       foreignKey: "id_plug",

@@ -16,7 +16,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [error, setError] = useState<string | null>(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
 
-  // Le hook useEffect est correct.
   useEffect(() => {
     if (!stationId) {
       setError("Station ID is missing.");
@@ -106,71 +105,95 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
     );
   }
 
+  const handleReserve = () => {
+    if (!selectedGroupKey) {
+      alert("Veuillez d'abord sélectionner un groupe de bornes.");
+      return;
+    }
+
+    // Logique future :
+    // 1. Trouver un terminal DISPONIBLE dans le groupe sélectionné.
+    // 2. Envoyer une requête POST à votre API (ex: /api/terminals/:id/book)
+    // 3. Mettre à jour l'interface si la réservation réussit.
+    alert(`Demande de réservation pour le groupe : ${selectedGroupKey}`);
+  };
+
+  const handleCancel = () => {
+    setSelectedGroupKey(null);
+  };
+
   // --- Rendu final combinant les deux mises en page ---
   return (
     <div className="station-details-content">
-      <h2>{station.nom_station}</h2>
-
-      {/* SECTION 1 : L'ANCIENNE PRÉSENTATION DES INFORMATIONS, RESTAURÉE À L'IDENTIQUE */}
+      <h2>La station</h2>
+      <p className="station-info__text">{station.nom_station}</p>
+      {station.adresse_station && (
+        <p className="station-info__text">{station.adresse_station}</p>
+      )}
       <div className="station-info-details">
-        {station.adresse_station && (
-          <p>
-            <strong>Adresse:</strong> {station.adresse_station}
-          </p>
-        )}
         {station.implantation_station && (
-          <p>
-            <strong>Implantation:</strong> {station.implantation_station}
+          <p className="station-info__text">
+            <strong className="station-info__label">Implantation:</strong>{" "}
+            {station.implantation_station}
           </p>
         )}
         {station.paiement_cb !== null && (
-          <p>
-            <strong>Paiement par CB:</strong>{" "}
+          <p className="station-info__text">
+            <strong className="station-info__label">Paiement par CB:</strong>{" "}
             {station.paiement_cb ? "Oui" : "Non"}
           </p>
         )}
         {station.paiement_autre && (
-          <p>
-            <strong>Autre paiement:</strong> {station.paiement_autre}
+          <p className="station-info__text">
+            <strong className="station-info__label">Autre paiement:</strong>{" "}
+            {station.paiement_autre ? "Oui" : "Non"}
           </p>
         )}
         {station.tarification && (
-          <p>
-            <strong>Tarification:</strong> {station.tarification}
+          <p className="station-info__text">
+            <strong className="station-info__label">Tarification:</strong>{" "}
+            {station.tarification}
           </p>
         )}
         {station.horaires && (
-          <p>
-            <strong>Horaires:</strong> {station.horaires}
+          <p className="station-info__text">
+            <strong className="station-info__label">Horaires:</strong>{" "}
+            {station.horaires}
           </p>
         )}
         {station.accessibilite_pmr !== null && (
-          <p>
-            <strong>Accès PMR:</strong>{" "}
+          <p className="station-info__text">
+            <strong className="station-info__label">Accès PMR:</strong>{" "}
             {station.accessibilite_pmr ? "Oui" : "Non"}
           </p>
         )}
         {station.nbre_pdc !== null && (
-          <p>
-            <strong>Nombre de points de charge:</strong> {station.nbre_pdc}
+          <p className="station-info__text">
+            <strong className="station-info__label">
+              Nombre de points de charge:
+            </strong>{" "}
+            {station.nbre_pdc}
           </p>
         )}
         {station.puissance_max !== null && (
-          <p>
-            <strong>Puissance maximale:</strong> {station.puissance_max} kW
+          <p className="station-info__text">
+            <strong className="station-info__label">Puissance maximale:</strong>{" "}
+            {station.puissance_max} kW
           </p>
         )}
         {station.observations && (
-          <p>
-            <strong>Observations:</strong> {station.observations}
+          <p className="station-info__text">
+            <strong className="station-info__label">Observations:</strong>{" "}
+            {station.observations}
           </p>
         )}
       </div>
 
-      {/* SECTION 2 : LA NOUVELLE GRILLE POUR LES BORNES */}
       {terminalGroups.length > 0 && (
         <>
-          <h3>Bornes de recharge</h3>
+          <h3 className="station-list-title terminal-groups-grid__title">
+            Choisir ma borne
+          </h3>
           <div className="terminal-groups-grid">
             {terminalGroups.map((group) => {
               const cardClasses = [
@@ -187,6 +210,7 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
                   type="button"
                   className={cardClasses}
                   onClick={() => handleCardInteraction(group.key)}
+                  disabled={group.availableCount === 0}
                 >
                   <div className="group-plugs">
                     {group.plugs.map((plug: Plug) => (
@@ -204,6 +228,25 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
                 </button>
               );
             })}
+          </div>
+
+          <div className="action-buttons-container">
+            <button
+              type="button"
+              className="action-button reserve-button"
+              onClick={handleReserve}
+              disabled={!selectedGroupKey}
+            >
+              Réserver
+            </button>
+            <button
+              type="button"
+              className="action-button cancel-button"
+              onClick={handleCancel}
+              disabled={!selectedGroupKey}
+            >
+              Annuler
+            </button>
           </div>
         </>
       )}

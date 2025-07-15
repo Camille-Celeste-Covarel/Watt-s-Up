@@ -70,7 +70,7 @@ function Filter({ onFilterValidation }: FilterProps) {
       plugs: selectedPlugs,
     };
     onFilterValidation(filters);
-    setIsFilterOpen(false); // Ferme le filtre après validation
+    setIsFilterOpen(false);
   };
 
   // ✅ AJOUT : Fonction pour réinitialiser

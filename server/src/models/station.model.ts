@@ -331,6 +331,10 @@ export class Station
             name: "idx_station_lat_lon",
           },
           {
+            fields: ["station_deux_roues"],
+            name: "idx_station_station_deux_roues",
+          },
+          {
             fields: [sequelize.literal("geom")],
             using: "GIST",
             name: "idx_station_geom_gist",
@@ -340,7 +344,7 @@ export class Station
     );
   }
 
-  static associate() {
+  static associate(sequelize: Sequelize) {
     Station.belongsTo(Access, { foreignKey: "id_access", as: "access" });
     Station.belongsTo(Provider, { foreignKey: "id_provider", as: "provider" });
     Station.belongsTo(Operator, { foreignKey: "id_operator", as: "operator" });

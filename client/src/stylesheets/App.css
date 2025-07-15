@@ -14,7 +14,7 @@ body {
   box-sizing: border-box;
 }
 
-button {
+.button /*_default*/ {
   width: 110px;
   height: 40px;
   background-color: var(--quinte-color);
