@@ -16,6 +16,8 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
+  const [isReserving, setIsReserving] = useState(false);
+  const [reservationError, setReservationError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
 
   useEffect(() => {
@@ -48,7 +50,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
     void fetchStationDetails();
   }, [stationId]);
 
-  // Le hook useMemo pour la grille des bornes est correct.
   const terminalGroups = useMemo(() => {
     if (!station?.terminals) return [];
     const groups = new Map<string, TerminalGroup>();
@@ -107,31 +108,66 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
     );
   }
 
-  const handleReserve = () => {
-    if (!isAuthenticated) {
-      alert("Veuillez vous connecter pour pouvoir réserver une borne.");
+  const handleReserve = async () => {
+    if (!isAuthenticated || !selectedGroupKey) {
+      setReservationError("Veuillez sélectionner un groupe et être connecté.");
       return;
     }
 
-    if (!selectedGroupKey) {
-      alert("Veuillez d'abord sélectionner un groupe de bornes.");
+    const selectedGroup = terminalGroups.find(
+      (g) => g.key === selectedGroupKey,
+    );
+    if (!selectedGroup) {
+      console.error("Groupe sélectionné non trouvé.");
+      setReservationError("Une erreur est survenue, groupe non trouvé.");
       return;
     }
 
-    // Logique future :
-    // La requête devra inclure `credentials: 'include'` pour envoyer le cookie d'authentification.
-    // fetch(`${import.meta.env.VITE_API_URL}/api/reservations`, { method: "POST", body: ..., credentials: "include" })
-    // 1. Trouver un terminal DISPONIBLE dans le groupe sélectionné.
-    // 2. Envoyer une requête POST à votre API (ex: /api/terminals/:id/book)
-    // 3. Mettre à jour l'interface si la réservation réussit.
-    alert(`Demande de réservation pour le groupe : ${selectedGroupKey}`);
+    setIsReserving(true);
+    setReservationError(null);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/reservations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            stationId: stationId,
+            power: selectedGroup.power,
+            plugIds: selectedGroup.plugs.map((p) => p.id),
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "La réservation a échoué.");
+      }
+
+      alert(
+        "Réservation confirmée ! Vous avez 30 minutes pour démarrer la charge.",
+      );
+      window.location.reload();
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Une erreur inconnue est survenue.";
+      setReservationError(errorMessage);
+    } finally {
+      setIsReserving(false);
+    }
   };
 
   const handleCancel = () => {
     setSelectedGroupKey(null);
   };
 
-  // --- Rendu final combinant les deux mises en page ---
   return (
     <div className="station-details-content">
       <h2>La station</h2>
@@ -242,11 +278,11 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
           <div className="action-buttons-container">
             <button
               type="button"
-              className="reserve-button"
+              className="action-button reserve-button"
               onClick={handleReserve}
-              disabled={!selectedGroupKey || !isAuthenticated}
+              disabled={!selectedGroupKey || !isAuthenticated || isReserving}
             >
-              Réserver
+              {isReserving ? "Réservation..." : "Réserver"}
             </button>
             <button
               type="button"
@@ -257,6 +293,9 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
               Annuler
             </button>
           </div>
+          {reservationError && (
+            <p className="reservation-error-message">{reservationError}</p>
+          )}
         </>
       )}
     </div>
