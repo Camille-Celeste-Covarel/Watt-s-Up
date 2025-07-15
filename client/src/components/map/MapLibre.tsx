@@ -1,5 +1,3 @@
-// C:/Users/Nindra/Seafile/Code/Code/P3/client/src/components/map/MapLibre.tsx
-
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./maplibre.css";
 import "@stadiamaps/maplibre-search-box/dist/maplibre-search-box.css";
@@ -15,7 +13,6 @@ import { fetchVisibleStations } from "../../utils/stationApi.ts";
 import { StationDetails } from "../StationDetails/stationDetails";
 import Filter from "../filter/Filter.tsx";
 
-// Cette fonction utilitaire ne change pas
 function logInvalidStations(stations: StationMapAttributes[], source: string) {
   const invalidStations = stations.filter((station) => !station.geojson_geom);
   if (invalidStations.length > 0) {
@@ -27,7 +24,6 @@ function logInvalidStations(stations: StationMapAttributes[], source: string) {
 }
 
 function MapLibre() {
-  // --- DÉCLARATION DES HOOKS AU PLUS HAUT NIVEAU ---
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const { openOverlay } = useOverlay();
@@ -40,7 +36,6 @@ function MapLibre() {
   });
 
   const [bbox, setBbox] = useState<string | null>(null);
-  // --- AJOUT : État pour le niveau de zoom ---
   const [zoom, setZoom] = useState<number>(14);
 
   // --- LE CŒUR : REACT QUERY  ---
@@ -57,7 +52,6 @@ function MapLibre() {
     staleTime: 5 * 60 * 1000,
   });
 
-  // --- EFFETS DE BORD (inchangé) ---
   useEffect(() => {
     if (!stationsData || !mapRef.current) return;
 
@@ -100,12 +94,10 @@ function MapLibre() {
     source.setData(geoJsonData);
   }, [stationsData]);
 
-  // --- GESTIONNAIRES D'ÉVÉNEMENTS (inchangé) ---
   const handleFilterValidation = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
 
-  // --- INITIALISATION DE LA CARTE ---
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -149,7 +141,6 @@ function MapLibre() {
         clusterRadius: 50,
       });
 
-      // Couches (layers) - inchangées
       map.addLayer({
         id: "cluster-circles",
         type: "circle",
@@ -214,7 +205,6 @@ function MapLibre() {
         },
       } as maplibregl.CircleLayerSpecification);
 
-      // Déclenche le premier chargement de données
       const bounds = map.getBounds();
       setBbox(
         [
@@ -224,11 +214,9 @@ function MapLibre() {
           bounds.getNorth(),
         ].join(","),
       );
-      // On initialise aussi le zoom
       setZoom(map.getZoom());
     });
 
-    // Interactions avec la carte (inchangées)
     map.on("click", "unclustered-point", (e) => {
       if (!e.features?.length) return;
       const stationId = e.features[0].properties?.id;
@@ -242,7 +230,6 @@ function MapLibre() {
     map.on("mouseenter", "unclustered-point", setCursorToPointer);
     map.on("mouseleave", "unclustered-point", resetCursor);
 
-    // --- MODIFICATION : Le debounce met à jour bbox ET zoom ---
     const debouncedUpdateMapState = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = window.setTimeout(() => {
@@ -256,7 +243,6 @@ function MapLibre() {
             bounds.getNorth(),
           ].join(","),
         );
-        // On met aussi à jour le niveau de zoom
         setZoom(mapRef.current.getZoom());
       }, 250);
     };
@@ -264,10 +250,8 @@ function MapLibre() {
     map.on("moveend", debouncedUpdateMapState);
     map.on("zoomend", debouncedUpdateMapState);
 
-    // Nettoyage
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
-      // --- AJOUT : Nettoyage des nouveaux listeners ---
       map.off("moveend", debouncedUpdateMapState);
       map.off("zoomend", debouncedUpdateMapState);
       // ---
