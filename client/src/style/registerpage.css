@@ -1,0 +1,70 @@
+.register-container {
+  height: calc(100vh - 70px - 60px);
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.register-profil-section {
+  background-color: var(--fondamental-color);
+  padding: 1.5rem;
+}
+
+.profil-picture-container {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.profil-avatar {
+  height: 100px;
+  width: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: center;
+  border: 2px solid var(--quinte-color);
+}
+
+.register-container h2 {
+  margin-top: 0;
+}
+
+.register-container h3 {
+  margin: 20px 0 10px 0;
+}
+
+.register-profil-section input {
+  background-color: white;
+  width: 220px;
+}
+
+.register-container input:focus {
+  outline: none;
+}
+
+.register-profil-section ::placeholder {
+  color: var(--fondamental-color);
+}
+
+.register-vehicle-section {
+  background-color: white;
+  padding: 1.5rem;
+}
+
+.register-vehicle-section input {
+  width: 220px;
+}
+
+.submit-btn {
+  margin-top: 20px;
+}
+
+.register-container select {
+  border: none;
+  background-color: white;
+  padding: 5px;
+}
+
+.register-vehicle-section select {
+  background-color: var(--fondamental-color);
+  color: white;
+}
