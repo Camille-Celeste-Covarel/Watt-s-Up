@@ -6,6 +6,8 @@ import { Book, ReservationStatus } from "../models/book.model";
 import { Terminal } from "../models/terminal.model";
 import { LogLevel } from "../tools/logger";
 
+const ReservationMin = 30;
+
 interface CreateReservationBody {
   stationId: string;
   power: number;
@@ -78,7 +80,7 @@ export const createReservation = async (
     // 3. Mettre à jour la borne et créer la réservation
     await availableTerminal.update({ is_booked: true }, { transaction });
 
-    const expires_at = new Date(Date.now() + 30 * 60 * 1000);
+    const expires_at = new Date(Date.now() + ReservationMin * 60 * 1000);
 
     const newReservation = await Book.create(
       { id_user: userId, id_terminal: availableTerminal.id, expires_at },

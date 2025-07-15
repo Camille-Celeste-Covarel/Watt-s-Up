@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "../../contexts/AuthContext";
 import type {
   EnrichedStationAttributes,
@@ -20,35 +20,35 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [reservationError, setReservationError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
+  const fetchStationDetails = useCallback(async () => {
     if (!stationId) {
       setError("Station ID is missing.");
       setLoading(false);
       return;
     }
 
-    const fetchStationDetails = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: EnrichedStationAttributes = await response.json();
-        setStation(data);
-      } catch (err) {
-        console.error("Error fetching station details:", err);
-        setError("Impossible de charger les détails de la station.");
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
-
-    void fetchStationDetails();
+      const data: EnrichedStationAttributes = await response.json();
+      setStation(data);
+    } catch (err) {
+      console.error("Error fetching station details:", err);
+      setError("Impossible de charger les détails de la station.");
+    } finally {
+      setLoading(false);
+    }
   }, [stationId]);
+
+  useEffect(() => {
+    void fetchStationDetails();
+  }, [fetchStationDetails]);
 
   const terminalGroups = useMemo(() => {
     if (!station?.terminals) return [];
@@ -152,7 +152,9 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
       alert(
         "Réservation confirmée ! Vous avez 30 minutes pour démarrer la charge.",
       );
-      window.location.reload();
+      // On rafraîchit les données de la station pour mettre à jour l'interface
+      await fetchStationDetails();
+      setSelectedGroupKey(null);
     } catch (err) {
       const errorMessage =
         err instanceof Error
