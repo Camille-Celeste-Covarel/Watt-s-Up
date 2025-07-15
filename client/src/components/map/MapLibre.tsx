@@ -1,16 +1,19 @@
 import "maplibre-gl/dist/maplibre-gl.css";
 import "./maplibre.css";
 import "@stadiamaps/maplibre-search-box/dist/maplibre-search-box.css";
-import Filter from "../filter/Filter.tsx";
 
 import { MapLibreSearchControl } from "@stadiamaps/maplibre-search-box";
+import { useQuery } from "@tanstack/react-query";
 import type * as GeoJSON from "geojson";
 import maplibregl, { GlobeControl } from "maplibre-gl";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
 import type { StationMapAttributes } from "../../types/types_maplibre.ts";
+import { fetchVisibleStations } from "../../utils/stationApi.ts";
 import { StationDetails } from "../StationDetails/stationDetails";
+import Filter from "../filter/Filter.tsx";
 
+// Cette fonction utilitaire ne change pas
 function logInvalidStations(stations: StationMapAttributes[], source: string) {
   const invalidStations = stations.filter((station) => !station.geojson_geom);
   if (invalidStations.length > 0) {
@@ -22,124 +25,84 @@ function logInvalidStations(stations: StationMapAttributes[], source: string) {
 }
 
 function MapLibre() {
+  // --- DÉCLARATION DES HOOKS AU PLUS HAUT NIVEAU ---
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const { openOverlay } = useOverlay();
+  const debounceTimerRef = useRef<number | null>(null);
 
-  const [filterData, setFilterData] = useState({
+  const [filters, setFilters] = useState({
     vehicles: [] as string[],
     powers: [] as string[],
     plugs: [] as string[],
   });
 
-  const currentFiltersRef = useRef(filterData);
+  const [bbox, setBbox] = useState<string | null>(null);
 
-  useEffect(() => {
-    currentFiltersRef.current = filterData;
-  }, [filterData]);
-
-  const fetchAndUpdateStations = useCallback(
-    async (filters?: typeof filterData) => {
-      if (!mapRef.current) return;
-      const map = mapRef.current;
-      const source = map.getSource("stations") as maplibregl.GeoJSONSource;
-      if (!source) return;
-
-      try {
-        const bounds = map.getBounds();
-        const bbox = [
-          bounds.getWest(),
-          bounds.getSouth(),
-          bounds.getEast(),
-          bounds.getNorth(),
-        ].join(",");
-
-        let url = `${import.meta.env.VITE_API_URL}/api/stations/visible?bbox=${bbox}`;
-
-        if (filters) {
-          if (filters.vehicles.length > 0) {
-            url += `&vehicles=${filters.vehicles.join(",")}`;
-          }
-          if (filters.powers.length > 0) {
-            url += `&powers=${filters.powers.join(",")}`;
-          }
-          if (filters.plugs.length > 0) {
-            url += `&plugs=${filters.plugs.join(",")}`;
-          }
-        }
-
-        const response = await fetch(url);
-        if (!response.ok) {
-          console.error(
-            `HTTP error! status: ${response.status} ${response.statusText}`,
-          );
-          return;
-        }
-
-        const data: StationMapAttributes[] = await response.json();
-        logInvalidStations(data, "fetchAndUpdateStations");
-
-        const features = data
-          .map((station) => {
-            if (!station.geojson_geom) {
-              return null;
-            }
-            try {
-              const geometry = JSON.parse(
-                station.geojson_geom as unknown as string,
-              );
-              if (
-                geometry?.type === "Point" &&
-                Array.isArray(geometry.coordinates)
-              ) {
-                return {
-                  type: "Feature",
-                  properties: station,
-                  geometry: geometry,
-                };
-              }
-              return null;
-            } catch (e) {
-              console.warn(
-                "Impossible de parser geojson_geom pour la station:",
-                station.id,
-              );
-              return null;
-            }
-          })
-          .filter(Boolean);
-
-        const geoJsonData: GeoJSON.FeatureCollection = {
-          type: "FeatureCollection",
-          features: features as GeoJSON.Feature[],
-        };
-
-        source.setData(geoJsonData);
-      } catch (error) {
-        console.error("Erreur lors du chargement des stations:", error);
+  // --- LE CŒUR : REACT QUERY ---
+  const { data: stationsData, isLoading } = useQuery({
+    queryKey: ["stations", "visible", bbox, filters],
+    queryFn: () => {
+      if (!bbox) {
+        return Promise.reject(new Error("Bbox is required to fetch stations."));
       }
+      return fetchVisibleStations(bbox, filters);
     },
-    [],
-  );
+    enabled: !!bbox,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  const applyFiltersToStations = useCallback(
-    async (filters: typeof filterData) => {
-      console.log("🎯 Application des filtres:", filters);
-      await fetchAndUpdateStations(filters);
-    },
-    [fetchAndUpdateStations],
-  );
+  // --- EFFETS DE BORD ---
+  // Met à jour la source de la carte quand les données de React Query changent.
+  useEffect(() => {
+    if (!stationsData || !mapRef.current) return;
 
-  const handleFilterValidation = (filters: {
-    vehicles: string[];
-    powers: string[];
-    plugs: string[];
-  }) => {
-    console.log("🔍 Filtres reçus:", filters);
-    setFilterData(filters);
-    applyFiltersToStations(filters);
+    const source = mapRef.current.getSource(
+      "stations",
+    ) as maplibregl.GeoJSONSource;
+    if (!source) return;
+
+    logInvalidStations(stationsData, "ReactQueryUpdate");
+
+    const features = stationsData
+      .map((station) => {
+        if (!station.geojson_geom) return null;
+        try {
+          const geometry = JSON.parse(
+            station.geojson_geom as unknown as string,
+          );
+          if (
+            geometry?.type === "Point" &&
+            Array.isArray(geometry.coordinates)
+          ) {
+            return { type: "Feature", properties: station, geometry };
+          }
+          return null;
+        } catch (e) {
+          console.warn(
+            "Impossible de parser geojson_geom pour la station:",
+            station.id,
+          );
+          return null;
+        }
+      })
+      .filter(Boolean);
+
+    const geoJsonData: GeoJSON.FeatureCollection = {
+      type: "FeatureCollection",
+      features: features as GeoJSON.Feature[],
+    };
+
+    source.setData(geoJsonData);
+  }, [stationsData]);
+
+  // --- GESTIONNAIRES D'ÉVÉNEMENTS ---
+  const handleFilterValidation = (newFilters: typeof filters) => {
+    setFilters(newFilters);
   };
 
+  // --- INITIALISATION DE LA CARTE ---
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -150,7 +113,6 @@ function MapLibre() {
       zoom: 14,
       attributionControl: false,
     });
-
     mapRef.current = map;
 
     map.addControl(
@@ -163,7 +125,19 @@ function MapLibre() {
     map.addControl(new MapLibreSearchControl({}), "top-left");
     map.addControl(new GlobeControl(), "bottom-right");
 
-    map.on("load", async () => {
+    const setCursorToPointer = () => {
+      if (mapRef.current) {
+        mapRef.current.getCanvas().style.cursor = "pointer";
+      }
+    };
+
+    const resetCursor = () => {
+      if (mapRef.current) {
+        mapRef.current.getCanvas().style.cursor = "";
+      }
+    };
+
+    map.on("load", () => {
       map.addSource("stations", {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
@@ -172,6 +146,7 @@ function MapLibre() {
         clusterRadius: 50,
       });
 
+      // Couches (layers)
       map.addLayer({
         id: "cluster-circles",
         type: "circle",
@@ -204,8 +179,9 @@ function MapLibre() {
             750,
             35,
           ],
+          "circle-opacity-transition": { duration: 300 },
         },
-      });
+      } as maplibregl.CircleLayerSpecification);
 
       map.addLayer({
         id: "cluster-count",
@@ -217,8 +193,11 @@ function MapLibre() {
           "text-font": ["Open Sans Bold"],
           "text-size": 14,
         },
-        paint: { "text-color": "#ffffff" },
-      });
+        paint: {
+          "text-color": "#ffffff",
+          "text-opacity-transition": { duration: 300 },
+        },
+      } as maplibregl.SymbolLayerSpecification);
 
       map.addLayer({
         id: "unclustered-point",
@@ -226,76 +205,73 @@ function MapLibre() {
         source: "stations",
         filter: ["!", ["has", "point_count"]],
         paint: {
-          "circle-color": "#11b4da",
-          "circle-radius": 6,
-          "circle-stroke-width": 1,
-          "circle-stroke-color": "#fff",
+          "circle-color": "#a62100",
+          "circle-radius": 8,
+          "circle-opacity-transition": { duration: 300 },
         },
-      });
+      } as maplibregl.CircleLayerSpecification);
 
-      try {
-        await fetchAndUpdateStations();
-      } catch (error) {
-        console.error("Le chargement initial des station a échoué :", error);
-      }
+      // Déclenche le premier chargement de données
+      const bounds = map.getBounds();
+      setBbox(
+        [
+          bounds.getWest(),
+          bounds.getSouth(),
+          bounds.getEast(),
+          bounds.getNorth(),
+        ].join(","),
+      );
     });
 
-    map.on("click", "cluster-circles", async (e) => {
-      if (!e.features?.length) return;
-      const feature = e.features[0];
-      const clusterId = feature.properties?.cluster_id;
-      if (clusterId && feature.geometry.type === "Point") {
-        const source = map.getSource("stations") as maplibregl.GeoJSONSource;
-        const zoom = await source.getClusterExpansionZoom(clusterId);
-        map.easeTo({
-          center: feature.geometry.coordinates as maplibregl.LngLatLike,
-          zoom: zoom,
-        });
-      }
-    });
-
+    // Interactions avec la carte
     map.on("click", "unclustered-point", (e) => {
       if (!e.features?.length) return;
-      const feature = e.features[0];
-      const stationId = feature.properties?.id;
-
-      if (stationId && feature.geometry?.type === "Point") {
+      const stationId = e.features[0].properties?.id;
+      if (stationId) {
         openOverlay(<StationDetails id={stationId} />);
-        map.easeTo({
-          center: feature.geometry.coordinates as maplibregl.LngLatLike,
-          zoom: 16,
-        });
       }
     });
-
-    const setCursorToPointer = () => {
-      if (mapRef.current) {
-        mapRef.current.getCanvas().style.cursor = "pointer";
-      }
-    };
-
-    const resetCursor = () => {
-      if (mapRef.current) {
-        mapRef.current.getCanvas().style.cursor = "";
-      }
-    };
 
     map.on("mouseenter", "cluster-circles", setCursorToPointer);
     map.on("mouseleave", "cluster-circles", resetCursor);
     map.on("mouseenter", "unclustered-point", setCursorToPointer);
     map.on("mouseleave", "unclustered-point", resetCursor);
 
-    map.on("moveend", () => fetchAndUpdateStations(currentFiltersRef.current));
-    map.on("zoomend", () => fetchAndUpdateStations(currentFiltersRef.current));
+    // Le debounce met à jour l'état `bbox`, ce qui déclenche la magie de React Query
+    const debouncedUpdateBbox = () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      debounceTimerRef.current = window.setTimeout(() => {
+        if (!mapRef.current) return;
+        const bounds = mapRef.current.getBounds();
+        setBbox(
+          [
+            bounds.getWest(),
+            bounds.getSouth(),
+            bounds.getEast(),
+            bounds.getNorth(),
+          ].join(","),
+        );
+      }, 250);
+    };
 
+    map.on("moveend", debouncedUpdateBbox);
+    map.on("zoomend", debouncedUpdateBbox);
+
+    // Nettoyage
     return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      map.off("mouseenter", "cluster-circles", setCursorToPointer);
+      map.off("mouseleave", "cluster-circles", resetCursor);
+      map.off("mouseenter", "unclustered-point", setCursorToPointer);
+      map.off("mouseleave", "unclustered-point", resetCursor);
       map.remove();
       mapRef.current = null;
     };
-  }, [openOverlay, fetchAndUpdateStations]);
+  }, [openOverlay]);
 
   return (
     <div ref={mapContainer} className="map-wrap">
+      {isLoading && <div className="loading-indicator">Chargement...</div>}
       <Filter onFilterValidation={handleFilterValidation} />
     </div>
   );

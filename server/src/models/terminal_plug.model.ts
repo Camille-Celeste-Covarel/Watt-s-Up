@@ -62,7 +62,7 @@ export class TerminalPlug
     );
   }
 
-  static associate() {
+  static associate(sequelize: Sequelize) {
     TerminalPlug.belongsTo(Terminal, {
       foreignKey: "idTerminal",
       as: "terminal",

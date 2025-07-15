@@ -64,5 +64,5 @@ export class Power
     );
   }
 
-  static associate() {}
+  static associate(sequelize: Sequelize) {}
 }

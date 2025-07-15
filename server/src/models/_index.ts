@@ -2,7 +2,6 @@ export * from "./user.model";
 export * from "./station.model";
 export * from "./access.model";
 export * from "./book.model";
-export * from "./book_terminal.model";
 export * from "./compagny.model";
 export * from "./observation.model";
 export * from "./operator.model";

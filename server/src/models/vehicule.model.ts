@@ -90,7 +90,7 @@ export class Vehicule
     );
   }
 
-  static associate() {
+  static associate(sequelize: Sequelize) {
     Vehicule.belongsTo(Plug, { foreignKey: "id_plug", as: "plug" });
     Vehicule.belongsTo(User, { foreignKey: "id_user", as: "user" });
   }

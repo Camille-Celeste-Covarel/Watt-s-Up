@@ -3,19 +3,28 @@ import type {
   BookAttributes,
   BookCreationAttributes,
 } from "../types/models/models";
-import { BookTerminal } from "./book_terminal.model";
 import { Terminal } from "./terminal.model";
 import { User } from "./user.model";
+
+export enum ReservationStatus {
+  ACTIVE = "ACTIVE",
+  IN_USE = "IN_USE",
+  COMPLETED = "COMPLETED",
+  EXPIRED = "EXPIRED",
+  CANCELLED = "CANCELLED",
+}
 
 export class Book
   extends Model<BookAttributes, BookCreationAttributes>
   implements BookAttributes
 {
   public id!: string;
-  public start_time!: Date | null;
-  public price!: number | null;
-  public actived!: boolean | null;
   public id_user!: string;
+  public id_terminal!: string;
+  public status!: ReservationStatus;
+  public expires_at!: Date;
+  public session_ends_at!: Date | null;
+  public price!: number | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -27,27 +36,33 @@ export class Book
           type: DataTypes.UUID,
           defaultValue: DataTypes.UUIDV4,
           primaryKey: true,
+        },
+        id_user: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          references: { model: User, key: "id" },
+        },
+        id_terminal: {
+          type: DataTypes.UUID,
+          allowNull: false,
+          references: { model: Terminal, key: "id" },
+        },
+        status: {
+          type: DataTypes.ENUM(...Object.values(ReservationStatus)),
+          allowNull: false,
+          defaultValue: ReservationStatus.ACTIVE,
+        },
+        expires_at: {
+          type: DataTypes.DATE,
           allowNull: false,
         },
-        start_time: {
+        session_ends_at: {
           type: DataTypes.DATE,
           allowNull: true,
         },
         price: {
           type: DataTypes.DOUBLE,
           allowNull: true,
-        },
-        actived: {
-          type: DataTypes.BOOLEAN,
-          allowNull: true,
-        },
-        id_user: {
-          type: DataTypes.UUID,
-          allowNull: false,
-          references: {
-            model: User,
-            key: "id",
-          },
         },
       },
       {
@@ -57,30 +72,22 @@ export class Book
         underscored: true,
         modelName: "Book",
         indexes: [
-          {
-            fields: ["id_user"],
-            name: "idx_book_id_user",
-          },
-          {
-            fields: ["start_time"],
-            name: "idx_book_start_time",
-          },
-          {
-            fields: ["actived"],
-            name: "idx_book_actived",
-          },
+          { fields: ["id_user"] },
+          { fields: ["status"] },
+          { fields: ["expires_at"] },
         ],
       },
     );
   }
 
-  static associate() {
-    Book.belongsTo(User, { foreignKey: "id_user", as: "user" });
-    Book.belongsToMany(Terminal, {
-      through: BookTerminal,
-      foreignKey: "id_book",
-      otherKey: "id_terminal",
-      as: "terminals",
+  static associate(sequelize: Sequelize) {
+    Book.belongsTo(sequelize.models.User, {
+      foreignKey: "id_user",
+      as: "user",
+    });
+    Book.belongsTo(sequelize.models.Terminal, {
+      foreignKey: "id_terminal",
+      as: "terminal",
     });
   }
 }

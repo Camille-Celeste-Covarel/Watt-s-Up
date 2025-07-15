@@ -5,7 +5,7 @@ services:
       context: ./server
       dockerfile: Dockerfile
     ports:
-      - "4002:3310"
+      - "3310:3310"
     environment:
       - PORT=3310
       - DB_PORT=5432
@@ -31,13 +31,13 @@ services:
       context: .
       dockerfile: ./client/Dockerfile
     ports:
-      - "4001:80"
+      - "3000:80"
     volumes:
       - ./client:/app
       - /app/node_modules
     environment:
-      VITE_API_URL: http://backend:4001
-      VITE_PUBLIC_API_URL: http://localhost:4002
+      VITE_API_URL: http://backend:3000
+      VITE_PUBLIC_API_URL: http://localhost:3310
     depends_on:
       - backend
     restart: unless-stopped
