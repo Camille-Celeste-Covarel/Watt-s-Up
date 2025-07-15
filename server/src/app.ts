@@ -6,7 +6,6 @@ import express, { type ErrorRequestHandler } from "express";
 import sequelize from "./config/database";
 import { Access } from "./models/access.model";
 import { Book } from "./models/book.model";
-import { BookTerminal } from "./models/book_terminal.model";
 import { Compagny } from "./models/compagny.model";
 import { ImportLog } from "./models/importlog.model";
 import { Observation } from "./models/observation.model";
@@ -134,43 +133,54 @@ async function startServer() {
     );
 
     // --- INITIALISATION DES MODÈLES ---
+
+    // NIVEAU 0 : Modèles sans dépendances ou avec des dépendances simples
+    console.log("Initialisation - Niveau 0", LogLevel.DEBUG);
     User.initialize(sequelize);
     Access.initialize(sequelize);
-    Book.initialize(sequelize);
     Compagny.initialize(sequelize);
     Operator.initialize(sequelize);
     Plug.initialize(sequelize);
     Power.initialize(sequelize);
     Provider.initialize(sequelize);
     ImportLog.initialize(sequelize);
+
+    // NIVEAU 1 : Modèles dépendant du niveau 0
+    console.log("Initialisation - Niveau 1", LogLevel.DEBUG);
     Station.initialize(sequelize);
     Vehicule.initialize(sequelize);
+
+    // NIVEAU 2 : Modèles dépendant du niveau 1
+    console.log("Initialisation - Niveau 2", LogLevel.DEBUG);
     Terminal.initialize(sequelize);
     Observation.initialize(sequelize);
+
+    // NIVEAU 3 : Modèles dépendant du niveau 2
+    console.log("Initialisation - Niveau 3", LogLevel.DEBUG);
+    Book.initialize(sequelize);
     request.initialize(sequelize);
-    BookTerminal.initialize(sequelize);
     TerminalPlug.initialize(sequelize);
+
     console.log("Tous les modèles ont été initialisés.", LogLevel.DEBUG);
 
     // --- DÉFINITION DES ASSOCIATIONS ---
-    User.associate();
-    Access.associate();
-    Book.associate();
-    BookTerminal.associate();
-    Compagny.associate();
-    Observation.associate();
-    Operator.associate();
-    Plug.associate();
-    Power.associate();
-    Provider.associate();
-    request.associate();
-    Station.associate();
-    Terminal.associate();
-    TerminalPlug.associate();
-    Vehicule.associate();
-    ImportLog.associate();
-    console.log("Toutes les associations ont été définies.", LogLevel.DEBUG);
+    User.associate(sequelize);
+    Access.associate(sequelize);
+    Compagny.associate(sequelize);
+    Operator.associate(sequelize);
+    Plug.associate(sequelize);
+    Power.associate(sequelize);
+    Provider.associate(sequelize);
+    ImportLog.associate(sequelize);
+    Station.associate(sequelize);
+    Vehicule.associate(sequelize);
+    Terminal.associate(sequelize);
+    Observation.associate(sequelize);
+    Book.associate(sequelize);
+    request.associate(sequelize);
+    TerminalPlug.associate(sequelize);
 
+    console.log("Toutes les associations ont été définies.", LogLevel.DEBUG);
     console.log("🚀 sequelize.sync remplacé par les migrations", LogLevel.INFO);
 
     // --- Création d'un utilisateur de test ---

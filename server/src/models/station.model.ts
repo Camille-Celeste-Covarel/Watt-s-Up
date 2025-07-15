@@ -344,7 +344,7 @@ export class Station
     );
   }
 
-  static associate() {
+  static associate(sequelize: Sequelize) {
     Station.belongsTo(Access, { foreignKey: "id_access", as: "access" });
     Station.belongsTo(Provider, { foreignKey: "id_provider", as: "provider" });
     Station.belongsTo(Operator, { foreignKey: "id_operator", as: "operator" });

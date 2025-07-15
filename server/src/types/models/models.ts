@@ -15,16 +15,27 @@ export type AccessCreationAttributes = Optional<
 
 export interface BookAttributes {
   id: string;
-  start_time: Date | null;
-  price: number | null;
-  actived: boolean | null;
   id_user: string;
+  id_terminal: string;
+  status: string;
+  expires_at: Date;
+  session_ends_at: Date | null;
+  price: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
+
 export type BookCreationAttributes = Optional<
   BookAttributes,
-  "id" | "createdAt" | "updatedAt" | "start_time" | "price" | "actived"
+  | "id"
+  | "createdAt"
+  | "updatedAt"
+  | "price"
+  | "id_terminal"
+  | "status"
+  | "expires_at"
+  | "session_ends_at"
+  | "id_user"
 >;
 
 export interface BookTerminalAttributes {

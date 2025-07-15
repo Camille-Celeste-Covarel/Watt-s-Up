@@ -46,5 +46,5 @@ export class Compagny
     );
   }
 
-  static associate() {}
+  static associate(sequelize: Sequelize) {}
 }
