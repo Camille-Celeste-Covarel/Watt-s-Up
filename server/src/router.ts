@@ -31,7 +31,7 @@ router.get("/stations/:id", stationsActions.read);
 // 🛡️ Wall d'autorisation - Tout ce qui suit nécessite d'être connecté
 /* ************************************************************************* */
 
-// router.use(authenticateToken);
+router.use(authenticateToken);
 
 /* ************************************************************************* */
 // 🔒 Routes PROTÉGÉES (utilisateur connecté requis)
