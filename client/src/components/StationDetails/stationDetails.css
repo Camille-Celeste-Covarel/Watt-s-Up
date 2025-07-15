@@ -153,6 +153,7 @@
   border-top: 1px solid #eee;
 
   .action-button {
+    padding: 10px;
     font-size: 1em;
     font-weight: bold;
     cursor: pointer;
@@ -167,11 +168,20 @@
 
 .reserve-button {
   background-color: var(--quinte-color);
+  font-size: 1em;
+  width: 100px;
+  border: none;
 
   &:hover {
     background-color: var(--seconde-color);
     transition-duration: 0.4s;
     color: white;
+  }
+  &:disabled {
+    background-color: #555555;
+    color: white;
+    cursor: default;
+    opacity: 0.3;
   }
 }
 

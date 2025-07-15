@@ -18,10 +18,7 @@ body {
 .button {
   width: 130px;
   height: 40px;
-  background-color: var(--quinte-color);
   border: none;
-  padding: 10px;
-  color: white;
 }
 
 :root {

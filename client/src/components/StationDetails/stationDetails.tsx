@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import type {
   EnrichedStationAttributes,
   Plug,
   TerminalGroup,
 } from "../../types/stationDetailsTypes.ts";
-import "./stationDetails.css";
 import type { StationDetailsProps } from "../../types/types_maplibre.ts";
 import { PlugIcon } from "../DisplaySVGPlug/DisplaySVGPlug";
+import "./stationDetails.css";
 
 export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [station, setStation] = useState<EnrichedStationAttributes | null>(
@@ -15,6 +16,7 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (!stationId) {
@@ -106,12 +108,19 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   }
 
   const handleReserve = () => {
+    if (!isAuthenticated) {
+      alert("Veuillez vous connecter pour pouvoir réserver une borne.");
+      return;
+    }
+
     if (!selectedGroupKey) {
       alert("Veuillez d'abord sélectionner un groupe de bornes.");
       return;
     }
 
     // Logique future :
+    // La requête devra inclure `credentials: 'include'` pour envoyer le cookie d'authentification.
+    // fetch(`${import.meta.env.VITE_API_URL}/api/reservations`, { method: "POST", body: ..., credentials: "include" })
     // 1. Trouver un terminal DISPONIBLE dans le groupe sélectionné.
     // 2. Envoyer une requête POST à votre API (ex: /api/terminals/:id/book)
     // 3. Mettre à jour l'interface si la réservation réussit.
@@ -233,9 +242,9 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
           <div className="action-buttons-container">
             <button
               type="button"
-              className="action-button reserve-button"
+              className="reserve-button"
               onClick={handleReserve}
-              disabled={!selectedGroupKey}
+              disabled={!selectedGroupKey || !isAuthenticated}
             >
               Réserver
             </button>
