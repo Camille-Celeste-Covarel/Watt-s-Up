@@ -91,8 +91,14 @@ export class request
     );
   }
 
-  static associate() {
-    request.belongsTo(User, { foreignKey: "id_user", as: "user" });
-    request.belongsTo(Terminal, { foreignKey: "id_terminal", as: "terminal" });
+  static associate(sequelize: Sequelize) {
+    request.belongsTo(sequelize.models.User, {
+      foreignKey: "id_user",
+      as: "user",
+    });
+    request.belongsTo(sequelize.models.Terminal, {
+      foreignKey: "id_terminal",
+      as: "terminal",
+    });
   }
 }

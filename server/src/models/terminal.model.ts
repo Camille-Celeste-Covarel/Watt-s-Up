@@ -10,12 +10,9 @@ import type {
   TerminalAttributes,
   TerminalCreationAttributes,
 } from "../types/models/models";
-import { Book } from "./book.model";
-import { BookTerminal } from "./book_terminal.model";
-import { Plug } from "./plug.model";
+import type { Plug } from "./plug.model";
 import { Power } from "./power.model";
 import { Station } from "./station.model";
-import { TerminalPlug } from "./terminal_plug.model";
 
 export class Terminal
   extends Model<TerminalAttributes, TerminalCreationAttributes>
@@ -146,18 +143,22 @@ export class Terminal
     );
   }
 
-  static associate() {
-    Terminal.belongsTo(Station, { foreignKey: "id_station", as: "station" });
-    Terminal.belongsTo(Power, { foreignKey: "id_power", as: "power" });
-    Terminal.belongsToMany(Book, {
-      through: BookTerminal,
+  static associate(sequelize: Sequelize) {
+    Terminal.belongsTo(sequelize.models.Station, {
+      foreignKey: "id_station",
+      as: "station",
+    });
+    Terminal.belongsTo(sequelize.models.Power, {
+      foreignKey: "id_power",
+      as: "power",
+    });
+    Terminal.hasMany(sequelize.models.Book, {
       foreignKey: "id_terminal",
-      otherKey: "id_book",
-      as: "books",
+      as: "reservations",
     });
 
-    Terminal.belongsToMany(Plug, {
-      through: TerminalPlug,
+    Terminal.belongsToMany(sequelize.models.Plug, {
+      through: sequelize.models.TerminalPlug,
       foreignKey: "id_terminal",
       otherKey: "id_plug",
       as: "plugs",

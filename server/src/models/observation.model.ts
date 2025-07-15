@@ -68,7 +68,7 @@ export class Observation
     );
   }
 
-  static associate() {
+  static associate(sequelize: Sequelize) {
     Observation.belongsTo(Station, { foreignKey: "id_station", as: "station" });
     Observation.belongsTo(User, { foreignKey: "id_user", as: "user" });
   }

@@ -22,8 +22,8 @@ export class Book
   public id_user!: string;
   public id_terminal!: string;
   public status!: ReservationStatus;
-  public expiresAt!: Date;
-  public sessionEndsAt!: Date | null;
+  public expires_at!: Date;
+  public session_ends_at!: Date | null;
   public price!: number | null;
 
   public readonly createdAt!: Date;
@@ -40,13 +40,11 @@ export class Book
         id_user: {
           type: DataTypes.UUID,
           allowNull: false,
-          field: "id_user",
           references: { model: User, key: "id" },
         },
         id_terminal: {
           type: DataTypes.UUID,
           allowNull: false,
-          field: "id_terminal",
           references: { model: Terminal, key: "id" },
         },
         status: {
@@ -54,15 +52,13 @@ export class Book
           allowNull: false,
           defaultValue: ReservationStatus.ACTIVE,
         },
-        expiresAt: {
+        expires_at: {
           type: DataTypes.DATE,
           allowNull: false,
-          field: "expires_at",
         },
-        sessionEndsAt: {
+        session_ends_at: {
           type: DataTypes.DATE,
           allowNull: true,
-          field: "session_ends_at",
         },
         price: {
           type: DataTypes.DOUBLE,
@@ -76,25 +72,22 @@ export class Book
         underscored: true,
         modelName: "Book",
         indexes: [
-          {
-            fields: ["id_user"],
-            name: "idx_book_id_user",
-          },
-          {
-            fields: ["status"],
-            name: "idx_book_status",
-          },
-          {
-            fields: ["expires_at"],
-            name: "idx_book_expires_at",
-          },
+          { fields: ["id_user"] },
+          { fields: ["status"] },
+          { fields: ["expires_at"] },
         ],
       },
     );
   }
 
-  static associate() {
-    Book.belongsTo(User, { foreignKey: "userId", as: "user" });
-    Book.belongsTo(Terminal, { foreignKey: "terminalId", as: "terminal" });
+  static associate(sequelize: Sequelize) {
+    Book.belongsTo(sequelize.models.User, {
+      foreignKey: "id_user",
+      as: "user",
+    });
+    Book.belongsTo(sequelize.models.Terminal, {
+      foreignKey: "id_terminal",
+      as: "terminal",
+    });
   }
 }
