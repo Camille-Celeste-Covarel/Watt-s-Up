@@ -356,6 +356,7 @@ export interface VehiculeAttributes {
   id_user: string;
   createdAt?: Date;
   updatedAt?: Date;
+  photo_url?: string;
 }
 export type VehiculeCreationAttributes = Optional<
   VehiculeAttributes,

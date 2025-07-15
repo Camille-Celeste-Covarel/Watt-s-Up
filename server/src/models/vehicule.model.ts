@@ -16,6 +16,7 @@ export class Vehicule
   public color!: string | null;
   public id_plug!: string;
   public id_user!: string;
+  public photo_url?: string;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -56,6 +57,10 @@ export class Vehicule
             model: User,
             key: "id",
           },
+        },
+        photo_url: {
+          type: DataTypes.STRING(255),
+          allowNull: true,
         },
       },
       {
