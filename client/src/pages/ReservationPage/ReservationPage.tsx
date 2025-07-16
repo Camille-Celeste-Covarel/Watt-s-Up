@@ -26,11 +26,21 @@ interface Reservation {
   id: string;
   status: "ACTIVE" | "IN_USE" | "COMPLETED" | "EXPIRED" | "CANCELLED";
   expires_at: string;
+  charge_started_at: string | null;
+  session_ends_at: string | null;
   createdAt: string;
   terminal: Terminal;
 }
 
 // --- Fonctions utilitaires
+
+const statusLabels: { [key in Reservation["status"]]: string } = {
+  ACTIVE: "Réservée",
+  IN_USE: "En charge",
+  COMPLETED: "Terminée",
+  EXPIRED: "Expirée",
+  CANCELLED: "Annulée",
+};
 
 const getRemainingTime = (expiresAt: string) => {
   const diff = new Date(expiresAt).getTime() - new Date().getTime();
@@ -38,6 +48,16 @@ const getRemainingTime = (expiresAt: string) => {
   const minutes = Math.floor(diff / 60000);
   const seconds = Math.floor((diff % 60000) / 1000);
   return `${minutes}m ${seconds}s`;
+};
+
+const getElapsedTime = (startTime: string) => {
+  const diff = new Date().getTime() - new Date(startTime).getTime();
+  if (diff < 0) return "00:00:00";
+
+  const hours = String(Math.floor(diff / 3600000)).padStart(2, "0");
+  const minutes = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
+  const seconds = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
+  return `${hours}:${minutes}:${seconds}`;
 };
 
 // --- Sous-composant pour l'affichage ---
@@ -76,7 +96,7 @@ const ReservationCard = ({ reservation }: { reservation: Reservation }) => {
             <li>
               Statut:{" "}
               <span className={`status status-${reservation.status}`}>
-                {reservation.status}
+                {statusLabels[reservation.status]}
               </span>
             </li>
           </ul>
@@ -147,13 +167,20 @@ export function ReservationPage() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (activeReservation) {
-      const interval = setInterval(() => {
-        setRemainingTime(getRemainingTime(activeReservation.expires_at));
-      }, 1000);
+    if (!activeReservation) return;
 
-      return () => clearInterval(interval);
-    }
+    const interval = setInterval(() => {
+      if (activeReservation.status === "ACTIVE") {
+        setRemainingTime(getRemainingTime(activeReservation.expires_at));
+      } else if (
+        activeReservation.status === "IN_USE" &&
+        activeReservation.charge_started_at
+      ) {
+        setRemainingTime(getElapsedTime(activeReservation.charge_started_at));
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, [activeReservation]);
 
   useEffect(() => {
@@ -241,29 +268,73 @@ export function ReservationPage() {
       {/* --- Section Réservation en cours --- */}
       {activeReservation && (
         <section className="reservation-section">
-          <h2>En cours</h2>
+          <h2>
+            {activeReservation.status === "IN_USE"
+              ? "Charge en cours"
+              : "Borne réservée"}
+          </h2>
           <ReservationCard reservation={activeReservation} />
-          <p>
-            La réservation expire dans : <strong>{remainingTime}</strong>
-          </p>
-          <div className="reservation-actions">
-            <button
-              type="button"
-              className="btn btn-primary"
-              onClick={() => handleStartCharge(activeReservation.id)}
-              disabled={isActionLoading}
-            >
-              Commencer la charge
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => handleCancelReservation(activeReservation.id)}
-              disabled={isActionLoading}
-            >
-              Annuler
-            </button>
-          </div>
+
+          {/* Affiche les infos et actions pour une réservation ACTIVE */}
+          {activeReservation.status === "ACTIVE" && (
+            <>
+              <p>
+                La réservation expire dans : <strong>{remainingTime}</strong>
+              </p>
+              <div className="reservation-actions">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => handleStartCharge(activeReservation.id)}
+                  disabled={isActionLoading}
+                >
+                  Commencer la charge
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => handleCancelReservation(activeReservation.id)}
+                  disabled={isActionLoading}
+                >
+                  Annuler
+                </button>
+              </div>
+            </>
+          )}
+
+          {/* Affiche les infos et actions pour une charge IN_USE */}
+          {activeReservation.status === "IN_USE" && (
+            <>
+              <p style={{ marginTop: "1rem" }}>
+                Temps de charge : <strong>{remainingTime}</strong>
+              </p>
+              {/* --- Ligne de debug pour le dev --- */}
+              {activeReservation.session_ends_at && (
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "grey",
+                    fontStyle: "italic",
+                  }}
+                >
+                  [DEV] Fin de session prévue à :{" "}
+                  {new Date(
+                    activeReservation.session_ends_at,
+                  ).toLocaleTimeString("fr-FR")}
+                </p>
+              )}
+              <div className="reservation-actions">
+                <button
+                  type="button"
+                  className="btn btn-danger"
+                  disabled
+                  title="Fonctionnalité à venir"
+                >
+                  Arrêter la charge
+                </button>
+              </div>
+            </>
+          )}
         </section>
       )}
 
@@ -279,7 +350,7 @@ export function ReservationPage() {
                   {new Date(reservation.createdAt).toLocaleDateString("fr-FR")}
                 </span>
                 <span className={`status status-${reservation.status}`}>
-                  {reservation.status}
+                  {statusLabels[reservation.status]}
                 </span>
               </summary>
               <ReservationCard reservation={reservation} />

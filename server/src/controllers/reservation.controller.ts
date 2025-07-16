@@ -10,6 +10,24 @@ import { LogLevel, log } from "../tools/logger";
 
 const ReservationMin = 30;
 
+// --- Constantes pour la simulation de charge ---
+const BATTERY_CAPACITY_KWH = 60;
+
+const DAY_TARGET_PERCENTAGE = 0.8;
+const DAY_START_MIN_PERCENTAGE = 0.12;
+const DAY_START_MAX_PERCENTAGE = 0.36;
+
+const NIGHT_TARGET_PERCENTAGE = 1.0;
+const NIGHT_START_MIN_PERCENTAGE = 0.1;
+const NIGHT_START_MAX_PERCENTAGE = 0.34;
+
+const NIGHT_START_HOUR = 22;
+const NIGHT_END_HOUR = 6;
+
+// Fonction utilitaire pour un nombre aléatoire
+const getRandomFloat = (min: number, max: number) =>
+  Math.random() * (max - min) + min;
+
 interface CreateReservationBody {
   stationId: string;
   power: number;
@@ -126,7 +144,7 @@ export const cancelReservation = async (
     const reservation = await Book.findOne({
       where: {
         id: reservationId,
-        id_user: userId, // Sécurité : on s'assure que la réservation appartient à l'utilisateur
+        id_user: userId,
       },
       transaction,
     });
@@ -188,35 +206,86 @@ export const startCharge = async (
     return;
   }
 
+  const transaction = await sequelize.transaction();
+
   try {
     const reservation = await Book.findOne({
       where: {
         id: reservationId,
         id_user: userId,
       },
+      include: [
+        { model: Terminal, as: "terminal", attributes: ["puissance_nominale"] },
+      ],
+      transaction,
     });
 
     if (!reservation) {
+      await transaction.rollback();
       res.status(404).json({ message: "Réservation non trouvée." });
       return;
     }
 
     if (reservation.status !== ReservationStatus.ACTIVE) {
+      await transaction.rollback();
       res.status(409).json({
         message: `La charge ne peut pas être démarrée pour cette réservation (statut: ${reservation.status}).`,
       });
       return;
     }
 
-    await reservation.update({ status: ReservationStatus.IN_USE });
+    // --- Logique de simulation de charge ---
+    const now = new Date();
+    const currentHour = now.getHours();
+    const isNight =
+      currentHour >= NIGHT_START_HOUR || currentHour < NIGHT_END_HOUR;
+
+    const startPercentage = isNight
+      ? getRandomFloat(NIGHT_START_MIN_PERCENTAGE, NIGHT_START_MAX_PERCENTAGE)
+      : getRandomFloat(DAY_START_MIN_PERCENTAGE, DAY_START_MAX_PERCENTAGE);
+
+    const targetPercentage = isNight
+      ? NIGHT_TARGET_PERCENTAGE
+      : DAY_TARGET_PERCENTAGE;
+
+    const percentageToCharge = targetPercentage - startPercentage;
+    const energyToChargeKwh = BATTERY_CAPACITY_KWH * percentageToCharge;
+
+    if (!reservation.terminal) {
+      // Sécurité : ne devrait jamais arriver grâce à l'include, mais c'est une bonne pratique
+      await transaction.rollback();
+      log("Terminal details not found for reservation.", LogLevel.ERROR, {
+        reservationId,
+      });
+      res.status(500).json({ message: "Détails de la borne introuvables." });
+      return;
+    }
+    const powerKw = reservation.terminal.puissance_nominale;
+    const chargeDurationHours = powerKw > 0 ? energyToChargeKwh / powerKw : 0;
+    const chargeDurationMs = chargeDurationHours * 60 * 60 * 1000;
+
+    const session_ends_at = new Date(now.getTime() + chargeDurationMs);
+
+    await reservation.update(
+      {
+        status: ReservationStatus.IN_USE,
+        charge_started_at: now,
+        session_ends_at,
+      },
+      { transaction },
+    );
+
+    await transaction.commit();
 
     log(
       `Charge démarrée pour la réservation ${reservation.id} par l'utilisateur ${userId}.`,
       LogLevel.INFO,
     );
-    // On renvoie la réservation mise à jour pour un retour immédiat
-    res.status(200).json(reservation);
+    // On recharge la réservation pour avoir toutes les données à jour
+    const updatedReservation = await Book.findByPk(reservationId);
+    res.status(200).json(updatedReservation);
   } catch (error) {
+    await transaction.rollback();
     log("Erreur lors du démarrage de la charge:", LogLevel.CRITICAL, error);
     res.status(500).json({ message: "Erreur interne du serveur." });
   }
