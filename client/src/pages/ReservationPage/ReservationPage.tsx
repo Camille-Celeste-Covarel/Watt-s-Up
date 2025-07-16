@@ -243,6 +243,36 @@ export function ReservationPage() {
     }
   };
 
+  const handleStopCharge = async (reservationId: string) => {
+    if (
+      !window.confirm("Êtes-vous sûr de vouloir arrêter la charge en cours ?")
+    ) {
+      return;
+    }
+
+    setIsActionLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}/stop`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "L'arrêt de la charge a échoué.");
+      }
+
+      await fetchReservations();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
   if (loading || isLoading) {
     return (
       <div className="page-content">Chargement de vos réservations...</div>
@@ -327,8 +357,8 @@ export function ReservationPage() {
                 <button
                   type="button"
                   className="btn btn-danger"
-                  disabled
-                  title="Fonctionnalité à venir"
+                  onClick={() => handleStopCharge(activeReservation.id)}
+                  disabled={isActionLoading}
                 >
                   Arrêter la charge
                 </button>

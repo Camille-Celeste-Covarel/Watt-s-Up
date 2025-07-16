@@ -291,6 +291,69 @@ export const startCharge = async (
   }
 };
 
+export const stopCharge = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  const userId = req.user?.id;
+  const { id: reservationId } = req.params;
+
+  if (!userId) {
+    res.status(401).json({ message: "Utilisateur non identifié." });
+    return;
+  }
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    // 1. Trouver la réservation à arrêter
+    const reservation = await Book.findOne({
+      where: {
+        id: reservationId,
+        id_user: userId,
+      },
+      transaction,
+    });
+
+    // 2. Vérifier si la réservation existe et peut être arrêtée
+    if (!reservation) {
+      await transaction.rollback();
+      res.status(404).json({ message: "Réservation non trouvée." });
+      return;
+    }
+
+    if (reservation.status !== ReservationStatus.IN_USE) {
+      await transaction.rollback();
+      res.status(409).json({
+        message: `Cette charge ne peut pas être arrêtée (statut: ${reservation.status}).`,
+      });
+      return;
+    }
+
+    // 3. Mettre à jour le statut et libérer la borne
+    await reservation.update(
+      { status: ReservationStatus.COMPLETED },
+      { transaction },
+    );
+    await Terminal.update(
+      { is_booked: false },
+      { where: { id: reservation.id_terminal }, transaction },
+    );
+
+    await transaction.commit();
+
+    log(
+      `Charge pour la réservation ${reservation.id} arrêtée par l'utilisateur ${userId}.`,
+      LogLevel.INFO,
+    );
+    res.status(200).json({ message: "Charge arrêtée avec succès." });
+  } catch (error) {
+    await transaction.rollback();
+    log("Erreur lors de l'arrêt de la charge:", LogLevel.CRITICAL, error);
+    res.status(500).json({ message: "Erreur interne du serveur." });
+  }
+};
+
 export const browseByUser = async (
   req: AuthRequest,
   res: Response,

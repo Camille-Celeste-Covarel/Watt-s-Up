@@ -4,6 +4,7 @@ import {
   cancelReservation,
   createReservation,
   startCharge,
+  stopCharge,
 } from "../controllers/reservation.controller";
 
 const router = Router();
@@ -19,5 +20,8 @@ router.delete("/me/:id", cancelReservation);
 
 // Route pour démarrer une charge
 router.post("/me/:id/start", startCharge);
+
+// Route pour arrêter une charge manuellement
+router.post("/me/:id/stop", stopCharge);
 
 export default router;
