@@ -16,7 +16,7 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
-import { ReservationPage } from "./pages/ReservationPage";
+import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
 import ProtectedRoute from "./utils/ProtectedRoute";
 
 // Import additional components for new routes

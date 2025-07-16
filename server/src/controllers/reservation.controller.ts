@@ -107,6 +107,75 @@ export const createReservation = async (
   }
 };
 
+export const cancelReservation = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  const userId = req.user?.id;
+  const { id: reservationId } = req.params;
+
+  if (!userId) {
+    res.status(401).json({ message: "Utilisateur non identifié." });
+    return;
+  }
+
+  const transaction = await sequelize.transaction();
+
+  try {
+    // 1. Trouver la réservation à annuler
+    const reservation = await Book.findOne({
+      where: {
+        id: reservationId,
+        id_user: userId, // Sécurité : on s'assure que la réservation appartient à l'utilisateur
+      },
+      transaction,
+    });
+
+    // 2. Vérifier si la réservation existe et peut être annulée
+    if (!reservation) {
+      await transaction.rollback();
+      res.status(404).json({ message: "Réservation non trouvée." });
+      return;
+    }
+
+    if (reservation.status !== ReservationStatus.ACTIVE) {
+      await transaction.rollback();
+      res.status(409).json({
+        message: `Cette réservation ne peut pas être annulée (statut: ${reservation.status}).`,
+      });
+      return;
+    }
+
+    // 3. Mettre à jour le statut de la réservation
+    await reservation.update(
+      { status: ReservationStatus.CANCELLED },
+      { transaction },
+    );
+
+    // 4. Libérer la borne associée
+    await Terminal.update(
+      { is_booked: false },
+      { where: { id: reservation.id_terminal }, transaction },
+    );
+
+    await transaction.commit();
+
+    console.log(
+      `Réservation ${reservation.id} annulée par l'utilisateur ${userId}.`,
+      LogLevel.INFO,
+    );
+    res.status(200).json({ message: "Réservation annulée avec succès." });
+  } catch (error) {
+    await transaction.rollback();
+    console.error(
+      "Erreur lors de l'annulation de la réservation:",
+      error,
+      LogLevel.CRITICAL,
+    );
+    res.status(500).json({ message: "Erreur interne du serveur." });
+  }
+};
+
 export const browseByUser = async (
   req: AuthRequest,
   res: Response,
