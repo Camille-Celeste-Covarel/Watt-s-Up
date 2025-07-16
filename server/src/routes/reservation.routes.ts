@@ -3,6 +3,7 @@ import {
   browseByUser,
   cancelReservation,
   createReservation,
+  startCharge,
 } from "../controllers/reservation.controller";
 
 const router = Router();
@@ -15,5 +16,8 @@ router.get("/me", browseByUser);
 
 // Route pour annuler une réservation
 router.delete("/me/:id", cancelReservation);
+
+// Route pour démarrer une charge
+router.post("/me/:id/start", startCharge);
 
 export default router;

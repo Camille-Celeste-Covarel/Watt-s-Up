@@ -6,7 +6,7 @@ import { Plug } from "../models/_index";
 import { Book, ReservationStatus } from "../models/book.model";
 import { Station } from "../models/station.model";
 import { Terminal } from "../models/terminal.model";
-import { LogLevel } from "../tools/logger";
+import { LogLevel, log } from "../tools/logger";
 
 const ReservationMin = 30;
 
@@ -91,17 +91,17 @@ export const createReservation = async (
 
     await transaction.commit();
 
-    console.log(
+    log(
       `Réservation ${newReservation.id} créée pour l'utilisateur ${userId}`,
       LogLevel.INFO,
     );
     res.status(201).json(newReservation);
   } catch (error) {
     await transaction.rollback();
-    console.error(
+    log(
       "Erreur lors de la création de la réservation:",
-      error,
       LogLevel.CRITICAL,
+      error,
     );
     res.status(500).json({ message: "Erreur interne du serveur." });
   }
@@ -160,18 +160,64 @@ export const cancelReservation = async (
 
     await transaction.commit();
 
-    console.log(
+    log(
       `Réservation ${reservation.id} annulée par l'utilisateur ${userId}.`,
       LogLevel.INFO,
     );
     res.status(200).json({ message: "Réservation annulée avec succès." });
   } catch (error) {
     await transaction.rollback();
-    console.error(
+    log(
       "Erreur lors de l'annulation de la réservation:",
-      error,
       LogLevel.CRITICAL,
+      error,
     );
+    res.status(500).json({ message: "Erreur interne du serveur." });
+  }
+};
+
+export const startCharge = async (
+  req: AuthRequest,
+  res: Response,
+): Promise<void> => {
+  const userId = req.user?.id;
+  const { id: reservationId } = req.params;
+
+  if (!userId) {
+    res.status(401).json({ message: "Utilisateur non identifié." });
+    return;
+  }
+
+  try {
+    const reservation = await Book.findOne({
+      where: {
+        id: reservationId,
+        id_user: userId,
+      },
+    });
+
+    if (!reservation) {
+      res.status(404).json({ message: "Réservation non trouvée." });
+      return;
+    }
+
+    if (reservation.status !== ReservationStatus.ACTIVE) {
+      res.status(409).json({
+        message: `La charge ne peut pas être démarrée pour cette réservation (statut: ${reservation.status}).`,
+      });
+      return;
+    }
+
+    await reservation.update({ status: ReservationStatus.IN_USE });
+
+    log(
+      `Charge démarrée pour la réservation ${reservation.id} par l'utilisateur ${userId}.`,
+      LogLevel.INFO,
+    );
+    // On renvoie la réservation mise à jour pour un retour immédiat
+    res.status(200).json(reservation);
+  } catch (error) {
+    log("Erreur lors du démarrage de la charge:", LogLevel.CRITICAL, error);
     res.status(500).json({ message: "Erreur interne du serveur." });
   }
 };
@@ -218,8 +264,9 @@ export const browseByUser = async (
 
     res.json(reservations);
   } catch (error) {
-    console.error(
+    log(
       "Erreur lors de la récupération des réservations de l'utilisateur:",
+      LogLevel.ERROR,
       error,
     );
     res.status(500).json({ message: "Erreur interne du serveur." });

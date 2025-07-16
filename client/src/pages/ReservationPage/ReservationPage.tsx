@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
-import "./ReservationPage.css"; // Import the new CSS file
+import "./ReservationPage.css";
 
 interface Plug {
   id: string;
@@ -92,6 +92,7 @@ export function ReservationPage() {
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isActionLoading, setIsActionLoading] = useState(false);
 
   // --- Filtrage des réservations ---
   const { activeReservation, pastReservations } = useMemo(() => {
@@ -168,6 +169,7 @@ export function ReservationPage() {
       return;
     }
 
+    setIsActionLoading(true);
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}`,
@@ -185,6 +187,32 @@ export function ReservationPage() {
       await fetchReservations();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
+  const handleStartCharge = async (reservationId: string) => {
+    setIsActionLoading(true);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}/start`,
+        {
+          method: "POST",
+          credentials: "include",
+        },
+      );
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Le démarrage de la charge a échoué.");
+      }
+
+      await fetchReservations();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
+    } finally {
+      setIsActionLoading(false);
     }
   };
 
@@ -219,13 +247,19 @@ export function ReservationPage() {
             La réservation expire dans : <strong>{remainingTime}</strong>
           </p>
           <div className="reservation-actions">
-            <button type="button" className="btn btn-primary">
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={() => handleStartCharge(activeReservation.id)}
+              disabled={isActionLoading}
+            >
               Commencer la charge
             </button>
             <button
               type="button"
               className="btn btn-secondary"
               onClick={() => handleCancelReservation(activeReservation.id)}
+              disabled={isActionLoading}
             >
               Annuler
             </button>
