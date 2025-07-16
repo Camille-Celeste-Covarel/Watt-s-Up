@@ -37,7 +37,9 @@ function ContactPage() {
         required
       />
       <div className="submit-button">
-        <button type="submit">Envoyer</button>
+        <button className="button-classic" type="submit">
+          Envoyer
+        </button>
       </div>
     </form>
   );

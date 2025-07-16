@@ -262,10 +262,18 @@ function Filter({ onFilterValidation }: FilterProps) {
             </div>
           </div>
           <div className="confirm-filter">
-            <button type="button" onClick={handleValidate}>
+            <button
+              type="button"
+              className="button-classic"
+              onClick={handleValidate}
+            >
               Valider
             </button>
-            <button type="button" onClick={handleReset}>
+            <button
+              type="button"
+              className="button-classic"
+              onClick={handleReset}
+            >
               Réinitialiser
             </button>
           </div>

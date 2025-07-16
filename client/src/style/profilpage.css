@@ -20,16 +20,6 @@
   flex-direction: column;
 }
 
-.profil-avatar {
-  height: 110px;
-  width: 110px;
-  border-radius: 50%;
-  object-fit: cover;
-  object-position: center;
-  border: 2px solid var(--quinte-color, #40352c);
-  margin: 2rem 0;
-}
-
 .profil-infos p {
   margin: 0.3rem 0;
 }
