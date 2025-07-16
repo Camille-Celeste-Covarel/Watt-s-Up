@@ -107,10 +107,14 @@ const register: RequestHandler = async (req, res, next) => {
       password,
       first_name,
       last_name,
+      birthdate,
       address,
+      address_bis,
       city,
       postcode,
       country,
+      gender,
+      avatar_url,
     } = req.body;
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
@@ -127,11 +131,14 @@ const register: RequestHandler = async (req, res, next) => {
       password: hashedPassword,
       first_name,
       last_name,
-      birthdate: new Date(),
-      address: address,
-      city: city,
-      postcode: postcode,
-      country: country,
+      birthdate,
+      address,
+      address_bis,
+      city,
+      postcode,
+      country,
+      gender,
+      avatar_url,
       is_admin: false,
     });
 

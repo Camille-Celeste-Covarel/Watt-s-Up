@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 import "../style/registerpage.css";
+import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
 
 interface FormData {
@@ -23,6 +24,7 @@ interface FormData {
   license_plate: string;
   color: string;
   id_plug: string;
+  vehicle_photo_url: string;
 }
 
 interface FormErrors {
@@ -44,6 +46,8 @@ interface FormErrors {
 }
 
 function RegisterPage() {
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState<FormData>({
     // User
     first_name: "",
@@ -64,6 +68,7 @@ function RegisterPage() {
     license_plate: "",
     color: "",
     id_plug: "",
+    vehicle_photo_url: "",
   });
 
   const [errors, setErrors] = useState<FormErrors>({});
@@ -150,12 +155,46 @@ function RegisterPage() {
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (validateForm()) {
-      console.log("Données du formulaire:", formData);
-      // Ici vous pouvez ajouter l'appel API pour créer le compte
+      try {
+        const response = await fetch(
+          `${import.meta.env.VITE_API_URL}/api/auth/register`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: formData.email,
+              password: formData.password,
+              first_name: formData.first_name,
+              last_name: formData.last_name,
+              birthdate: formData.birthdate,
+              address: formData.address,
+              address_bis: formData.address_bis,
+              city: formData.city,
+              postcode: formData.postcode,
+              country: formData.country,
+              gender: formData.gender,
+              avatar_url: avatar,
+            }),
+          },
+        );
+
+        const data = await response.json();
+
+        if (response.ok) {
+          alert("Compte créé avec succès !");
+          navigate("/login");
+        } else {
+          alert(data.error || "Erreur lors de la création du compte");
+        }
+      } catch (err) {
+        alert("Erreur réseau");
+      }
     }
   };
 
@@ -175,24 +214,39 @@ function RegisterPage() {
     fileInput?.click();
   };
 
+  const handleVehicleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const imageUrl = URL.createObjectURL(file);
+      setFormData((prev) => ({
+        ...prev,
+        vehicle_photo_url: imageUrl,
+      }));
+    }
+  };
+
   return (
-    <div className="register-container">
-      <section className="register-profil-section">
-        <h2>Mon profil</h2>
-        <div className="profil-picture-container">
-          <img src={avatar} className="profil-avatar" alt="avatar du compte" />
-          <button type="button" onClick={triggerFileInput}>
-            Télécharger une photo
-          </button>
-          <input
-            id="profile-image-input"
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            style={{ display: "none" }}
-          />
-        </div>
-        <form onSubmit={handleSubmit} className="register-form">
+    <form onSubmit={handleSubmit} className="register-form">
+      <div className="register-container">
+        <section className="register-profil-section">
+          <h2>Mon profil</h2>
+          <div className="profil-picture-container">
+            <img
+              src={avatar}
+              className="profil-avatar"
+              alt="avatar du compte"
+            />
+            <button type="button" onClick={triggerFileInput}>
+              Télécharger une photo
+            </button>
+            <input
+              id="profile-image-input"
+              type="file"
+              accept="image/*"
+              onChange={handleImageUpload}
+              style={{ display: "none" }}
+            />
+          </div>
           <div className="form-group">
             <h3>Prénom</h3>
             <input
@@ -370,66 +424,90 @@ function RegisterPage() {
               <span className="error-message">{errors.country}</span>
             )}
           </div>
-        </form>
-      </section>
+        </section>
 
-      <section className="register-vehicle-section">
-        <h2>Mon véhicule</h2>
-        <div className="form-group">
-          <h3>Nom du véhicule</h3>
-          <input
-            type="text"
-            name="vehicle_name"
-            value={formData.vehicle_name}
-            onChange={handleChange}
-            className={errors.vehicle_name ? "error" : ""}
-            placeholder="Tapez le nom"
-          />
-          {errors.vehicle_name && (
-            <span className="error-message">{errors.vehicle_name}</span>
-          )}
-        </div>
-
-        <div className="form-group">
-          <h3>Plaque d'immatriculation</h3>
-          <input
-            type="text"
-            name="license_plate"
-            value={formData.license_plate}
-            onChange={handleChange}
-            className={errors.license_plate ? "error" : ""}
-            placeholder="Tapez votre plaque d'immatriculation"
-          />
-          {errors.license_plate && (
-            <span className="error-message">{errors.license_plate}</span>
-          )}
-        </div>
-        <div className="form-group">
-          <h3>Type de prise</h3>
-          <select
-            name="id_plug"
-            value={formData.id_plug}
-            onChange={handleChange}
-            className={errors.id_plug ? "error" : ""}
-          >
-            <option value="">Sélectionnez votre prise</option>
-            <option value="chademo">CHAdeMO</option>
-            <option value="type2">Type 2</option>
-            <option value="combo-ccs">Combo CCS</option>
-            <option value="type-ef">Type EF</option>
-          </select>
-          {errors.id_plug && (
-            <span className="error-message">{errors.id_plug}</span>
-          )}
-        </div>
-
-        <div className="form-actions">
+        <section className="register-vehicle-section">
+          <div className="form-group">
+            <h3>Photo du véhicule</h3>
+            <button
+              type="button"
+              onClick={() => {
+                const fileInput = document.getElementById(
+                  "vehicle-photo-input",
+                ) as HTMLInputElement;
+                fileInput?.click();
+              }}
+            >
+              Télécharger une photo pour votre véhicule
+            </button>
+            <input
+              id="vehicle-photo-input"
+              type="file"
+              accept="image/*"
+              onChange={handleVehicleImageUpload}
+              style={{ display: "none" }}
+            />
+            {formData.vehicle_photo_url && (
+              <img
+                src={formData.vehicle_photo_url}
+                alt="Aperçu véhicule"
+                className="vehicle-photo-preview"
+              />
+            )}
+          </div>
+          <h2>Mon véhicule</h2>
+          <div className="form-group">
+            <h3>Nom du véhicule</h3>
+            <input
+              type="text"
+              name="vehicle_name"
+              value={formData.vehicle_name}
+              onChange={handleChange}
+              className={errors.vehicle_name ? "error" : ""}
+              placeholder="Tapez le nom"
+            />
+            {errors.vehicle_name && (
+              <span className="error-message">{errors.vehicle_name}</span>
+            )}
+          </div>
+          <div className="form-group">
+            <h3>Plaque d'immatriculation</h3>
+            <input
+              type="text"
+              name="license_plate"
+              value={formData.license_plate}
+              onChange={handleChange}
+              className={errors.license_plate ? "error" : ""}
+              placeholder="Tapez votre plaque d'immatriculation"
+            />
+            {errors.license_plate && (
+              <span className="error-message">{errors.license_plate}</span>
+            )}
+          </div>
+          <div className="form-group">
+            <h3>Type de prise</h3>
+            <select
+              name="id_plug"
+              value={formData.id_plug}
+              onChange={handleChange}
+              className={errors.id_plug ? "error" : ""}
+            >
+              <option value="">Sélectionnez votre prise</option>
+              <option value="chademo">CHAdeMO</option>
+              <option value="type2">Type 2</option>
+              <option value="combo-ccs">Combo CCS</option>
+              <option value="type-ef">Type EF</option>
+            </select>
+            {errors.id_plug && (
+              <span className="error-message">{errors.id_plug}</span>
+            )}
+          </div>
           <button type="submit" className="submit-btn">
             Valider mes informations
           </button>
-        </div>
-      </section>
-    </div>
+        </section>
+      </div>
+    </form>
   );
 }
 
