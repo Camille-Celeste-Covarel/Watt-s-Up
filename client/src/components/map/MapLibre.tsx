@@ -13,7 +13,6 @@ import { fetchVisibleStations } from "../../utils/stationApi.ts";
 import { StationDetails } from "../StationDetails/stationDetails";
 import Filter from "../filter/Filter.tsx";
 
-// Cette fonction utilitaire ne change pas
 function logInvalidStations(stations: StationMapAttributes[], source: string) {
   const invalidStations = stations.filter((station) => !station.geojson_geom);
   if (invalidStations.length > 0) {
@@ -25,7 +24,6 @@ function logInvalidStations(stations: StationMapAttributes[], source: string) {
 }
 
 function MapLibre() {
-  // --- DÉCLARATION DES HOOKS AU PLUS HAUT NIVEAU ---
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const { openOverlay } = useOverlay();
@@ -38,23 +36,22 @@ function MapLibre() {
   });
 
   const [bbox, setBbox] = useState<string | null>(null);
+  const [zoom, setZoom] = useState<number>(14);
 
-  // --- LE CŒUR : REACT QUERY ---
-  const { data: stationsData, isLoading } = useQuery({
-    queryKey: ["stations", "visible", bbox, filters],
+  // --- LE CŒUR : REACT QUERY  ---
+  const { data: stationsData, isLoading } = useQuery<StationMapAttributes[]>({
+    queryKey: ["stations", "visible", bbox, filters, zoom],
     queryFn: () => {
       if (!bbox) {
         return Promise.reject(new Error("Bbox is required to fetch stations."));
       }
-      return fetchVisibleStations(bbox, filters);
+      return fetchVisibleStations(bbox, filters, zoom);
     },
     enabled: !!bbox,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
 
-  // --- EFFETS DE BORD ---
-  // Met à jour la source de la carte quand les données de React Query changent.
   useEffect(() => {
     if (!stationsData || !mapRef.current) return;
 
@@ -97,12 +94,10 @@ function MapLibre() {
     source.setData(geoJsonData);
   }, [stationsData]);
 
-  // --- GESTIONNAIRES D'ÉVÉNEMENTS ---
   const handleFilterValidation = (newFilters: typeof filters) => {
     setFilters(newFilters);
   };
 
-  // --- INITIALISATION DE LA CARTE ---
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -146,7 +141,6 @@ function MapLibre() {
         clusterRadius: 50,
       });
 
-      // Couches (layers)
       map.addLayer({
         id: "cluster-circles",
         type: "circle",
@@ -211,7 +205,6 @@ function MapLibre() {
         },
       } as maplibregl.CircleLayerSpecification);
 
-      // Déclenche le premier chargement de données
       const bounds = map.getBounds();
       setBbox(
         [
@@ -221,9 +214,9 @@ function MapLibre() {
           bounds.getNorth(),
         ].join(","),
       );
+      setZoom(map.getZoom());
     });
 
-    // Interactions avec la carte
     map.on("click", "unclustered-point", (e) => {
       if (!e.features?.length) return;
       const stationId = e.features[0].properties?.id;
@@ -237,8 +230,7 @@ function MapLibre() {
     map.on("mouseenter", "unclustered-point", setCursorToPointer);
     map.on("mouseleave", "unclustered-point", resetCursor);
 
-    // Le debounce met à jour l'état `bbox`, ce qui déclenche la magie de React Query
-    const debouncedUpdateBbox = () => {
+    const debouncedUpdateMapState = () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       debounceTimerRef.current = window.setTimeout(() => {
         if (!mapRef.current) return;
@@ -251,15 +243,18 @@ function MapLibre() {
             bounds.getNorth(),
           ].join(","),
         );
+        setZoom(mapRef.current.getZoom());
       }, 250);
     };
 
-    map.on("moveend", debouncedUpdateBbox);
-    map.on("zoomend", debouncedUpdateBbox);
+    map.on("moveend", debouncedUpdateMapState);
+    map.on("zoomend", debouncedUpdateMapState);
 
-    // Nettoyage
     return () => {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      map.off("moveend", debouncedUpdateMapState);
+      map.off("zoomend", debouncedUpdateMapState);
+      // ---
       map.off("mouseenter", "cluster-circles", setCursorToPointer);
       map.off("mouseleave", "cluster-circles", resetCursor);
       map.off("mouseenter", "unclustered-point", setCursorToPointer);
