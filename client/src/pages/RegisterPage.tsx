@@ -1,8 +1,8 @@
 import { useState } from "react";
 
 import "../style/registerpage.css";
-import avatarIcon from "../assets/images/icon/avatar.svg";
 import { useNavigate } from "react-router";
+import avatarIcon from "../assets/images/icon/avatar.svg";
 
 interface FormData {
   // Champs User selon le modèle
@@ -46,7 +46,7 @@ interface FormErrors {
 }
 
 function RegisterPage() {
-  const navigate = useNavigate()
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState<FormData>({
     // User
@@ -188,7 +188,7 @@ function RegisterPage() {
 
         if (response.ok) {
           alert("Compte créé avec succès !");
-          navigate("/login")
+          navigate("/login");
         } else {
           alert(data.error || "Erreur lors de la création du compte");
         }
@@ -231,7 +231,11 @@ function RegisterPage() {
         <section className="register-profil-section">
           <h2>Mon profil</h2>
           <div className="profil-picture-container">
-            <img src={avatar} className="profil-avatar" alt="avatar du compte" />
+            <img
+              src={avatar}
+              className="profil-avatar"
+              alt="avatar du compte"
+            />
             <button type="button" onClick={triggerFileInput}>
               Télécharger une photo
             </button>
@@ -450,8 +454,6 @@ function RegisterPage() {
                 className="vehicle-photo-preview"
               />
             )}
-          </div>
-          <div className="form-actions">
           </div>
           <h2>Mon véhicule</h2>
           <div className="form-group">

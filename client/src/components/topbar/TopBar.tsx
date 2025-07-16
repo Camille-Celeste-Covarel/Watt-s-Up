@@ -1,7 +1,7 @@
 import "./topbar.css";
 import { useNavigate } from "react-router";
-import { useAuth } from "../../contexts/AuthContext";
 import logo from "../../assets/images/topbar/logo.svg";
+import { useAuth } from "../../contexts/AuthContext";
 
 function TopBar() {
   const navigate = useNavigate();
@@ -33,11 +33,7 @@ function TopBar() {
           Se connecter
         </button>
       ) : (
-        <button
-          type="button"
-          className="logout-button"
-          onClick={handleLogout}
-        >
+        <button type="button" className="logout-button" onClick={handleLogout}>
           Se déconnecter
         </button>
       )}

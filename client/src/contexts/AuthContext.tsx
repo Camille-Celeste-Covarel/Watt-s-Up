@@ -27,8 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         method: "POST",
         credentials: "include",
       });
-    } catch (e) {
-    }
+    } catch (e) {}
     setUser(null);
     setIsAuthenticated(false);
   };
