@@ -183,35 +183,6 @@ async function startServer() {
     console.log("Toutes les associations ont été définies.", LogLevel.DEBUG);
     console.log("🚀 sequelize.sync remplacé par les migrations", LogLevel.INFO);
 
-    // --- Création d'un utilisateur de test ---
-    const [user, created] = await User.findOrCreate({
-      where: { email: "test.user@example.com" },
-      defaults: {
-        first_name: "Test",
-        last_name: "User",
-        email: "test.user@example.com",
-        password: "securepassword123",
-        birthdate: new Date("1990-01-01"),
-        address: "123 Main St",
-        city: "Anytown",
-        postcode: "12345",
-        country: "FR",
-        is_admin: false,
-      },
-    });
-
-    if (created) {
-      console.log(
-        `✅ Utilisateur créé avec succès : ID ${user.id}`,
-        LogLevel.INFO,
-      );
-    } else {
-      console.log(
-        `ℹ️ L'utilisateur avec l'email ${user.email} existe déjà (ID: ${user.id}).`,
-        LogLevel.INFO,
-      );
-    }
-
     return app;
   } catch (error) {
     console.error(

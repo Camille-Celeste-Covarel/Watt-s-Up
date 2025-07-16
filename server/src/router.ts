@@ -7,6 +7,7 @@ import requestActions from "./modules/requestActions";
 import stationsActions from "./modules/stationsActions";
 import userActions from "./modules/userActions";
 import vehiculeActions from "./modules/vehiculeActions";
+import reservationRoutes from "./routes/reservation.routes";
 
 const router = express.Router();
 
@@ -31,15 +32,13 @@ router.get("/stations/:id", stationsActions.read);
 // 🛡️ Wall d'autorisation - Tout ce qui suit nécessite d'être connecté
 /* ************************************************************************* */
 
-// router.use(authenticateToken);
+router.use(authenticateToken);
 
 /* ************************************************************************* */
 // 🔒 Routes PROTÉGÉES (utilisateur connecté requis)
 /* ************************************************************************* */
 
-router.post("/import/csv", upload.single("csvFile"), importCsv);
-
-// Routes utilisateurs (admin seulement)
+// Routes utilisateurs
 router.get("/users", userActions.browse);
 router.get("/users/:id", userActions.read);
 router.post("/users", userActions.add);
@@ -71,5 +70,11 @@ router.delete("/vehicules/:id", vehiculeActions.destroy);
 router.post("/stations", stationsActions.add);
 router.put("/stations/:id", stationsActions.edit);
 router.delete("/stations/:id", stationsActions.destroy);
+
+// Route pour la création de réservation
+router.use("/reservations", reservationRoutes);
+
+// Route pour import des données CSV
+router.post("/import/csv", upload.single("csvFile"), importCsv);
 
 export default router;
