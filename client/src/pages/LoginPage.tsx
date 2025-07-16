@@ -71,7 +71,7 @@ function LoginPage() {
 
         {error && <div className="error-message">{error}</div>}
 
-        <button type="submit" className="button-submit">
+        <button type="submit" className="button-classic">
           Se connecter
         </button>
 
@@ -81,7 +81,11 @@ function LoginPage() {
           <h2>Toujours pas de compte ?</h2>
         </div>
 
-        <button type="button" onClick={() => navigate("/register")}>
+        <button
+          type="button"
+          className="button-classic"
+          onClick={() => navigate("/register")}
+        >
           S'inscrire !
         </button>
       </form>

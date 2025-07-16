@@ -21,6 +21,15 @@ body {
   border: none;
 }
 
+.button-classic {
+  width: 110px;
+  padding: 5px;
+  min-height: 30px;
+  background-color: var(--quinte-color);
+  border: none;
+  color: white;
+}
+
 :root {
   --fondamental-color: #f2c641;
   --quinte-color: #40352c;
