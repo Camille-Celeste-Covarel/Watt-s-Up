@@ -79,5 +79,5 @@ export class ImportLog
     );
   }
 
-  static associate() {}
+  static associate(sequelize: Sequelize) {}
 }

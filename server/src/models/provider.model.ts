@@ -46,5 +46,5 @@ export class Provider
     );
   }
 
-  static associate() {}
+  static associate(sequelize: Sequelize) {}
 }

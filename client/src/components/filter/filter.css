@@ -9,6 +9,10 @@
   border-radius: 5px;
 }
 
+.active-filters {
+  background-color: var(--quinte-color);
+}
+
 .filter-overlay {
   position: fixed;
   top: 60px;

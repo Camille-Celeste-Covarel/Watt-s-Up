@@ -15,16 +15,27 @@ export type AccessCreationAttributes = Optional<
 
 export interface BookAttributes {
   id: string;
-  start_time: Date | null;
-  price: number | null;
-  actived: boolean | null;
   id_user: string;
+  id_terminal: string;
+  status: string;
+  expires_at: Date;
+  session_ends_at: Date | null;
+  price: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }
+
 export type BookCreationAttributes = Optional<
   BookAttributes,
-  "id" | "createdAt" | "updatedAt" | "start_time" | "price" | "actived"
+  | "id"
+  | "createdAt"
+  | "updatedAt"
+  | "price"
+  | "id_terminal"
+  | "status"
+  | "expires_at"
+  | "session_ends_at"
+  | "id_user"
 >;
 
 export interface BookTerminalAttributes {
@@ -277,13 +288,7 @@ export interface TerminalAttributes {
   latitude?: number | null;
   longitude?: number | null;
   geom?: GeoJSON.Point | Literal | null;
-  type_de_prise: string;
   puissance_nominale: number;
-  prise_type_2: boolean;
-  prise_type_ef: boolean;
-  prise_chademo: boolean;
-  prise_combo_ccs: boolean;
-  prise_autre: string | null;
   status: string | null;
   num_pdc: string | null;
   createdAt?: Date;
@@ -300,7 +305,6 @@ export type TerminalCreationAttributes = Optional<
   | "latitude"
   | "longitude"
   | "geom"
-  | "prise_autre"
   | "status"
   | "num_pdc"
 >;

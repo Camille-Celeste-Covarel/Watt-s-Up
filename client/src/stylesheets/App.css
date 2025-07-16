@@ -15,8 +15,9 @@ body {
   font-family: "Montserrat", sans-serif;
 }
 
-button {
-  max-width: 130px;
+.button /*_default*/ {
+  width: 110px;
+  height: 40px;
   background-color: var(--quinte-color);
   border: none;
   padding: 10px;

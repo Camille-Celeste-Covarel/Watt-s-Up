@@ -127,5 +127,5 @@ export class User
     );
   }
 
-  static associate() {}
+  static associate(sequelize: Sequelize) {}
 }
