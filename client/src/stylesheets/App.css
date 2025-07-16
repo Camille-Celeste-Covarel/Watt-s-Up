@@ -22,12 +22,13 @@ body {
 }
 
 .button-classic {
-  width: 110px;
-  padding: 5px;
+  max-width: 120px;
+  padding: 10px;
   min-height: 30px;
   background-color: var(--quinte-color);
   border: none;
   color: white;
+  margin: 20px 0;
 }
 
 :root {

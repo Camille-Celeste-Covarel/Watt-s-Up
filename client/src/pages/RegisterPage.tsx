@@ -1,8 +1,10 @@
 import { useState } from "react";
 
 import "../style/registerpage.css";
+import { FaEye, FaEyeSlash } from "react-icons/fa"; // Installe react-icons si besoin
 import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
+import vehicleDefaultIcon from "../assets/images/vehicleIcons/carProfile.svg";
 
 interface FormData {
   // Champs User selon le modèle
@@ -73,6 +75,8 @@ function RegisterPage() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [avatar, setAvatar] = useState<string>(avatarIcon);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
@@ -125,13 +129,20 @@ function RegisterPage() {
       newErrors.country = "Le pays est requis";
     }
 
-    // Validation Vehicule (champs obligatoires selon le modèle)
     if (!formData.vehicle_name.trim()) {
       newErrors.vehicle_name = "Le nom du véhicule est requis";
     }
 
     if (!formData.id_plug) {
       newErrors.id_plug = "Le type de prise est requis";
+    }
+
+    const plateRegex = /^[A-Z]{2}-\d{3}-[A-Z]{2}$/i;
+
+    if (!formData.license_plate) {
+      newErrors.license_plate = "La plaque d'immatriculation est requise";
+    } else if (!plateRegex.test(formData.license_plate.trim())) {
+      newErrors.license_plate = "Format attendu : AA-123-AA";
     }
 
     setErrors(newErrors);
@@ -236,7 +247,11 @@ function RegisterPage() {
               className="profil-avatar"
               alt="avatar du compte"
             />
-            <button type="button" onClick={triggerFileInput}>
+            <button
+              type="button"
+              className="button-classic"
+              onClick={triggerFileInput}
+            >
               Télécharger une photo
             </button>
             <input
@@ -294,14 +309,29 @@ function RegisterPage() {
 
           <div className="form-group">
             <h3>Mot de passe</h3>
-            <input
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={errors.password ? "error" : ""}
-              placeholder="Entrez votre mot de passe"
-            />
+            <div className="password-input-container">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={errors.password ? "error" : ""}
+                placeholder="Entrez votre mot de passe"
+              />
+              <button
+                type="button"
+                className="password-toggle-btn"
+                onClick={() => setShowPassword((v) => !v)}
+                tabIndex={-1}
+                aria-label={
+                  showPassword
+                    ? "Masquer le mot de passe"
+                    : "Afficher le mot de passe"
+                }
+              >
+                {showPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
             {errors.password && (
               <span className="error-message">{errors.password}</span>
             )}
@@ -309,14 +339,38 @@ function RegisterPage() {
 
           <div className="form-group">
             <h3>Confirmer le mot de passe</h3>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={errors.confirmPassword ? "error" : ""}
-              placeholder="Confirmez votre mot de passe"
-            />
+            <div className="password-input-container">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={errors.confirmPassword ? "error" : ""}
+                placeholder="Confirmez votre mot de passe"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((v) => !v)}
+                style={{
+                  position: "absolute",
+                  right: 10,
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
+                tabIndex={-1}
+                aria-label={
+                  showConfirmPassword
+                    ? "Masquer le mot de passe"
+                    : "Afficher le mot de passe"
+                }
+              >
+                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+              </button>
+            </div>
             {errors.confirmPassword && (
               <span className="error-message">{errors.confirmPassword}</span>
             )}
@@ -429,8 +483,24 @@ function RegisterPage() {
         <section className="register-vehicle-section">
           <div className="form-group">
             <h3>Photo du véhicule</h3>
+            <div className="vehicle-photo-box">
+              {formData.vehicle_photo_url ? (
+                <img
+                  src={formData.vehicle_photo_url}
+                  alt="Aperçu véhicule"
+                  className="vehicle-photo-preview"
+                />
+              ) : (
+                <img
+                  src={vehicleDefaultIcon}
+                  alt="Aperçu véhicule"
+                  className="vehicle-photo-preview vehicle-photo-default"
+                />
+              )}
+            </div>
             <button
               type="button"
+              className="button-classic"
               onClick={() => {
                 const fileInput = document.getElementById(
                   "vehicle-photo-input",
@@ -438,7 +508,7 @@ function RegisterPage() {
                 fileInput?.click();
               }}
             >
-              Télécharger une photo pour votre véhicule
+              Télécharger une photo
             </button>
             <input
               id="vehicle-photo-input"
@@ -447,13 +517,6 @@ function RegisterPage() {
               onChange={handleVehicleImageUpload}
               style={{ display: "none" }}
             />
-            {formData.vehicle_photo_url && (
-              <img
-                src={formData.vehicle_photo_url}
-                alt="Aperçu véhicule"
-                className="vehicle-photo-preview"
-              />
-            )}
           </div>
           <h2>Mon véhicule</h2>
           <div className="form-group">
@@ -478,7 +541,7 @@ function RegisterPage() {
               value={formData.license_plate}
               onChange={handleChange}
               className={errors.license_plate ? "error" : ""}
-              placeholder="Tapez votre plaque d'immatriculation"
+              placeholder="Format : AA-123-AA"
             />
             {errors.license_plate && (
               <span className="error-message">{errors.license_plate}</span>
@@ -502,7 +565,7 @@ function RegisterPage() {
               <span className="error-message">{errors.id_plug}</span>
             )}
           </div>
-          <button type="submit" className="submit-btn">
+          <button type="submit" className="button-classic">
             Valider mes informations
           </button>
         </section>

@@ -21,7 +21,6 @@
   border-radius: 50%;
   object-fit: cover;
   object-position: center;
-  border: 2px solid var(--quinte-color);
 }
 
 .register-container h2 {
@@ -54,10 +53,6 @@
   width: 220px;
 }
 
-.submit-btn {
-  margin-top: 20px;
-}
-
 .register-container select {
   border: none;
   background-color: white;
@@ -67,4 +62,61 @@
 .register-vehicle-section select {
   background-color: var(--fondamental-color);
   color: white;
+}
+
+.vehicle-photo-box {
+  width: 250px;
+  height: 150px;
+  max-width: 80vw;
+  background-color: var(--quinte-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.vehicle-photo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  display: block;
+}
+
+.vehicle-photo-default {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+}
+
+.password-input-container {
+  position: relative;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+input.error,
+select.error {
+  border: 2px solid #e74c3c;
+  background-color: #fff6f6;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.95em;
+  margin-top: 2px;
+  display: block;
 }
