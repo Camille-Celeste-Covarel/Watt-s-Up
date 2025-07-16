@@ -7,7 +7,6 @@ import { User } from "../models/user.model";
 // Récupère toutes les ressources (par exemple, toutes les réservations).
 const browse: RequestHandler = async (req, res, next) => {
   try {
-    // lister toutes les réservations
     const reservations = await Book.findAll({
       include: [
         {
@@ -28,7 +27,19 @@ const browse: RequestHandler = async (req, res, next) => {
 // Récupère une ressource spécifique par son ID.
 const read: RequestHandler = async (req, res, next) => {
   try {
-    res.sendStatus(404);
+    const { id } = req.params;
+    const reservation = await Book.findByPk(id, {
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
+        { model: Terminal, as: "terminal", attributes: ["id", "num_pdc"] },
+      ],
+    });
+
+    reservation ? res.json(reservation) : res.sendStatus(404);
   } catch (err) {
     next(err);
   }

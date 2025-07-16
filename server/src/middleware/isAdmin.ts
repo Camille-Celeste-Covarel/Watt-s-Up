@@ -1,9 +1,8 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
-interface JWTPayload {
-  userId: number;
-  email: string;
+interface TokenPayload {
+  id: string;
   isAdmin: boolean;
 }
 
@@ -30,7 +29,7 @@ const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
         return;
       }
 
-      const payload = decoded as JWTPayload;
+      const payload = decoded as TokenPayload;
 
       if (!payload.isAdmin) {
         res.status(403).json({ error: "Accès refusé. Droits admin requis." });

@@ -1,9 +1,15 @@
 import { Router } from "express";
-import { createReservation } from "../controllers/reservation.controller";
-import { isAuthenticatedForReservation } from "../middleware/reservationAuth";
+import {
+  browseByUser,
+  createReservation,
+} from "../controllers/reservation.controller";
 
 const router = Router();
 
-router.post("/", isAuthenticatedForReservation, createReservation);
+// Route pour créer une nouvelle réservation
+router.post("/", createReservation);
+
+// Route pour lister les réservations de l'utilisateur connecté
+router.get("/me", browseByUser);
 
 export default router;
