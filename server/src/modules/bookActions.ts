@@ -1,11 +1,24 @@
 import type { RequestHandler } from "express";
-import { Book } from "../models/_index";
+import { Book } from "../models/book.model";
+import { Terminal } from "../models/terminal.model";
+import { User } from "../models/user.model";
 
 // L'opération BREAD : Browse (Read All)
 // Récupère toutes les ressources (par exemple, toutes les réservations).
 const browse: RequestHandler = async (req, res, next) => {
   try {
-    res.json([]);
+    // lister toutes les réservations
+    const reservations = await Book.findAll({
+      include: [
+        {
+          model: User,
+          as: "user",
+          attributes: ["id", "first_name", "last_name", "email"],
+        },
+        { model: Terminal, as: "terminal", attributes: ["id", "num_pdc"] },
+      ],
+    });
+    res.json(reservations);
   } catch (err) {
     next(err);
   }

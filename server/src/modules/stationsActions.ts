@@ -91,7 +91,9 @@ const browse: RequestHandler = async (_req, res, next) => {
 // L'opération BREAD : Browse Visible (Read All visible in bbox)
 const browseVisible: RequestHandler = async (req, res, next) => {
   try {
-    const { bbox, vehicles, powers, plugs } = req.query;
+    const { bbox, vehicles, powers, plugs, zoom } = req.query;
+    const currentZoom = Number.parseFloat(zoom as string) || 0;
+    const CLUSTER_ZOOM_THRESHOLD = 14;
 
     if (!bbox || typeof bbox !== "string") {
       res.status(400).json({ error: "Bounding box (bbox) is required." });
@@ -109,7 +111,7 @@ const browseVisible: RequestHandler = async (req, res, next) => {
     }
     const [west, south, east, north] = bboxParts;
 
-    // --- ÉTAPE 1 : Obtenir les IDs des stations (inchangée et déjà rapide) ---
+    // --- ÉTAPE 1 : Obtenir les IDs des stations (inchangée) ---
     const filterOptions: {
       where: {
         [Op.and]: (WhereOptions | ReturnType<typeof sequelize.literal>)[];
@@ -126,6 +128,7 @@ const browseVisible: RequestHandler = async (req, res, next) => {
       include: [],
     };
 
+    // Logique de filtres (inchangée)
     if (vehicles && typeof vehicles === "string" && vehicles.includes("bike")) {
       filterOptions.where[Op.and].push({ station_deux_roues: true });
     }
@@ -199,7 +202,28 @@ const browseVisible: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    // --- NOUVELLE ÉTAPE 2 : Récupérer TOUS les compteurs en UNE SEULE requête ---
+    // --- NOUVELLE LOGIQUE CONDITIONNELLE BASÉE SUR LE ZOOM ---
+    // Si nous sommes en vue cluster, nous n'avons besoin que de la géométrie.
+    // C'est beaucoup plus rapide car on évite la requête sur les terminaux.
+    if (currentZoom <= CLUSTER_ZOOM_THRESHOLD) {
+      const stationsGeom = await Station.findAll({
+        attributes: [
+          "id",
+          [
+            sequelize.fn("ST_AsGeoJSON", sequelize.col("Station.geom")),
+            "geojson_geom",
+          ],
+        ],
+        where: {
+          id: { [Op.in]: stationIds },
+        },
+        raw: true,
+      });
+      res.json(stationsGeom);
+      return;
+    }
+
+    // ÉTAPE 2 : Récupérer les compteurs en une seule requête
     const terminalCounts = await Terminal.findAll({
       attributes: [
         "id_station",
@@ -225,7 +249,7 @@ const browseVisible: RequestHandler = async (req, res, next) => {
       });
     }
 
-    // --- ÉTAPE 3 : Récupérer les données des stations SANS les sous-requêtes ---
+    // ÉTAPE 3 : Récupérer les données des stations SANS les sous-requêtes
     const stationsData = await Station.findAll({
       attributes: [
         "id",
@@ -240,8 +264,7 @@ const browseVisible: RequestHandler = async (req, res, next) => {
       raw: true,
     });
 
-    // --- ÉTAPE 4 : Assembler les données en JavaScript (ultra-rapide) ---
-    // CORRECTION: Remplacer 'any' par le type 'RawStationData'
+    // ÉTAPE 4 : Assembler les données en JavaScript
     const finalStations = (stationsData as unknown as RawStationData[]).map(
       (station) => {
         const counts = countsMap.get(station.id) || { total: 0, available: 0 };

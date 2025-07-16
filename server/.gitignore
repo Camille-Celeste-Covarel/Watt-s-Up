@@ -4,3 +4,4 @@ coverage
 *.local
 .env.
 logs
+dist

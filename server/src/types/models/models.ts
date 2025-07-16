@@ -38,18 +38,6 @@ export type BookCreationAttributes = Optional<
   | "id_user"
 >;
 
-export interface BookTerminalAttributes {
-  id: string;
-  id_book: string;
-  id_terminal: string;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
-export type BookTerminalCreationAttributes = Optional<
-  BookTerminalAttributes,
-  "id" | "createdAt" | "updatedAt"
->;
-
 export interface CompagnyAttributes {
   id: string;
   name: string;

@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useAuth } from "../../contexts/AuthContext";
 import type {
   EnrichedStationAttributes,
   Plug,
   TerminalGroup,
 } from "../../types/stationDetailsTypes.ts";
-import "./stationDetails.css";
 import type { StationDetailsProps } from "../../types/types_maplibre.ts";
 import { PlugIcon } from "../DisplaySVGPlug/DisplaySVGPlug";
+import "./stationDetails.css";
 
 export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [station, setStation] = useState<EnrichedStationAttributes | null>(
@@ -15,38 +16,40 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
+  const [isReserving, setIsReserving] = useState(false);
+  const [reservationError, setReservationError] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
-  useEffect(() => {
+  const fetchStationDetails = useCallback(async () => {
     if (!stationId) {
       setError("Station ID is missing.");
       setLoading(false);
       return;
     }
 
-    const fetchStationDetails = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await fetch(
-          `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
-        );
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data: EnrichedStationAttributes = await response.json();
-        setStation(data);
-      } catch (err) {
-        console.error("Error fetching station details:", err);
-        setError("Impossible de charger les détails de la station.");
-      } finally {
-        setLoading(false);
+    setLoading(true);
+    setError(null);
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
+      );
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
-    };
-
-    void fetchStationDetails();
+      const data: EnrichedStationAttributes = await response.json();
+      setStation(data);
+    } catch (err) {
+      console.error("Error fetching station details:", err);
+      setError("Impossible de charger les détails de la station.");
+    } finally {
+      setLoading(false);
+    }
   }, [stationId]);
 
-  // Le hook useMemo pour la grille des bornes est correct.
+  useEffect(() => {
+    void fetchStationDetails();
+  }, [fetchStationDetails]);
+
   const terminalGroups = useMemo(() => {
     if (!station?.terminals) return [];
     const groups = new Map<string, TerminalGroup>();
@@ -105,24 +108,68 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
     );
   }
 
-  const handleReserve = () => {
-    if (!selectedGroupKey) {
-      alert("Veuillez d'abord sélectionner un groupe de bornes.");
+  const handleReserve = async () => {
+    if (!isAuthenticated || !selectedGroupKey) {
+      setReservationError("Veuillez sélectionner un groupe et être connecté.");
       return;
     }
 
-    // Logique future :
-    // 1. Trouver un terminal DISPONIBLE dans le groupe sélectionné.
-    // 2. Envoyer une requête POST à votre API (ex: /api/terminals/:id/book)
-    // 3. Mettre à jour l'interface si la réservation réussit.
-    alert(`Demande de réservation pour le groupe : ${selectedGroupKey}`);
+    const selectedGroup = terminalGroups.find(
+      (g) => g.key === selectedGroupKey,
+    );
+    if (!selectedGroup) {
+      console.error("Groupe sélectionné non trouvé.");
+      setReservationError("Une erreur est survenue, groupe non trouvé.");
+      return;
+    }
+
+    setIsReserving(true);
+    setReservationError(null);
+
+    try {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/reservations`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          credentials: "include",
+          body: JSON.stringify({
+            stationId: stationId,
+            power: selectedGroup.power,
+            plugIds: selectedGroup.plugs.map((p) => p.id),
+          }),
+        },
+      );
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "La réservation a échoué.");
+      }
+
+      alert(
+        "Réservation confirmée ! Vous avez 30 minutes pour démarrer la charge.",
+      );
+      // On rafraîchit les données de la station pour mettre à jour l'interface
+      await fetchStationDetails();
+      setSelectedGroupKey(null);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error
+          ? err.message
+          : "Une erreur inconnue est survenue.";
+      setReservationError(errorMessage);
+    } finally {
+      setIsReserving(false);
+    }
   };
 
   const handleCancel = () => {
     setSelectedGroupKey(null);
   };
 
-  // --- Rendu final combinant les deux mises en page ---
   return (
     <div className="station-details-content">
       <h2>La station</h2>
@@ -235,9 +282,9 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
               type="button"
               className="action-button reserve-button"
               onClick={handleReserve}
-              disabled={!selectedGroupKey}
+              disabled={!selectedGroupKey || !isAuthenticated || isReserving}
             >
-              Réserver
+              {isReserving ? "Réservation..." : "Réserver"}
             </button>
             <button
               type="button"
@@ -248,6 +295,9 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
               Annuler
             </button>
           </div>
+          {reservationError && (
+            <p className="reservation-error-message">{reservationError}</p>
+          )}
         </>
       )}
     </div>
