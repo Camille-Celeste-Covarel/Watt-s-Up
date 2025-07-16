@@ -8,6 +8,7 @@ import userActions from "./modules/userActions";
 import vehiculeActions from "./modules/vehiculeActions";
 import bookRoutes from "./routes/book.routes";
 import reservationRoutes from "./routes/reservation.routes";
+import { startCronJobs } from "./tools/cron.service";
 
 const router = express.Router();
 
@@ -72,5 +73,8 @@ router.use("/reservations", reservationRoutes);
 
 // Route pour import des données CSV
 router.post("/import/csv", upload.single("csvFile"), importCsv);
+
+// Démarrage des tâches de fond (cron jobs)
+startCronJobs();
 
 export default router;

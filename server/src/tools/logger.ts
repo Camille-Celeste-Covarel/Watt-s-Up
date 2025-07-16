@@ -7,14 +7,16 @@ import type { TransformError } from "../types/dataProcessing/importProcessingTyp
 export enum LogLevel {
   DEBUG = 0,
   INFO = 1,
-  WARN = 2,
-  ERROR = 3,
-  CRITICAL = 4,
+  SUCCESS = 2,
+  WARN = 3,
+  ERROR = 4,
+  CRITICAL = 5,
 }
 
 const LOG_LEVEL_NAMES: { [key: string]: LogLevel } = {
   DEBUG: LogLevel.DEBUG,
   INFO: LogLevel.INFO,
+  SUCCESS: LogLevel.SUCCESS,
   WARN: LogLevel.WARN,
   ERROR: LogLevel.ERROR,
   CRITICAL: LogLevel.CRITICAL,
@@ -276,4 +278,21 @@ export function cleanOldLogs() {
     }
     originalConsoleLog("Nettoyage des logs anciens terminé.", LogLevel.DEBUG);
   });
+}
+
+/**
+ * @param message Le message à logger.
+ * @param level Le niveau de log.
+ * @param optionalParams Paramètres additionnels.
+ */
+export function log(
+  message: unknown,
+  level: LogLevel,
+  ...optionalParams: unknown[]
+) {
+  if (level >= LogLevel.ERROR) {
+    console.error(message, level, ...optionalParams);
+  } else {
+    console.log(message, level, ...optionalParams);
+  }
 }
