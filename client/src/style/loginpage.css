@@ -6,8 +6,16 @@ input {
   background-color: var(--fondamental-color);
   border: none;
   padding: 5px;
+  margin-bottom: 15px;
 }
 
 input::placeholder {
   color: white;
+}
+
+.login-forgot-password {
+  color: blue;
+  font-style: italic;
+  border: none;
+  background-color: transparent;
 }

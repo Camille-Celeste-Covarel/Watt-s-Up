@@ -36,10 +36,6 @@
   width: 220px;
 }
 
-.register-container input:focus {
-  outline: none;
-}
-
 .register-profil-section ::placeholder {
   color: var(--fondamental-color);
 }

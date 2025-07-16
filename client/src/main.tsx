@@ -11,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
 import ContactPage from "./pages/ContactPage";
+import ForgotPassword from "./pages/ForgotPassword.tsx";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
@@ -44,6 +45,11 @@ const router = createBrowserRouter([
     path: "/register",
     element: <App />,
     children: [{ index: true, element: <RegisterPage /> }],
+  },
+  {
+    path: "/forgot-password",
+    element: <App />,
+    children: [{ index: true, element: <ForgotPassword /> }],
   },
   {
     path: "/informations",
