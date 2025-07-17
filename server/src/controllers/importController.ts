@@ -35,14 +35,14 @@ import {
 
 const console = {
   log: logWithProgress,
-  error: logWithProgress, // ✅ On s'assure que console.error utilise aussi notre logger personnalisé
+  error: logWithProgress,
   warn: logWithProgress,
 };
 
 console.log("importController.ts chargé.", LogLevel.INFO);
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "CSVCache");
-console.log(`DEBUG: UPLOAD_DIR calculated as: ${UPLOAD_DIR}`, LogLevel.INFO); // ✅ Ordre et formatage corrigés
+console.log(`DEBUG: UPLOAD_DIR calculated as: ${UPLOAD_DIR}`, LogLevel.INFO);
 const FLUSH_THRESHOLD_LINES = 5000;
 const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "logs");
 const PROGRESS_LOG_LINES_INTERVAL = 1000;
@@ -73,15 +73,14 @@ function getStationCompositeId(
 
 async function processConsolidatedStations(
   stationsToProcess: StagedStationContent[],
-  importId: string, // On ajoute l'ID de l'import pour vérifier l'état d'annulation
+  importId: string,
 ): Promise<{ successfulStations: number; errors: TransformError[] }> {
   let successfulStations = 0;
   const errors: TransformError[] = [];
 
   for (const stagedStation of stationsToProcess) {
-    // POINT DE CONTRÔLE PRINCIPAL : On vérifie avant de traiter chaque station du lot.
     if (isStopRequested(importId)) {
-      break; // On sort de la boucle si l'arrêt est demandé.
+      break;
     }
 
     const compositeId = getStationCompositeId(stagedStation.stationData);
@@ -610,7 +609,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         // Explicitement détruire le stream pour s'assurer que la lecture du fichier s'arrête
         // et libère les ressources, empêchant le script de continuer en arrière-plan.
         if (!csvStream.destroyed) {
-          // fast-csv stream will propagate the destroy to the underlying file stream.
           csvStream.destroy();
         }
         break;
@@ -645,17 +643,13 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
           transformedResult.data;
         const compositeId = getStationCompositeId(stationData);
 
-        // NOUVEAU LOG : Début de la consolidation de la ligne CSV
+        // Début de la consolidation de la ligne CSV
         console.log(
           `Consolidation de la ligne CSV #${totalProcessedCsvLines} pour station ${compositeId}.`,
           LogLevel.DEBUG,
         );
 
         if (!stagedStationData.has(compositeId)) {
-          console.log(
-            `Nouvelle station ajoutée au tampon: ${compositeId} (Ligne CSV: ${totalProcessedCsvLines}). Taille du tampon: ${stagedStationData.size + 1}`,
-            LogLevel.DEBUG,
-          );
           stagedStationData.set(compositeId, {
             stationData: stationData,
             terminals: [],
@@ -666,10 +660,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         const stationEntry = stagedStationData.get(compositeId);
         if (stationEntry) {
           stationEntry.terminals.push({ terminalData, plugAssociations });
-          console.log(
-            `Terminal ajouté à la station existante ${compositeId}. Total terminaux pour cette station: ${stationEntry.terminals.length} (Ligne CSV: ${totalProcessedCsvLines}).`,
-            LogLevel.DEBUG,
-          );
           stationEntry.lastModifiedRow = totalProcessedCsvLines;
         }
       } else {
@@ -717,7 +707,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
               stagedStationData.delete(compositeId);
             } else {
               console.log(
-                // Remplacé warn par log car nous avons maintenant un alias global
                 `Tentative d'accès à un index inexistant lors du flush: ${i}. numberToFlush: ${numberToFlush}, sortedStagedStations.length: ${sortedStagedStations.length}`,
                 LogLevel.WARN,
               );
@@ -756,14 +745,12 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    // Ce message n'est pertinent que si le stream s'est terminé normalement.
     if (!wasInterrupted) {
       console.log(
         `Fin du stream CSV. Traitement du dernier lot (${stagedStationData.size} stations restantes dans le tampon).`,
         LogLevel.INFO,
       );
     }
-    // POINT DE CONTRÔLE SECONDAIRE : On ne fait le flush final que si l'import n'a pas été annulé.
     if (!isStopRequested(importUuid) && stagedStationData.size > 0) {
       const stationsToFlush = Array.from(stagedStationData.values());
       stagedStationData.clear();
@@ -793,7 +780,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     await fs.promises.unlink(filePath);
     console.log("Fichier temporaire supprimé.", LogLevel.DEBUG);
 
-    // On s'assure que le stream de log est bien fermé avant de continuer.
     await new Promise<void>((resolve) => {
       // L'événement 'finish' garantit que toutes les données ont été écrites.
       errorLogStream.on("finish", () => {
@@ -870,7 +856,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       `Envoi de la notification de complétion. Statut: ${finalDataForNotification.status}`,
       LogLevel.INFO,
     );
-    // On notifie le client via WebSocket avec le résumé final
+    // On notifie le client via WebSocket
     notifyCompletion(finalDataForNotification);
     console.log(
       "Notification de complétion envoyée avec succès.",
@@ -984,7 +970,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       });
     }
   } finally {
-    unregisterImport(importUuid); // On nettoie l'état de l'import
+    unregisterImport(importUuid);
     restoreConsoleOutput();
   }
 };

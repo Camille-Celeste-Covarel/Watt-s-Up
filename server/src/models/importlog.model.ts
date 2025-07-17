@@ -66,7 +66,7 @@ export class ImportLog
             "COMPLETED",
             "PARTIAL_SUCCESS",
             "FAILED",
-            "CANCELLED", // ✅ On ajoute la valeur manquante ici
+            "CANCELLED",
           ),
           allowNull: false,
         },

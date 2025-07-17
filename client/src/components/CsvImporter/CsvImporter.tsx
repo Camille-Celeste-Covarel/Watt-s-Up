@@ -26,7 +26,6 @@ const CsvImporter: React.FC = () => {
     null,
   );
 
-  // --- Nouveaux états pour le design amélioré ---
   const [logLines, setLogLines] = useState<string[]>([]);
   const [errorMessages, setErrorMessages] = useState<string[]>([]);
   const [elapsedTime, setElapsedTime] = useState<number>(0);
@@ -35,15 +34,12 @@ const CsvImporter: React.FC = () => {
   const timerRef = useRef<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // --- Fonction utilitaire pour formater les lignes de log (stabilisée avec useCallback) ---
   const formatLogLine = useCallback((message: string): string => {
     const time = new Date().toLocaleTimeString("fr-FR");
-    // On nettoie le message de tout espace non désiré et on ajoute l'heure.
     return `${time} - ${message.trim()}`;
-  }, []); // Vide, car elle n'a pas de dépendances externes.
+  }, []);
 
   // Cette fonction prépare le tableau de bord pour l'affichage.
-  // Elle est appelée par le message 'start' du serveur, pas avant.
   const startImportDisplay = useCallback(
     (initialMessage = "Initialisation...") => {
       // On ne modifie PAS isImporting ou importId ici.
@@ -55,7 +51,6 @@ const CsvImporter: React.FC = () => {
       setLogLines([formatLogLine(initialMessage)]);
       setElapsedTime(0);
 
-      // Démarrage du chronomètre
       if (timerRef.current) clearInterval(timerRef.current);
       timerRef.current = window.setInterval(() => {
         setElapsedTime((t) => t + 1);
@@ -74,12 +69,10 @@ const CsvImporter: React.FC = () => {
     };
 
     websocket.current.onmessage = (event) => {
-      // Le log de débogage a été retiré, le système est stable.
       const data: ProgressMessage = JSON.parse(event.data);
 
       switch (data.type) {
         case "start": {
-          // Le serveur confirme le début et donne un ID.
           // C'est SEULEMENT maintenant qu'on affiche le dashboard.
           if (data.importId) {
             setImportId(data.importId);
@@ -162,15 +155,14 @@ const CsvImporter: React.FC = () => {
   const handleUpload = async () => {
     if (!file || isImporting) return;
 
-    // 1. On indique que le processus commence et on donne un retour visuel immédiat.
     setIsImporting(true);
     setLogLines([formatLogLine("Envoi du fichier au serveur...")]);
     setErrorMessages([]);
-    setProcessedCount(null); // Cache les résultats précédents
-    setImportId(null); // Réinitialise l'ID pour cette nouvelle opération
+    setProcessedCount(null);
+    setImportId(null);
 
     const formData = new FormData();
-    formData.append("csvfile", file); // ✅ CORRECTION : Le serveur attend "csvfile" en minuscules.
+    formData.append("csvfile", file);
 
     try {
       const response = await fetch(
@@ -189,15 +181,13 @@ const CsvImporter: React.FC = () => {
         const message =
           errorResult.message || "Échec du téléversement du fichier.";
 
-        // Arrêt propre côté client si l'upload échoue
         setErrorMessages([message]);
         setLogLines((prev) => [...prev, formatLogLine(`❌ ${message}`)]);
         setIsImporting(false);
-        setProcessedCount(0); // Garde le dashboard visible pour l'erreur
+        setProcessedCount(0);
         return;
       }
 
-      // 2. L'upload a réussi. On met à jour le log et on ATTEND le message 'start' du serveur.
       setLogLines((prev) => [
         ...prev,
         formatLogLine("Fichier accepté, en attente du démarrage..."),

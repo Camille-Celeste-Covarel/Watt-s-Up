@@ -3,7 +3,7 @@
    ========================================================================== */
 
 .importer-container {
-  max-width: 800px; /* Un peu plus large pour le nouveau dashboard */
+  max-width: 800px;
   margin: 2rem auto;
   padding: 1.5rem 2rem;
   border: 1px solid #e0e0e0;
@@ -13,238 +13,227 @@
   font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
   transition: all 0.3s ease-in-out;
-}
 
-.importer-container h3 {
-  text-align: center;
-  color: #333;
-  margin-top: 0;
-  margin-bottom: 2rem;
-  font-weight: 600;
-}
+  h3 {
+    text-align: center;
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-weight: 600;
+  }
 
-.importer-controls {
-  display: flex;
-  flex-direction: column; /* On empile verticalement */
-  gap: 1rem;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 1rem;
-}
+  .importer-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
 
-.importer-button-group {
-  display: flex;
-  gap: 1rem;
-  align-items: center;
-  justify-content: center;
-}
+    .importer-button-group {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+    }
 
-.importer-controls input[type="file"] {
-  /* Ancien style, on peut le supprimer ou le laisser au cas où */
-  flex-grow: 1;
-}
+    /*
+  Style commun pour tous les boutons
+  */
+    button,
+    .importer-browse-button {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: background-color 0.2s;
 
-/* Style commun pour tous les boutons */
-.importer-controls button,
-.importer-browse-button {
-  padding: 0.6rem 1.2rem;
-  border: none;
-  background-color: #007bff;
-  color: white;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 1rem;
-  font-weight: 500;
-  transition: background-color 0.2s;
-}
+      &:hover:not(:disabled) {
+        background-color: #0056b3;
+      }
 
-/* Comportement au survol */
-.importer-controls button:hover:not(:disabled),
-.importer-browse-button:hover:not(:disabled) {
-  background-color: #0056b3;
-}
+      &:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+    }
 
-.importer-controls button:disabled {
-  background-color: #ccc;
-  cursor: not-allowed;
-}
+    button {
+      background-color: #007bff;
+    }
 
-/* Style spécifique pour le bouton d'arrêt */
-.importer-stop-button {
-  background-color: #dc3545; /* Rouge danger */
-}
+    .importer-stop-button {
+      background-color: #dc3545;
 
-.importer-stop-button:hover:not(:disabled) {
-  background-color: #c82333;
-}
+      &:hover:not(:disabled) {
+        background-color: #c82333;
+      }
+    }
 
-/* Style pour le nouveau bouton de sélection de fichier */
-.importer-browse-button {
-  background-color: #6c757d; /* Un gris neutre */
-}
+    .importer-browse-button {
+      background-color: #6c757d;
 
-.importer-browse-button:hover:not(:disabled) {
-  background-color: #5a6268;
-}
+      &:hover:not(:disabled) {
+        background-color: #5a6268;
+      }
+    }
 
-/* Style pour l'affichage du nom de fichier */
-.file-name-display {
-  margin-top: 0.5rem; /* On ajoute un espacement vertical */
-  font-style: italic;
-  color: #555;
-}
+    .file-name-display {
+      margin-top: 0.5rem;
+      font-style: italic;
+      color: #555;
+    }
+  }
 
-/* ==========================================================================
-   Nouveau Dashboard d'importation
-   ========================================================================== */
+  /* ==========================================================================
+     Nouveau Dashboard d'importation
+     ========================================================================== */
 
-.import-dashboard {
-  margin-top: 1.5rem;
-  border-top: 1px solid #eee;
-  padding-top: 1.5rem;
-}
+  .import-dashboard {
+    margin-top: 1.5rem;
+    border-top: 1px solid #eee;
+    padding-top: 1.5rem;
 
-/* --- Barre de progression --- */
+    .progress-bar-container {
+      width: 100%;
+      background-color: #e9ecef;
+      border-radius: 6px;
+      height: 28px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
 
-.progress-bar-container {
-  width: 100%;
-  background-color: #e9ecef;
-  border-radius: 6px;
-  height: 28px;
-  overflow: hidden;
-  position: relative; /* Pour positionner le texte par-dessus */
-  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+      .progress-bar {
+        height: 100%;
+        transition: width 0.4s ease-in-out, background-image 0.4s ease-in-out;
+        border-radius: 6px;
+      }
 
-.progress-bar {
-  height: 100%;
-  transition: width 0.4s ease-in-out, background-image 0.4s ease-in-out;
-  border-radius: 6px;
-}
+      .progress-bar-text {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+      }
+    }
 
-.progress-bar-text {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: white;
-  font-weight: bold;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
-}
+    .status-row {
+      display: flex;
+      margin-top: 1.5rem;
+      gap: 1.5rem;
+      min-height: 220px;
 
-/* --- Zone de Statut (Console + Timer/Stats) --- */
+      .log-console {
+        flex-grow: 1;
+        background-color: #2d2d2d;
+        color: #f0f0f0;
+        padding: 1rem;
+        border-radius: 4px;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
 
-.status-row {
-  display: flex;
-  margin-top: 1.5rem;
-  gap: 1.5rem;
-  min-height: 220px;
-}
+        .log-line {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          padding: 2px 0;
+        }
+      }
 
-.log-console {
-  flex-grow: 1;
-  background-color: #2d2d2d;
-  color: #f0f0f0;
-  padding: 1rem;
-  border-radius: 4px;
-  font-family: "Courier New", Courier, monospace;
-  font-size: 0.85rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end; /* Les nouvelles lignes apparaissent en bas */
-  overflow: hidden;
-}
+      .timer-and-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        flex-basis: 180px;
+        flex-shrink: 0;
 
-.log-line {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding: 2px 0;
-}
+        .timer,
+        .stats-recap {
+          background-color: #e9ecef;
+          border-radius: 4px;
+          padding: 1rem;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          flex-grow: 1;
 
-.timer-and-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-  flex-basis: 180px; /* Largeur fixe */
-  flex-shrink: 0;
-}
+          span {
+            display: block;
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+        }
 
-.timer,
-.stats-recap {
-  background-color: #e9ecef;
-  border-radius: 4px;
-  padding: 1rem;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  flex-grow: 1;
-}
+        .timer strong {
+          font-size: 2.5rem;
+          font-weight: 300;
+          color: #343a40;
+          line-height: 1.2;
+        }
 
-.timer span,
-.stats-recap span {
-  display: block;
-  font-size: 0.8rem;
-  color: #6c757d;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
+        .stats-recap strong {
+          font-weight: 600;
+          font-size: 1.2rem;
+        }
+      }
+    }
 
-.timer strong {
-  font-size: 2.5rem;
-  font-weight: 300;
-  color: #343a40;
-  line-height: 1.2;
-}
+    .error-accordion {
+      margin-top: 1.5rem;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      overflow: hidden;
 
-.stats-recap strong {
-  font-weight: 600;
-  font-size: 1.2rem;
-}
+      summary {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 0.75rem 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        list-style-position: inside;
+        transition: background-color 0.2s;
 
-/* --- Accordéon d'erreurs --- */
+        &:hover {
+          background-color: #f1c3c7;
+        }
+      }
 
-.error-accordion {
-  margin-top: 1.5rem;
-  border: 1px solid #f5c6cb;
-  border-radius: 4px;
-  overflow: hidden; /* Pour que le radius s'applique bien */
-}
+      .error-details {
+        padding: 1rem;
+        background-color: #fdf2f3;
+        font-size: 0.9rem;
+        border-top: 1px solid #f5c6cb;
+        max-height: 200px;
+        overflow-y: auto;
 
-.error-accordion summary {
-  background-color: #f8d7da;
-  color: #721c24;
-  padding: 0.75rem 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  list-style-position: inside; /* Pour l'icône de la flèche */
-  transition: background-color 0.2s;
-}
+        div {
+          padding-bottom: 0.5rem;
+          border-bottom: 1px dashed #f5c6cb;
+          margin-bottom: 0.5rem;
 
-.error-accordion summary:hover {
-  background-color: #f1c3c7;
-}
-
-.error-details {
-  padding: 1rem;
-  background-color: #fdf2f3;
-  font-size: 0.9rem;
-  border-top: 1px solid #f5c6cb;
-  max-height: 200px;
-  overflow-y: auto;
-}
-
-.error-details div {
-  padding-bottom: 0.5rem;
-  border-bottom: 1px dashed #f5c6cb;
-  margin-bottom: 0.5rem;
-}
-.error-details div:last-child {
-  border-bottom: none;
-  margin-bottom: 0;
+          &:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+          }
+        }
+      }
+    }
+  }
 }
