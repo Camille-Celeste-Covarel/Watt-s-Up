@@ -20,7 +20,11 @@ import type {
   TerminalAttributes,
 } from "../types/models/models";
 
-import { notifyCompletion, notifyStart } from "../services/importNotifier";
+import {
+  notifyCompletion,
+  notifyProgress,
+  notifyStart,
+} from "../services/importNotifier";
 import {
   isStopRequested,
   registerImport,
@@ -30,6 +34,7 @@ import {
   LogLevel,
   logImportErrorToFile,
   logWithProgress,
+  redirectConsoleOutput,
   restoreConsoleOutput,
 } from "../tools/logger";
 
@@ -54,7 +59,6 @@ if (!fs.existsSync(ERROR_LOG_DIR)) {
 }
 
 const stagedStationData = new Map<string, StagedStationContent>();
-const processedStationsGlobalCache = new Map<string, Models.Station>();
 
 function getStationCompositeId(
   stationData: Partial<StationAttributes>,
@@ -496,16 +500,23 @@ async function processConsolidatedStations(
   return { successfulStations, errors };
 }
 
-export const importCsv = async (req: Request, res: Response): Promise<void> => {
-  console.log("Fonction importCsv appelée.", LogLevel.INFO);
-
+/**
+ * Gère le traitement du fichier CSV en arrière-plan, de manière asynchrone,
+ * sans bloquer la réponse HTTP.
+ */
+async function processCsvInBackground(
+  importUuid: string,
+  filePath: string,
+  originalFileName: string,
+  totalLinesFromMetadata: number,
+) {
   const startTime = new Date();
+  // Restaurer le logger personnalisé pour cette tâche de fond.
+  redirectConsoleOutput();
 
   stagedStationData.clear();
-  processedStationsGlobalCache.clear();
 
   // Enregistrement de l'import pour permettre l'annulation
-  const importUuid = uuidv4();
   registerImport(importUuid);
   // FUTURE: Métrique - Incrémenter le compteur 'imports_started_total'
   // FUTURE: Métrique - Incrémenter la jauge 'imports_in_progress'
@@ -517,7 +528,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
   let importCompleted = false;
   let totalProcessedCsvLines = 0;
-  const totalLinesFromMetadata = 135913;
   let totalSuccessfulStations = 0;
   let totalErrorEntries = 0;
 
@@ -558,27 +568,11 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   }
 
-  if (!req.file) {
-    console.log("Aucun fichier CSV fourni, renvoi erreur 400.", LogLevel.INFO);
-    errorLogStream.end();
-    const duration_ms = new Date().getTime() - startTime.getTime();
-    res.status(400).json({
-      message: "Aucun fichier CSV fourni.",
-      importId: importUuid,
-      errorLogFile: currentErrorLogFile,
-      status: "FAILED",
-      duration_ms: duration_ms,
-    });
-    return;
-  }
-
-  const filePath = (req.file as CustomFile).path;
-  const originalFileName = (req.file as CustomFile).originalname;
-
   try {
     initialImportLogEntry = await Models.ImportLog.create({
       import_id: importUuid,
       file_name: originalFileName,
+      total_lines_in_file: totalLinesFromMetadata,
       total_lines_processed: 0,
       successful_lines: 0,
       error_summary: { message: "Importation en cours..." },
@@ -629,6 +623,12 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         console.log(
           `Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.`,
           LogLevel.INFO,
+        );
+        notifyProgress(
+          importUuid,
+          currentProgressPercentage,
+          `Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.`,
+          totalSuccessfulStations,
         );
         lastProgressPercentage = currentProgressPercentage;
       }
@@ -821,6 +821,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     const importSummary: ImportLogCreationAttributes = {
       import_id: importUuid,
       file_name: originalFileName,
+      total_lines_in_file: totalLinesFromMetadata,
       total_lines_processed: totalProcessedCsvLines,
       successful_lines: totalSuccessfulStations,
       error_summary: finalErrorSummary,
@@ -862,18 +863,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       "Notification de complétion envoyée avec succès.",
       LogLevel.INFO,
     );
-
-    res.status(200).json({
-      message: "Importation CSV terminée.",
-      importId: importUuid,
-      totalLinesProcessed: totalProcessedCsvLines,
-      successfulStations: totalSuccessfulStations,
-      errorCount: totalErrorEntries,
-      errorSummary: finalErrorSummary,
-      errorLogFile: currentErrorLogFile,
-      status: finalStatus,
-      duration_ms: duration_ms,
-    });
   } catch (generalError: unknown) {
     console.error(
       "[CONSOLE ERROR] Erreur de lecture du stream CSV ou de traitement (catch principal):",
@@ -917,6 +906,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       const importSummary: ImportLogCreationAttributes = {
         import_id: importUuid,
         file_name: originalFileName || "N/A (Stream Error)",
+        total_lines_in_file: totalLinesFromMetadata,
         total_lines_processed: totalProcessedCsvLines,
         successful_lines: 0,
         error_summary: {
@@ -960,17 +950,54 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         );
       }
 
-      res.status(500).json({
-        message: "Erreur lors de la lecture du fichier CSV.",
-        error: errorMessage,
-        importId: importUuid,
-        errorLogFile: currentErrorLogFile,
-        status: status,
-        duration_ms: duration_ms,
-      });
+      // Pas de `res.status` ici car la réponse a déjà été envoyée.
+      // On log juste l'erreur.
     }
   } finally {
     unregisterImport(importUuid);
     restoreConsoleOutput();
   }
+}
+
+export const importCsv = async (req: Request, res: Response): Promise<void> => {
+  console.log("Requête HTTP pour importCsv reçue.", LogLevel.INFO);
+
+  if (!req.file) {
+    res.status(400).json({ message: "Aucun fichier CSV fourni." });
+    return;
+  }
+
+  const importUuid = uuidv4();
+  const filePath = (req.file as CustomFile).path;
+  const originalFileName = (req.file as CustomFile).originalname;
+  // Pour une vraie application, ce nombre viendrait d'une analyse rapide du fichier.
+  const totalLinesFromMetadata = 135913;
+
+  // On répond IMMÉDIATEMENT au client pour ne pas le faire attendre.
+  res.status(202).json({
+    message:
+      "La demande d'importation a été acceptée et est en cours de traitement.",
+    importId: importUuid,
+  });
+
+  console.log(
+    `Réponse 202 envoyée pour l'import ${importUuid}. Lancement du traitement en arrière-plan.`,
+    LogLevel.INFO,
+  );
+
+  // On lance le traitement en arrière-plan SANS l'attendre.
+  // C'est la clé pour découpler la tâche de la requête HTTP.
+  processCsvInBackground(
+    importUuid,
+    filePath,
+    originalFileName,
+    totalLinesFromMetadata,
+  ).catch((err) => {
+    // On s'assure de capturer toute erreur non gérée dans la tâche de fond pour éviter un crash serveur.
+    console.error(
+      `Erreur non gérée dans le traitement de fond pour l'import ${importUuid}:`,
+      LogLevel.CRITICAL,
+      err,
+    );
+  });
 };

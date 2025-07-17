@@ -4,18 +4,25 @@ import type { ImportLogAttributes } from "../types/models/models";
 import { getWss } from "./websocket";
 
 /**
- * Fonction de base pour diffuser un message à tous les clients WebSocket.
- * @param data L'objet de données à envoyer.
+ * Sends a message to a specific, open WebSocket client.
+ * @param ws The target WebSocket client.
+ * @param data The stringified data to send.
  */
-function broadcast(data: object) {
+function send(ws: WebSocket, data: string) {
+  if (ws.readyState === WebSocket.OPEN) {
+    ws.send(data);
+  }
+}
+
+/**
+ * Fonction de base pour diffuser un message à tous les clients WebSocket.
+ * @param message La chaîne de caractères du message à envoyer.
+ */
+function broadcast(message: string) {
   try {
     const wss: WebSocketServer = getWss();
-    const message = JSON.stringify(data);
-
     for (const client of wss.clients) {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
+      send(client, message);
     }
   } catch (error) {
     // Ignore silencieusement si le serveur WebSocket n'est pas prêt.
@@ -25,79 +32,103 @@ function broadcast(data: object) {
 /**
  * Notifie les clients que l'importation a démarré et leur fournit l'ID.
  * @param importId L'UUID de l'importation.
+ * @param ws
+ * @param message
  */
-export function notifyStart(importId: string) {
-  broadcast({ type: "start", message: "Importation démarrée...", importId });
+export function notifyStart(
+  importId: string,
+  ws?: WebSocket,
+  message?: string,
+) {
+  const payload = {
+    type: "start",
+    message: message || "Importation démarrée...",
+    importId,
+  };
+  const data = JSON.stringify(payload);
+  if (ws) {
+    send(ws, data);
+  } else {
+    broadcast(data);
+  }
 }
 
 /**
  * Notifie les clients d'une progression en cours.
- * Appelé par le "logger espion".
- * @param message Le message de log brut.
- * @param percentage Le pourcentage de progression extrait.
+ * Si `ws` est fourni, le message n'est envoyé qu'à ce client (pour la réhydratation).
  */
-export function notifyProgress(message: string, percentage: number | null) {
-  broadcast({ type: "progress", message, percentage });
+export function notifyProgress(
+  importId: string,
+  percentage: number,
+  message: string,
+  successful_lines: number,
+  ws?: WebSocket,
+) {
+  const payload = {
+    type: "progress",
+    message,
+    percentage,
+    importId,
+    stats: { success: successful_lines },
+  };
+  const data = JSON.stringify(payload);
+  if (ws) {
+    send(ws, data);
+  } else {
+    broadcast(data);
+  }
 }
 
 /**
- * Notifie les clients d'une erreur survenue pendant le processus.
- * Appelé par le "logger espion" pour un feedback en temps réel.
+ * Notifie les clients d'une erreur survenue pendant le processus en temps réel.
  * @param message Le message d'erreur.
  */
 export function notifyError(message: string) {
-  broadcast({ type: "error", message });
+  const payload = { type: "error", message };
+  broadcast(JSON.stringify(payload));
 }
 
 /**
  * Notifie les clients de la fin de l'importation avec un résumé complet.
- * Utilise la logique de votre `notificationService` original.
  * @param importSummary Le résumé final de l'importation.
  */
 export function notifyCompletion(importSummary: ImportLogAttributes) {
-  const {
-    status,
-    file_name,
-    total_lines_processed,
-    successful_lines,
-    error_summary,
-  } = importSummary;
+  const { status, file_name, total_lines_processed, successful_lines } =
+    importSummary;
 
-  // ✅ Initialisation redondante supprimée, type ajouté.
+  const totalErrorEntries =
+    (total_lines_processed ?? 0) - (successful_lines ?? 0);
   let finalMessage: string;
 
   switch (status) {
     case "COMPLETED":
-      finalMessage = `✅ Importation réussie: ${file_name}\n- Lignes CSV traitées: ${total_lines_processed}\n- Stations importées/mises à jour: ${successful_lines}`;
+      finalMessage = `✅ Importation de ${file_name} terminée avec succès.`;
       break;
-    // ✅ Bloc de portée ajouté pour isoler la déclaration de `errorCount`.
     case "PARTIAL_SUCCESS": {
-      const errorCount =
-        typeof error_summary?.message === "string"
-          ? error_summary.message.split(" ")[0]
-          : "N/A";
-      finalMessage = `⚠️ Importation partielle: ${file_name}\n- Lignes CSV traitées: ${total_lines_processed}\n- Stations réussies: ${successful_lines}\n- Erreurs: ${errorCount}`;
+      finalMessage = `⚠️ Importation de ${file_name} terminée avec des erreurs.`;
       break;
     }
     case "CANCELLED": {
-      finalMessage = `🛑 Importation annulée par l'utilisateur: ${file_name}\n- ${successful_lines} stations ont été traitées avant l'arrêt.`;
+      finalMessage = `🛑 Importation de ${file_name} annulée par l'utilisateur.`;
       break;
     }
     case "FAILED":
-      finalMessage = `❌ Importation échouée: ${file_name}\n- Raison: ${error_summary?.message || "Inconnue"}`;
+      finalMessage = `❌ Échec de l'importation de ${file_name}.`;
       break;
     default:
       finalMessage = `❓ Statut d'importation inconnu: ${status} pour le fichier ${file_name}.`;
       break;
   }
 
-  broadcast({
+  const payload = {
     type: "complete",
     message: finalMessage,
+    importId: importSummary.import_id,
     stats: {
       total: total_lines_processed,
       success: successful_lines,
-      errors: (total_lines_processed ?? 0) - (successful_lines ?? 0),
+      errors: totalErrorEntries,
     },
-  });
+  };
+  broadcast(JSON.stringify(payload));
 }

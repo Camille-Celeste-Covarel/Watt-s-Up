@@ -11,7 +11,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Import the main app component
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
-import AdminDashboard from "./pages/AdminDashboard.tsx"; // ✅ Importer la nouvelle page admin
+import { ImportProvider } from "./contexts/ImportContext.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
@@ -19,21 +20,13 @@ import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
 import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
-import AdminRoute from "./utils/AdminRoute.tsx"; // ✅ Importer le nouveau garde de route
+import AdminRoute from "./utils/AdminRoute.tsx";
 import ProtectedRoute from "./utils/ProtectedRoute";
-
-// Import additional components for new routes
-// Try creating these components in the "pages" folder
-
-// import About from "./pages/About";
-// import Contact from "./pages/Contact";
 
 /* ************************************************************************* */
 
 // Create router configuration with routes
-// You can add more routes as you build out your app!
 const router = createBrowserRouter([
-  // ✅ ROUTES PUBLIQUES (inchangées)
   {
     path: "/",
     element: <App />,
@@ -55,7 +48,6 @@ const router = createBrowserRouter([
     children: [{ index: true, element: <InfoPage /> }],
   },
 
-  // ✅ ROUTES PROTÉGÉES (avec ProtectedRoute)
   {
     path: "/profil",
     element: <App />,
@@ -113,7 +105,6 @@ const router = createBrowserRouter([
     ],
   },
 
-  // 👑 ROUTE ADMIN (avec AdminRoute)
   {
     path: "/admin/dashboard",
     element: <App />,
@@ -145,33 +136,10 @@ const queryClient = new QueryClient();
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      {/*<ReactQueryDevtools initialIsOpen={false} />*/}
+      <ImportProvider>
+        <RouterProvider router={router} />
+      </ImportProvider>
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   </StrictMode>,
 );
-
-/**
- * Helpful Notes:
- *
- * 1. Adding More Routes:
- *    To add more pages to your app, first create a new component (e.g., About.tsx).
- *    Then, import that component above like this:
- *
- *    import About from "./pages/About";
- *
- *    Add a new route to the router:
- *
- *      {
- *        path: "/about",
- *        element: <About />,  // Renders the About component
- *      }
- *
- * 2. Try Nested Routes:
- *    For more complex applications, you can nest routes. This lets you have sub-pages within a main page.
- *    Documentation: https://reactrouter.com/en/main/start/tutorial#nested-routes
- *
- * 3. Experiment with Dynamic Routes:
- *    You can create routes that take parameters (e.g., /users/:id).
- *    Documentation: https://reactrouter.com/en/main/start/tutorial#url-params-in-loaders
- */

@@ -307,28 +307,15 @@ export function log(
 }
 
 /**
- * Une version "overrided" de la fonction de log qui, en plus de son travail normal,
- * va notifier les clients WebSocket si le message correspond à une progression.
- * C'est notre "espion" non-invasif.
+ * Version "overrided" de la fonction de log qui redirige les erreurs vers `notifyError`.
  */
 export function logWithProgress(
   message: unknown,
   level: LogLevel,
   ...optionalParams: unknown[]
 ) {
-  log(message, level, ...optionalParams);
-
-  // On ne traite que les messages de type string pour les notifications
-  if (typeof message !== "string") {
-    return;
-  }
-
-  if (level === LogLevel.INFO) {
-    const progressMatch = message.match(/Traitement en cours : (\d+)%/);
-    if (progressMatch?.[1]) {
-      notifyProgress(message, Number.parseInt(progressMatch[1], 10));
-    }
-  } else if (level >= LogLevel.ERROR) {
+  log(message, level, ...optionalParams); // Continue le logging normal
+  if (level >= LogLevel.ERROR && typeof message === "string") {
     notifyError(message);
   }
 }
