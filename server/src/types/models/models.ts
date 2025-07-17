@@ -335,6 +335,8 @@ export interface UserAttributes {
   is_admin: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+  reset_token?: string | null;
+  reset_token_expiry?: Date | null;
 }
 export type UserCreationAttributes = Optional<
   UserAttributes,

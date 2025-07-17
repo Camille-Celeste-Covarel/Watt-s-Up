@@ -1,6 +1,9 @@
+import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import { Op } from "sequelize";
 import { User } from "../models/_index";
 
 // L'opération BREAD : Browse (Read All)
@@ -198,6 +201,86 @@ const logout: RequestHandler = async (req, res, next) => {
   }
 };
 
+const forgotPassword: RequestHandler = async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) {
+      res.json({
+        message: "Si l'email existe, un lien a été envoyé.",
+      });
+      return;
+    }
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenExpiry = new Date(Date.now() + 1000 * 60 * 60);
+
+    user.reset_token = token;
+    user.reset_token_expiry = tokenExpiry;
+    await user.save();
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
+
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to: user.email,
+      subject: "Réinitialisation de votre mot de passe",
+      html: `<p>Pour réinitialiser votre mot de passe, cliquez sur ce lien : <a href="${resetUrl}">${resetUrl}</a></p>`,
+    });
+
+    res.json({
+      message: "Si l'email existe, un lien a été envoyé.",
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const resetPassword: RequestHandler = async (req, res, next) => {
+  try {
+    const { token, password } = req.body;
+
+    // Vérification de la longueur du mot de passe
+    if (!password || password.length < 6) {
+      res
+        .status(400)
+        .json({ message: "Le mot de passe doit faire au moins 6 caractères." });
+      return;
+    }
+
+    const user = await User.findOne({
+      where: {
+        reset_token: token,
+        reset_token_expiry: { [Op.gt]: new Date() },
+      },
+    });
+
+    if (!user) {
+      res.status(400).json({ message: "Lien invalide ou expiré." });
+      return;
+    }
+
+    user.password = await bcrypt.hash(password, 10);
+    user.reset_token = null;
+    user.reset_token_expiry = null;
+    await user.save();
+
+    res.json({ message: "Votre mot de passe a bien été réinitialisé." });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   browse,
   read,
@@ -207,4 +290,6 @@ export default {
   register,
   login,
   logout,
+  forgotPassword,
+  resetPassword,
 };

@@ -47,6 +47,8 @@ router.get(
     });
   },
 );
+router.post("/auth/forgot-password", userActions.forgotPassword);
+router.post("/auth/reset-password", userActions.resetPassword);
 
 // Routes pour la map/stations (landing page)
 router.get("/stations", stationsActions.browse);

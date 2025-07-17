@@ -14,14 +14,22 @@ import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
 import { ImportProvider } from "./contexts/ImportContext.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
+import ForgotPassword from "./pages/ForgotPassword.tsx";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
 import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
+import ResetPassword from "./pages/ResetPassword.tsx";
 import AdminRoute from "./utils/AdminRoute.tsx";
 import ProtectedRoute from "./utils/ProtectedRoute";
+
+// Import additional components for new routes
+// Try creating these components in the "pages" folder
+
+// import About from "./pages/About";
+// import Contact from "./pages/Contact";
 
 /* ************************************************************************* */
 
@@ -41,6 +49,16 @@ const router = createBrowserRouter([
     path: "/register",
     element: <App />,
     children: [{ index: true, element: <RegisterPage /> }],
+  },
+  {
+    path: "/forgot-password",
+    element: <App />,
+    children: [{ index: true, element: <ForgotPassword /> }],
+  },
+  {
+    path: "/reset-password",
+    element: <App />,
+    children: [{ index: true, element: <ResetPassword /> }],
   },
   {
     path: "/informations",
@@ -143,3 +161,28 @@ createRoot(rootElement).render(
     </QueryClientProvider>
   </StrictMode>,
 );
+
+/**
+ * Helpful Notes:
+ *
+ * 1. Adding More Routes:
+ *    To add more pages to your app, first create a new component (e.g., About.tsx).
+ *    Then, import that component above like this:
+ *
+ *    import About from "./pages/About";
+ *
+ *    Add a new route to the router:
+ *
+ *      {
+ *        path: "/about",
+ *        element: <About />,  // Renders the About component
+ *      }
+ *
+ * 2. Try Nested Routes:
+ *    For more complex applications, you can nest routes. This lets you have sub-pages within a main page.
+ *    Documentation: https://reactrouter.com/en/main/start/tutorial#nested-routes
+ *
+ * 3. Experiment with Dynamic Routes:
+ *    You can create routes that take parameters (e.g., /users/:id).
+ *    Documentation: https://reactrouter.com/en/main/start/tutorial#url-params-in-loaders
+ */
