@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Writable } from "node:stream";
 import { DatabaseError } from "sequelize";
+import { notifyError, notifyProgress } from "../services/importNotifier";
 import type { TransformError } from "../types/dataProcessing/importProcessingTypes";
 
 export enum LogLevel {
@@ -25,6 +26,14 @@ const LOG_LEVEL_NAMES: { [key: string]: LogLevel } = {
 const LOG_LEVEL_VALUES: Set<number> = new Set(
   Object.values(LogLevel).filter((v) => typeof v === "number") as number[],
 );
+
+function getProgressBarColor(percentage: number): string {
+  const red = Math.round(255 * (1 - percentage / 100));
+  const green = Math.round(255 * (percentage / 100));
+  return `\x1b[38;2;${red};${green};0m`;
+}
+
+const ANSI_RESET_COLOR = "\x1b[0m";
 
 const originalConsoleLog = console.log;
 const originalConsoleError = console.error;
@@ -73,6 +82,61 @@ export function initializeConsoleLogStream() {
 }
 
 /**
+ * Crée un gestionnaire de log personnalisé.
+ * Factorise la logique commune entre console.log et console.error.
+ * @param defaultLevel Le niveau de log à utiliser si aucun n'est fourni.
+ * @param logFunction La fonction de console originale à appeler (ex: originalConsoleLog).
+ * @returns Une fonction de log qui peut remplacer console.log ou console.error.
+ */
+function createLogHandler(
+  defaultLevel: LogLevel,
+  logFunction: (...args: unknown[]) => void,
+) {
+  return (message?: unknown, ...optionalParams: unknown[]) => {
+    let level = defaultLevel;
+    let filteredParams = optionalParams;
+
+    // Logique pour extraire le niveau de log des paramètres
+    if (optionalParams.length > 0) {
+      const firstParam = optionalParams[0];
+      if (typeof firstParam === "number" && LOG_LEVEL_VALUES.has(firstParam)) {
+        level = firstParam;
+        filteredParams = optionalParams.slice(1);
+      } else if (
+        typeof firstParam === "string" &&
+        LOG_LEVEL_NAMES[firstParam.toUpperCase()] !== undefined
+      ) {
+        level = LOG_LEVEL_NAMES[firstParam.toUpperCase()];
+        filteredParams = optionalParams.slice(1);
+      }
+    }
+
+    if (level >= minLogLevel) {
+      const time = new Date().toLocaleTimeString("fr-FR");
+      let finalMessageForConsole = message;
+
+      // Si c'est un message de progression, on le colore pour la console
+      if (typeof message === "string") {
+        const progressMatch = message.match(/Traitement en cours : (\d+)%/);
+        if (progressMatch?.[1]) {
+          const percentage = Number.parseInt(progressMatch[1], 10);
+          const color = getProgressBarColor(percentage);
+          finalMessageForConsole = `${color}${message}${ANSI_RESET_COLOR}`;
+        }
+      }
+
+      const logMessage = `${time} : ${LogLevel[level]} - ${finalMessageForConsole} ${filteredParams.map((p) => String(p)).join(" ")}`;
+      // On utilise logFunction (originalConsoleLog/Error) pour afficher dans le terminal
+      logFunction(logMessage.trim());
+
+      if (logStream) {
+        logStream.write(`${logMessage}\n`);
+      }
+    }
+  };
+}
+
+/**
  * Redirige les méthodes console.log et console.error
  * pour inclure des timestamps et des niveaux de log,
  * et écrire dans un fichier si un stream est configuré.
@@ -84,63 +148,8 @@ export function redirectConsoleOutput() {
       ? LOG_LEVEL_NAMES[configuredLevel]
       : LogLevel.INFO;
 
-  console.log = (message?: unknown, ...optionalParams: unknown[]) => {
-    let level: LogLevel = LogLevel.INFO;
-    let filteredParams: unknown[] = optionalParams;
-
-    if (optionalParams.length > 0) {
-      const firstParam = optionalParams[0];
-      if (typeof firstParam === "number" && LOG_LEVEL_VALUES.has(firstParam)) {
-        level = firstParam;
-        filteredParams = optionalParams.slice(1);
-      } else if (
-        typeof firstParam === "string" &&
-        LOG_LEVEL_NAMES[firstParam.toUpperCase()] !== undefined
-      ) {
-        level = LOG_LEVEL_NAMES[firstParam.toUpperCase()];
-        filteredParams = optionalParams.slice(1);
-      }
-    }
-
-    if (level >= minLogLevel) {
-      const time = new Date().toLocaleTimeString("fr-FR");
-      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.map((p) => String(p)).join(" ")}`;
-      originalConsoleLog(logMessage);
-
-      if (logStream) {
-        logStream.write(`${logMessage}\n`);
-      }
-    }
-  };
-
-  console.error = (message?: unknown, ...optionalParams: unknown[]) => {
-    let level: LogLevel = LogLevel.ERROR;
-    let filteredParams: unknown[] = optionalParams;
-
-    if (optionalParams.length > 0) {
-      const firstParam = optionalParams[0];
-      if (typeof firstParam === "number" && LOG_LEVEL_VALUES.has(firstParam)) {
-        level = firstParam;
-        filteredParams = optionalParams.slice(1);
-      } else if (
-        typeof firstParam === "string" &&
-        LOG_LEVEL_NAMES[firstParam.toUpperCase()] !== undefined
-      ) {
-        level = LOG_LEVEL_NAMES[firstParam.toUpperCase()];
-        filteredParams = optionalParams.slice(1);
-      }
-    }
-
-    if (level >= minLogLevel) {
-      const time = new Date().toLocaleTimeString("fr-FR");
-      const logMessage = `${time} : ${LogLevel[level]} - ${message} ${filteredParams.map((p) => String(p)).join(" ")}`;
-      originalConsoleError(logMessage);
-
-      if (logStream) {
-        logStream.write(`${logMessage}\n`);
-      }
-    }
-  };
+  console.log = createLogHandler(LogLevel.INFO, originalConsoleLog);
+  console.error = createLogHandler(LogLevel.ERROR, originalConsoleError);
 }
 
 /**
@@ -294,5 +303,32 @@ export function log(
     console.error(message, level, ...optionalParams);
   } else {
     console.log(message, level, ...optionalParams);
+  }
+}
+
+/**
+ * Une version "overrided" de la fonction de log qui, en plus de son travail normal,
+ * va notifier les clients WebSocket si le message correspond à une progression.
+ * C'est notre "espion" non-invasif.
+ */
+export function logWithProgress(
+  message: unknown,
+  level: LogLevel,
+  ...optionalParams: unknown[]
+) {
+  log(message, level, ...optionalParams);
+
+  // On ne traite que les messages de type string pour les notifications
+  if (typeof message !== "string") {
+    return;
+  }
+
+  if (level === LogLevel.INFO) {
+    const progressMatch = message.match(/Traitement en cours : (\d+)%/);
+    if (progressMatch?.[1]) {
+      notifyProgress(message, Number.parseInt(progressMatch[1], 10));
+    }
+  } else if (level >= LogLevel.ERROR) {
+    notifyError(message);
   }
 }

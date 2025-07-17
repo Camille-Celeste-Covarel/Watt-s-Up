@@ -20,22 +20,24 @@ import type {
   TerminalAttributes,
 } from "../types/models/models";
 
+import { notifyCompletion } from "../services/importNotifier";
 import {
   LogLevel,
-  initializeConsoleLogStream,
   logImportErrorToFile,
-  redirectConsoleOutput,
+  logWithProgress,
   restoreConsoleOutput,
 } from "../tools/logger";
-import { sendImportNotification } from "../tools/notificationService";
 
-initializeConsoleLogStream();
-redirectConsoleOutput();
+const console = {
+  log: logWithProgress,
+  error: logWithProgress, // ✅ On s'assure que console.error utilise aussi notre logger personnalisé
+  warn: logWithProgress,
+};
 
 console.log("importController.ts chargé.", LogLevel.INFO);
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "CSVCache");
-console.log("DEBUG: UPLOAD_DIR calculated as:", UPLOAD_DIR, LogLevel.INFO);
+console.log(`DEBUG: UPLOAD_DIR calculated as: ${UPLOAD_DIR}`, LogLevel.INFO); // ✅ Ordre et formatage corrigés
 const FLUSH_THRESHOLD_LINES = 5000;
 const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "logs");
 const PROGRESS_LOG_LINES_INTERVAL = 1000;
@@ -48,14 +50,6 @@ if (!fs.existsSync(ERROR_LOG_DIR)) {
 
 const stagedStationData = new Map<string, StagedStationContent>();
 const processedStationsGlobalCache = new Map<string, Models.Station>();
-
-function getProgressBarColor(percentage: number): string {
-  const red = Math.round(255 * (1 - percentage / 100));
-  const green = Math.round(255 * (percentage / 100));
-  return `\x1b[38;2;${red};${green};0m`;
-}
-
-const ANSI_RESET_COLOR = "\x1b[0m";
 
 function getStationCompositeId(
   stationData: Partial<StationAttributes>,
@@ -99,7 +93,6 @@ async function processConsolidatedStations(
 
     try {
       const { stationData, terminals } = stagedStation;
-
       let station: Models.Station | null = null;
       let createdStation = false;
 
@@ -168,7 +161,9 @@ async function processConsolidatedStations(
 
         if (!createdStation) {
           console.log(
-            `Mise à jour de la station existante: ${station.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+            `Mise à jour de la station existante: ${station.id} (Ligne CSV: ${
+              stagedStation.lastModifiedRow
+            })`,
             LogLevel.DEBUG,
           );
           await station.update(stationData as StationAttributes, {
@@ -176,7 +171,9 @@ async function processConsolidatedStations(
           });
         } else {
           console.log(
-            `Station créée avec succès: ${station.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+            `Station créée avec succès: ${station.id} (Ligne CSV: ${
+              stagedStation.lastModifiedRow
+            })`,
             LogLevel.DEBUG,
           );
         }
@@ -219,7 +216,9 @@ async function processConsolidatedStations(
           LogLevel.DEBUG,
         );
         console.log(
-          `TerminalData pour upsert (ligne ${stagedStation.lastModifiedRow}): ${JSON.stringify(terminalData)}`,
+          `TerminalData pour upsert (ligne ${
+            stagedStation.lastModifiedRow
+          }): ${JSON.stringify(terminalData)}`,
           LogLevel.DEBUG,
         );
 
@@ -261,7 +260,9 @@ async function processConsolidatedStations(
           });
 
           console.log(
-            `Résultat findOrCreate Terminal: instance=${terminal ? terminal.id : "null"}, created=${terminalCreated} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+            `Résultat findOrCreate Terminal: instance=${terminal ? terminal.id : "null"}, created=${terminalCreated} (Ligne CSV: ${
+              stagedStation.lastModifiedRow
+            })`,
             LogLevel.DEBUG,
           );
 
@@ -283,7 +284,9 @@ async function processConsolidatedStations(
 
           if (!terminalCreated) {
             console.log(
-              `Mise à jour du terminal existant: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Mise à jour du terminal existant: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
             await terminal.update(
@@ -294,7 +297,9 @@ async function processConsolidatedStations(
             );
           } else {
             console.log(
-              `Terminal créé avec succès: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Terminal créé avec succès: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
           }
@@ -352,7 +357,9 @@ async function processConsolidatedStations(
 
           if (plugsToDelete.length > 0) {
             console.log(
-              `Suppression de ${plugsToDelete.length} plugs anciennes pour terminal: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Suppression de ${plugsToDelete.length} plugs anciennes pour terminal: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
             await Models.TerminalPlug.destroy({
@@ -363,7 +370,9 @@ async function processConsolidatedStations(
 
           if (plugsToCreate.length > 0) {
             console.log(
-              `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
             await Models.TerminalPlug.bulkCreate(
@@ -598,7 +607,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
       totalProcessedCsvLines++;
       linesProcessedSinceLastFlush++;
-
       const currentProgressPercentage = Math.floor(
         (totalProcessedCsvLines / totalLinesFromMetadata) * 100,
       );
@@ -608,9 +616,8 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         (totalProcessedCsvLines % PROGRESS_LOG_LINES_INTERVAL === 0 &&
           totalProcessedCsvLines > 0)
       ) {
-        const color = getProgressBarColor(currentProgressPercentage);
         console.log(
-          `${color}Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.${ANSI_RESET_COLOR}`,
+          `Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.`,
           LogLevel.INFO,
         );
         lastProgressPercentage = currentProgressPercentage;
@@ -696,7 +703,8 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
               stationsToFlush.push(stationContent);
               stagedStationData.delete(compositeId);
             } else {
-              console.warn(
+              console.log(
+                // Remplacé warn par log car nous avons maintenant un alias global
                 `Tentative d'accès à un index inexistant lors du flush: ${i}. numberToFlush: ${numberToFlush}, sortedStagedStations.length: ${sortedStagedStations.length}`,
                 LogLevel.WARN,
               );
@@ -814,19 +822,9 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       );
     }
 
-    await sendImportNotification(
-      initialImportLogEntry ||
-        ({
-          import_id: importUuid,
-          file_name: originalFileName,
-          total_lines_processed: totalProcessedCsvLines,
-          successful_lines: totalSuccessfulStations,
-          error_summary: finalErrorSummary,
-          error_log_file_path: currentErrorLogFile,
-          status: finalStatus,
-          import_date: new Date(),
-          duration_ms: duration_ms,
-        } as ImportLogAttributes),
+    // On notifie le client via WebSocket avec le résumé final
+    notifyCompletion(
+      (initialImportLogEntry?.get() || importSummary) as ImportLogAttributes,
     );
 
     res.status(200).json({
@@ -897,8 +895,9 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
             LogLevel.DEBUG,
           );
         }
-        await sendImportNotification(
-          initialImportLogEntry || (importSummary as ImportLogAttributes),
+        notifyCompletion(
+          (initialImportLogEntry?.get() ||
+            importSummary) as ImportLogAttributes,
         );
       } catch (logError) {
         console.error(

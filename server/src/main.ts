@@ -1,4 +1,5 @@
 import startServer from "./app";
+import { createWebSocketServer } from "./services/websocket";
 import { LogLevel, cleanOldLogs } from "./tools/logger";
 
 // Récupérer le port depuis les variables d'environnement
@@ -17,15 +18,20 @@ cleanOldLogs();
 
 // Fonction principale pour démarrer l'application
 async function main() {
-  const app = await startServer();
+  // 1. On prépare l'application Express comme d'habitude.
+  const expressApp = await startServer();
+
+  // 2. On utilise notre service pour créer un serveur unifié (HTTP + WebSocket).
+  const httpServer = createWebSocketServer(expressApp);
 
   // On transforme l'appel à app.listen en une promesse pour pouvoir l'attendre.
   // Cela garantit que le script ne se termine pas avant que le serveur ne soit
   // réellement en écoute, et nous permet de capturer les erreurs de démarrage.
   await new Promise<void>((resolve, reject) => {
-    const server = app.listen(port, () => {
+    // 3. On démarre le serveur unifié.
+    const runningServer = httpServer.listen(port, () => {
       console.log(
-        `⚡️ Serveur Express démarré et écoute sur http://localhost:${port}`,
+        `🚀 HTTP & WebSocket server listening on port ${port}`,
         LogLevel.INFO,
       );
       // Le serveur est prêt, on peut résoudre la promesse.
@@ -33,7 +39,7 @@ async function main() {
     });
 
     // Gestionnaire pour les erreurs de démarrage du serveur (ex: port déjà utilisé)
-    server.on("error", (error) => {
+    runningServer.on("error", (error) => {
       reject(error);
     });
   });
