@@ -15,7 +15,12 @@ export class ImportLog
   public successful_lines!: number;
   public error_summary!: ImportLogAttributes["error_summary"];
   public error_log_file_path!: string | null;
-  public status!: "IN_PROGRESS" | "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED";
+  public status!:
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "PARTIAL_SUCCESS"
+    | "FAILED"
+    | "CANCELLED";
   public import_date!: Date;
 
   public readonly createdAt!: Date;
@@ -61,6 +66,7 @@ export class ImportLog
             "COMPLETED",
             "PARTIAL_SUCCESS",
             "FAILED",
+            "CANCELLED", // ✅ On ajoute la valeur manquante ici
           ),
           allowNull: false,
         },

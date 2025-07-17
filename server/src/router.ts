@@ -104,7 +104,7 @@ router.put("/stations/:id", stationsActions.edit);
 router.delete("/stations/:id", stationsActions.destroy);
 
 // Route pour import des données CSV
-router.post("/import/csv", upload.single("csvFile"), importCsv);
+router.post("/import/csv", upload.single("csvfile"), importCsv);
 
 // Démarrage des tâches de fond (cron jobs)
 startCronJobs();

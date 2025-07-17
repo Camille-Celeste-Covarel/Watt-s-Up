@@ -23,6 +23,14 @@ function broadcast(data: object) {
 }
 
 /**
+ * Notifie les clients que l'importation a démarré et leur fournit l'ID.
+ * @param importId L'UUID de l'importation.
+ */
+export function notifyStart(importId: string) {
+  broadcast({ type: "start", message: "Importation démarrée...", importId });
+}
+
+/**
  * Notifie les clients d'une progression en cours.
  * Appelé par le "logger espion".
  * @param message Le message de log brut.
@@ -69,6 +77,10 @@ export function notifyCompletion(importSummary: ImportLogAttributes) {
           ? error_summary.message.split(" ")[0]
           : "N/A";
       finalMessage = `⚠️ Importation partielle: ${file_name}\n- Lignes CSV traitées: ${total_lines_processed}\n- Stations réussies: ${successful_lines}\n- Erreurs: ${errorCount}`;
+      break;
+    }
+    case "CANCELLED": {
+      finalMessage = `🛑 Importation annulée par l'utilisateur: ${file_name}\n- ${successful_lines} stations ont été traitées avant l'arrêt.`;
       break;
     }
     case "FAILED":

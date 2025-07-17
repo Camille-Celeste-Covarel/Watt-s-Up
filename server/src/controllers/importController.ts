@@ -20,7 +20,12 @@ import type {
   TerminalAttributes,
 } from "../types/models/models";
 
-import { notifyCompletion } from "../services/importNotifier";
+import { notifyCompletion, notifyStart } from "../services/importNotifier";
+import {
+  isStopRequested,
+  registerImport,
+  unregisterImport,
+} from "../services/importStateManager";
 import {
   LogLevel,
   logImportErrorToFile,
@@ -68,11 +73,17 @@ function getStationCompositeId(
 
 async function processConsolidatedStations(
   stationsToProcess: StagedStationContent[],
+  importId: string, // On ajoute l'ID de l'import pour vérifier l'état d'annulation
 ): Promise<{ successfulStations: number; errors: TransformError[] }> {
   let successfulStations = 0;
   const errors: TransformError[] = [];
 
   for (const stagedStation of stationsToProcess) {
+    // POINT DE CONTRÔLE PRINCIPAL : On vérifie avant de traiter chaque station du lot.
+    if (isStopRequested(importId)) {
+      break; // On sort de la boucle si l'arrêt est demandé.
+    }
+
     const compositeId = getStationCompositeId(stagedStation.stationData);
     console.log(
       `Début de traitement pour la station: ${compositeId} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
@@ -494,7 +505,12 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   stagedStationData.clear();
   processedStationsGlobalCache.clear();
 
+  // Enregistrement de l'import pour permettre l'annulation
   const importUuid = uuidv4();
+  registerImport(importUuid);
+  // FUTURE: Métrique - Incrémenter le compteur 'imports_started_total'
+  // FUTURE: Métrique - Incrémenter la jauge 'imports_in_progress'
+
   const currentErrorLogFile = path.join(
     ERROR_LOG_DIR,
     `import_errors_${importUuid}.log`,
@@ -573,21 +589,8 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     });
     console.log("Entrée ImportLog IN_PROGRESS créée en BDD.", LogLevel.DEBUG);
 
-    const forcedError: TransformError = {
-      type: "FORCED_TEST_ERROR",
-      message:
-        "Ceci est un message d'erreur de test forcé pour vérifier la journalisation.",
-      rowNumber: 0,
-      rowData: {} as CsvRow,
-      columnName: "N/A",
-      culpritValue: "N/A",
-      originalError: new Error("Erreur de test interne forcée."),
-    };
-    logImportErrorToFile(forcedError, errorLogStream);
-    console.error(
-      "[CONSOLE ERROR] Message d'erreur de test forcé envoyé à logImportErrorToFile.",
-      LogLevel.ERROR,
-    );
+    // Notifie le client que le processus a démarré, en envoyant l'ID d'import
+    notifyStart(importUuid);
 
     const csvStream = fs
       .createReadStream(filePath)
@@ -595,17 +598,26 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
     let lastProgressPercentage = -1;
     let linesProcessedSinceLastFlush = 0;
+    let wasInterrupted = false;
 
     for await (const row of csvStream as AsyncIterable<CsvRow>) {
-      if (importCompleted) {
+      if (importCompleted || isStopRequested(importUuid)) {
+        wasInterrupted = true;
         console.log(
-          "Arrêt du traitement en raison d'une erreur de stream précédente.",
-          LogLevel.DEBUG,
+          "Arrêt de l'importation demandé. Interruption de la lecture du fichier CSV.",
+          LogLevel.INFO,
         );
+        // Explicitement détruire le stream pour s'assurer que la lecture du fichier s'arrête
+        // et libère les ressources, empêchant le script de continuer en arrière-plan.
+        if (!csvStream.destroyed) {
+          // fast-csv stream will propagate the destroy to the underlying file stream.
+          csvStream.destroy();
+        }
         break;
       }
 
       totalProcessedCsvLines++;
+      // FUTURE: Métrique - Incrémenter le compteur 'csv_lines_processed_total'
       linesProcessedSinceLastFlush++;
       const currentProgressPercentage = Math.floor(
         (totalProcessedCsvLines / totalLinesFromMetadata) * 100,
@@ -662,6 +674,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         }
       } else {
         totalErrorEntries++;
+        // FUTURE: Métrique - Incrémenter le compteur 'transformation_errors_total'
         console.log(
           `Erreur de transformation détectée pour la ligne ${totalProcessedCsvLines}. Appel de logImportErrorToFile.`,
           LogLevel.DEBUG,
@@ -718,8 +731,9 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
               LogLevel.INFO,
             );
             const { successfulStations, errors: processErrors } =
-              await processConsolidatedStations(stationsToFlush);
+              await processConsolidatedStations(stationsToFlush, importUuid);
             totalSuccessfulStations += successfulStations;
+            // FUTURE: Métrique - Ajouter 'successfulStations' au compteur 'stations_processed_total'
             totalErrorEntries += processErrors.length;
             console.log(
               `processConsolidatedStations a retourné ${processErrors.length} erreurs pour ce flush. Écriture dans le log d'erreur.`,
@@ -742,11 +756,15 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    console.log(
-      `Fin du stream CSV. Traitement du dernier lot (${stagedStationData.size} stations restantes dans le tampon).`,
-      LogLevel.INFO,
-    );
-    if (stagedStationData.size > 0) {
+    // Ce message n'est pertinent que si le stream s'est terminé normalement.
+    if (!wasInterrupted) {
+      console.log(
+        `Fin du stream CSV. Traitement du dernier lot (${stagedStationData.size} stations restantes dans le tampon).`,
+        LogLevel.INFO,
+      );
+    }
+    // POINT DE CONTRÔLE SECONDAIRE : On ne fait le flush final que si l'import n'a pas été annulé.
+    if (!isStopRequested(importUuid) && stagedStationData.size > 0) {
       const stationsToFlush = Array.from(stagedStationData.values());
       stagedStationData.clear();
 
@@ -755,7 +773,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         LogLevel.DEBUG,
       );
       const { successfulStations, errors: processErrors } =
-        await processConsolidatedStations(stationsToFlush);
+        await processConsolidatedStations(stationsToFlush, importUuid);
       totalSuccessfulStations += successfulStations;
       totalErrorEntries += processErrors.length;
       console.log(
@@ -775,21 +793,36 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     await fs.promises.unlink(filePath);
     console.log("Fichier temporaire supprimé.", LogLevel.DEBUG);
 
-    errorLogStream.end();
-    console.log(
-      "Commande de fermeture du stream de log d'erreur envoyée.",
-      LogLevel.DEBUG,
-    );
+    // On s'assure que le stream de log est bien fermé avant de continuer.
+    await new Promise<void>((resolve) => {
+      // L'événement 'finish' garantit que toutes les données ont été écrites.
+      errorLogStream.on("finish", () => {
+        console.log(
+          "Stream de log d'erreur 'finish' event reçu.",
+          LogLevel.DEBUG,
+        );
+        resolve();
+      });
+      errorLogStream.end();
+    });
 
     const endTime = new Date();
     const duration_ms = endTime.getTime() - startTime.getTime();
+    console.log(
+      "Fin du script d'importation, préparation du statut final.",
+      LogLevel.DEBUG,
+    );
 
-    const finalStatus: ImportLogAttributes["status"] =
-      totalErrorEntries === 0 && totalSuccessfulStations > 0
-        ? "COMPLETED"
-        : totalSuccessfulStations > 0
-          ? "PARTIAL_SUCCESS"
-          : "FAILED";
+    // La vérification de l'annulation doit avoir la priorité sur les autres statuts.
+    const finalStatus: ImportLogAttributes["status"] = isStopRequested(
+      importUuid,
+    )
+      ? "CANCELLED"
+      : totalSuccessfulStations === 0
+        ? "FAILED"
+        : totalErrorEntries === 0
+          ? "COMPLETED"
+          : "PARTIAL_SUCCESS";
 
     const finalErrorSummary =
       totalErrorEntries > 0
@@ -811,20 +844,37 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       duration_ms: duration_ms,
     };
 
+    // FUTURE: Métrique - Décrémenter la jauge 'imports_in_progress'
+    // FUTURE: Métrique - Incrémenter le compteur 'imports_completed_total{status="..."}' avec le statut final
+
+    let finalDataForNotification: ImportLogAttributes;
+
     if (initialImportLogEntry) {
-      await initialImportLogEntry.update(importSummary);
-      console.log("Entrée ImportLog mise à jour en BDD.", LogLevel.DEBUG);
+      // On s'assure que l'entrée existe avant de l'updater
+      const entry = await Models.ImportLog.findByPk(initialImportLogEntry.id);
+      // On met à jour la BDD et on récupère la version la plus fraîche pour la notification
+      if (entry) {
+        const updatedEntry = await entry.update(importSummary);
+        finalDataForNotification = updatedEntry.get();
+        console.log("Entrée ImportLog mise à jour en BDD.", LogLevel.DEBUG);
+      } else {
+        const newEntry = await Models.ImportLog.create(importSummary);
+        finalDataForNotification = newEntry.get();
+      }
     } else {
-      await Models.ImportLog.create(importSummary);
-      console.log(
-        "Entrée ImportLog finale créée en BDD suite à une initialisation manquée.",
-        LogLevel.DEBUG,
-      );
+      const newEntry = await Models.ImportLog.create(importSummary);
+      finalDataForNotification = newEntry.get();
     }
 
+    console.log(
+      `Envoi de la notification de complétion. Statut: ${finalDataForNotification.status}`,
+      LogLevel.INFO,
+    );
     // On notifie le client via WebSocket avec le résumé final
-    notifyCompletion(
-      (initialImportLogEntry?.get() || importSummary) as ImportLogAttributes,
+    notifyCompletion(finalDataForNotification);
+    console.log(
+      "Notification de complétion envoyée avec succès.",
+      LogLevel.INFO,
     );
 
     res.status(200).json({
@@ -852,7 +902,16 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
           LogLevel.DEBUG,
         );
       }
-      errorLogStream.end();
+      await new Promise<void>((resolve) => {
+        errorLogStream.on("finish", () => {
+          console.log(
+            "Stream de log d'erreur 'finish' event reçu (catch block).",
+            LogLevel.DEBUG,
+          );
+          resolve();
+        });
+        errorLogStream.end();
+      });
 
       let errorMessage = "An unknown error occurred during import.";
       if (generalError instanceof Error) {
@@ -866,6 +925,8 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       }
 
       const duration_ms = new Date().getTime() - startTime.getTime();
+      // FUTURE: Métrique - Décrémenter la jauge 'imports_in_progress'
+      // FUTURE: Métrique - Incrémenter le compteur 'imports_completed_total{status="FAILED"}'
       const status: ImportLogAttributes["status"] = "FAILED";
       const importSummary: ImportLogCreationAttributes = {
         import_id: importUuid,
@@ -881,23 +942,29 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         duration_ms: duration_ms,
       };
 
+      let finalDataForNotification: ImportLogAttributes;
+
       try {
         if (initialImportLogEntry) {
-          await initialImportLogEntry.update(importSummary);
+          const updatedEntry =
+            await initialImportLogEntry.update(importSummary);
+          finalDataForNotification = updatedEntry.get();
           console.log(
             "Entrée ImportLog FAILED mise à jour en BDD.",
             LogLevel.DEBUG,
           );
         } else {
-          await Models.ImportLog.create(importSummary);
-          console.log(
-            "Entrée ImportLog FAILED créée en BDD (nouvelle entrée).",
-            LogLevel.DEBUG,
-          );
+          const newEntry = await Models.ImportLog.create(importSummary);
+          finalDataForNotification = newEntry.get();
         }
-        notifyCompletion(
-          (initialImportLogEntry?.get() ||
-            importSummary) as ImportLogAttributes,
+        console.log(
+          "Envoi de la notification de complétion (catch block).",
+          LogLevel.INFO,
+        );
+        notifyCompletion(finalDataForNotification);
+        console.log(
+          "Notification de complétion envoyée (catch block).",
+          LogLevel.INFO,
         );
       } catch (logError) {
         console.error(
@@ -917,6 +984,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       });
     }
   } finally {
+    unregisterImport(importUuid); // On nettoie l'état de l'import
     restoreConsoleOutput();
   }
 };

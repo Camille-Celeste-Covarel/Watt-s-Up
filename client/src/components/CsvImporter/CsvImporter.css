@@ -25,13 +25,28 @@
 
 .importer-controls {
   display: flex;
+  flex-direction: column; /* On empile verticalement */
   gap: 1rem;
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
 }
 
-.importer-controls button {
+.importer-button-group {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  justify-content: center;
+}
+
+.importer-controls input[type="file"] {
+  /* Ancien style, on peut le supprimer ou le laisser au cas où */
+  flex-grow: 1;
+}
+
+/* Style commun pour tous les boutons */
+.importer-controls button,
+.importer-browse-button {
   padding: 0.6rem 1.2rem;
   border: none;
   background-color: #007bff;
@@ -43,13 +58,40 @@
   transition: background-color 0.2s;
 }
 
-.importer-controls button:hover:not(:disabled) {
+/* Comportement au survol */
+.importer-controls button:hover:not(:disabled),
+.importer-browse-button:hover:not(:disabled) {
   background-color: #0056b3;
 }
 
 .importer-controls button:disabled {
   background-color: #ccc;
   cursor: not-allowed;
+}
+
+/* Style spécifique pour le bouton d'arrêt */
+.importer-stop-button {
+  background-color: #dc3545; /* Rouge danger */
+}
+
+.importer-stop-button:hover:not(:disabled) {
+  background-color: #c82333;
+}
+
+/* Style pour le nouveau bouton de sélection de fichier */
+.importer-browse-button {
+  background-color: #6c757d; /* Un gris neutre */
+}
+
+.importer-browse-button:hover:not(:disabled) {
+  background-color: #5a6268;
+}
+
+/* Style pour l'affichage du nom de fichier */
+.file-name-display {
+  margin-top: 0.5rem; /* On ajoute un espacement vertical */
+  font-style: italic;
+  color: #555;
 }
 
 /* ==========================================================================
