@@ -1,3 +1,4 @@
+// @ts-ignore
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 // Import necessary modules from React and React Router
 import { StrictMode } from "react";
@@ -10,6 +11,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Import the main app component
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx"; // ✅ Importer la nouvelle page admin
 import ContactPage from "./pages/ContactPage";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
@@ -17,6 +19,7 @@ import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
 import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
+import AdminRoute from "./utils/AdminRoute.tsx"; // ✅ Importer le nouveau garde de route
 import ProtectedRoute from "./utils/ProtectedRoute";
 
 // Import additional components for new routes
@@ -109,6 +112,22 @@ const router = createBrowserRouter([
       },
     ],
   },
+
+  // 👑 ROUTE ADMIN (avec AdminRoute)
+  {
+    path: "/admin/dashboard",
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: (
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        ),
+      },
+    ],
+  },
 ]);
 
 /* ************************************************************************* */
@@ -127,7 +146,7 @@ createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
       <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      {/*<ReactQueryDevtools initialIsOpen={false} />*/}
     </QueryClientProvider>
   </StrictMode>,
 );
