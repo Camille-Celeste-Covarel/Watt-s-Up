@@ -65,7 +65,15 @@ function LoginPage() {
               required
               placeholder="Tapez votre mot de passe"
             />
-            <p>Mot de passe oublié ?</p>
+            <button
+              type="button"
+              className="login-forgot-password"
+              onClick={() => {
+                navigate("/forgot-password");
+              }}
+            >
+              Mot de passe oublié ?
+            </button>
           </div>
         </div>
 
@@ -76,8 +84,6 @@ function LoginPage() {
         </button>
 
         <div className="separator">
-          {" "}
-          {/* ✅ Séparateur */}
           <h2>Toujours pas de compte ?</h2>
         </div>
 

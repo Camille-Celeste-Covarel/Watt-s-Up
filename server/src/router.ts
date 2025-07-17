@@ -20,6 +20,8 @@ const router = express.Router();
 router.post("/auth/login", userActions.login);
 router.post("/auth/register", userActions.register);
 router.post("/auth/logout", userActions.logout);
+router.post("/auth/forgot-password", userActions.forgotPassword);
+router.post("/auth/reset-password", userActions.resetPassword);
 router.get("/auth/check", authenticateToken, (req, res) => {
   res.json({ authenticated: true });
 });

@@ -22,6 +22,8 @@ export class User
   public password!: string;
   public avatar_url?: string;
   public is_admin!: boolean;
+  public reset_token?: string | null;
+  public reset_token_expiry?: Date | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -88,6 +90,14 @@ export class User
           type: DataTypes.BOOLEAN,
           allowNull: false,
           defaultValue: false,
+        },
+        reset_token: {
+          type: DataTypes.STRING(255),
+          allowNull: true,
+        },
+        reset_token_expiry: {
+          type: DataTypes.DATE,
+          allowNull: true,
         },
       },
       {

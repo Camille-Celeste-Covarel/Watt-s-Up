@@ -1,7 +1,7 @@
 import { useState } from "react";
 
 import "../style/registerpage.css";
-import { FaEye, FaEyeSlash } from "react-icons/fa"; // Installe react-icons si besoin
+import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
 import vehicleDefaultIcon from "../assets/images/vehicleIcons/carProfile.svg";
