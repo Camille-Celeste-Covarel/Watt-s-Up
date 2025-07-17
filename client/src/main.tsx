@@ -17,8 +17,8 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage.tsx";
 import RegisterPage from "./pages/RegisterPage";
-import ProtectedRoute from "./utils/ProtectedRoute.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import ProtectedRoute from "./utils/ProtectedRoute.tsx";
 
 // Import additional components for new routes
 // Try creating these components in the "pages" folder

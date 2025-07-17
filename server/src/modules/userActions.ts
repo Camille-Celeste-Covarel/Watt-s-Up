@@ -1,10 +1,10 @@
-import { Op } from "sequelize";
+import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import type { RequestHandler } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../models/_index";
-import crypto from "node:crypto";
 import nodemailer from "nodemailer";
+import { Op } from "sequelize";
+import { User } from "../models/_index";
 
 // L'opération BREAD : Browse (Read All)
 // Récupère tous les utilisateurs de la base de données.
@@ -242,8 +242,8 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
       });
       return;
     }
-    const token = crypto.randomBytes(32).toString("hex")
-    const tokenExpiry = new Date(Date.now() + 1000 * 60 * 60)
+    const token = crypto.randomBytes(32).toString("hex");
+    const tokenExpiry = new Date(Date.now() + 1000 * 60 * 60);
 
     user.reset_token = token;
     user.reset_token_expiry = tokenExpiry;
@@ -254,10 +254,10 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
       port: Number(process.env.EMAIL_PORT),
       secure: false,
       auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-  },
-    })
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
 
@@ -266,12 +266,11 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
       to: user.email,
       subject: "Réinitialisation de votre mot de passe",
       html: `<p>Pour réinitialiser votre mot de passe, cliquez sur ce lien : <a href="${resetUrl}">${resetUrl}</a></p>`,
-    })
-
-    res.json({
-    message: "Si l'email existe, un lien a été envoyé.",
     });
 
+    res.json({
+      message: "Si l'email existe, un lien a été envoyé.",
+    });
   } catch (err) {
     next(err);
   }
@@ -283,7 +282,9 @@ const resetPassword: RequestHandler = async (req, res, next) => {
 
     // Vérification de la longueur du mot de passe
     if (!password || password.length < 6) {
-      res.status(400).json({ message: "Le mot de passe doit faire au moins 6 caractères." });
+      res
+        .status(400)
+        .json({ message: "Le mot de passe doit faire au moins 6 caractères." });
       return;
     }
 
