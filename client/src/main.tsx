@@ -14,9 +14,10 @@ import ContactPage from "./pages/ContactPage";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
-import ProfilPage from "./pages/ProfilPage.tsx";
+import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
-import ProtectedRoute from "./utils/ProtectedRoute.tsx";
+import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
+import ProtectedRoute from "./utils/ProtectedRoute";
 
 // Import additional components for new routes
 // Try creating these components in the "pages" folder
@@ -89,6 +90,20 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <StationDetails />
+          </ProtectedRoute>
+        ),
+      },
+    ],
+  },
+  {
+    path: "/reservations",
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: (
+          <ProtectedRoute>
+            <ReservationPage />
           </ProtectedRoute>
         ),
       },

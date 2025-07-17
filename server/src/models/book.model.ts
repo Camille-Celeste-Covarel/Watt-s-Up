@@ -23,8 +23,12 @@ export class Book
   public id_terminal!: string;
   public status!: ReservationStatus;
   public expires_at!: Date;
+  public charge_started_at!: Date | null;
   public session_ends_at!: Date | null;
   public price!: number | null;
+
+  // Déclaration de l'association pour que TypeScript la reconnaisse
+  public readonly terminal?: Terminal;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -55,6 +59,10 @@ export class Book
         expires_at: {
           type: DataTypes.DATE,
           allowNull: false,
+        },
+        charge_started_at: {
+          type: DataTypes.DATE,
+          allowNull: true,
         },
         session_ends_at: {
           type: DataTypes.DATE,
