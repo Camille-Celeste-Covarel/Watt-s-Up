@@ -36,36 +36,7 @@ const read: RequestHandler = async (req, res, next) => {
 
 // L'opération BREAD : Add (Create)
 // Ajoute un nouvel utilisateur à la base de données.
-const add: RequestHandler = async (req, res, next) => {
-  try {
-    const [user, created] = await User.findOrCreate({
-      defaults: {
-        first_name: "Test",
-        last_name: "User",
-        email: "test.user@example.com",
-        password: "securepassword123",
-        birthdate: new Date("1990-01-01"),
-        address: "123 Main St",
-        city: "Anytown",
-        postcode: "12345",
-        country: "FR",
-        is_admin: false,
-      },
-    });
-
-    if (created) {
-      res
-        .status(201)
-        .json({ id: user.id, message: "Utilisateur créé avec succès" });
-    } else {
-      res
-        .status(200)
-        .json({ id: user.id, message: "Utilisateur déjà existant" });
-    }
-  } catch (err) {
-    next(err);
-  }
-};
+const add: RequestHandler = async (req, res, next) => {};
 
 const edit: RequestHandler = async (req, res, next) => {
   try {
@@ -183,8 +154,7 @@ const login: RequestHandler = async (req, res, next) => {
 
     const token = jwt.sign(
       {
-        userId: user.id,
-        email: user.email,
+        id: user.id,
         isAdmin: user.is_admin,
       },
       jwtSecret,

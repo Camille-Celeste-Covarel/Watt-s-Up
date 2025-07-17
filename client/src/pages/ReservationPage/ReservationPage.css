@@ -1,0 +1,102 @@
+.reservations-page {
+  padding: 1rem;
+  color: #333;
+}
+
+.reservations-page h1,
+.reservations-page h2 {
+  color: #1a3a6b;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.reservation-section {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.reservation-card {
+  padding: 1rem 0;
+}
+
+.reservation-card-header h3 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #333;
+}
+
+.reservation-card-header p {
+  margin: 0.2rem 0 1rem;
+  font-style: italic;
+  color: #666;
+}
+
+.reservation-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.detail-block h4 {
+  margin: 0 0 0.5rem;
+  color: #1a3a6b;
+  font-size: 1rem;
+}
+
+.detail-block ul {
+  margin: 0;
+  padding: 0;
+  list-style-type: none;
+  color: #555;
+}
+
+.status {
+  padding: 0.3rem 0.6rem;
+  border-radius: 12px;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+}
+
+.status-ACTIVE {
+  background-color: #d4edda;
+  color: #155724;
+}
+.status-COMPLETED {
+  background-color: #d1ecf1;
+  color: #0c5460;
+}
+.status-CANCELLED {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+.status-EXPIRED {
+  background-color: #fff3cd;
+  color: #856404;
+}
+
+.reservation-actions {
+  margin-top: 1.5rem;
+  display: flex;
+  gap: 1rem;
+}
+
+/* Styles for history section */
+.history-item {
+  border-bottom: 1px solid #e0e0e0;
+}
+.history-item:last-child {
+  border-bottom: none;
+}
+
+.history-summary {
+  cursor: pointer;
+  padding: 1rem 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}

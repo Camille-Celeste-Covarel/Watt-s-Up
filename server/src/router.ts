@@ -2,12 +2,13 @@ import express from "express";
 import upload from "./config/multer";
 import { importCsv } from "./controllers/importController";
 import authenticateToken from "./middleware/isConnected";
-import bookActions from "./modules/bookActions";
 import requestActions from "./modules/requestActions";
 import stationsActions from "./modules/stationsActions";
 import userActions from "./modules/userActions";
 import vehiculeActions from "./modules/vehiculeActions";
+import bookRoutes from "./routes/book.routes";
 import reservationRoutes from "./routes/reservation.routes";
+import { startCronJobs } from "./tools/cron.service";
 
 const router = express.Router();
 
@@ -47,12 +48,8 @@ router.post("/users", userActions.add);
 router.put("/users/:id", userActions.edit);
 router.delete("/users/:id", userActions.destroy);
 
-// Routes reservations
-router.get("/books", bookActions.browse);
-router.get("/books/:id", bookActions.read);
-router.post("/books", bookActions.add);
-router.put("/books/:id", bookActions.edit);
-router.delete("/books/:id", bookActions.destroy);
+// Réservations
+router.use("/books", bookRoutes);
 
 // Routes demandes
 router.get("/requests", requestActions.browse);
@@ -68,7 +65,7 @@ router.post("/vehicules", vehiculeActions.add);
 router.put("/vehicules/:id", vehiculeActions.edit);
 router.delete("/vehicules/:id", vehiculeActions.destroy);
 
-// Routes stations protégées (modification, ajout, suppression)
+// Routes stations protégées
 router.post("/stations", stationsActions.add);
 router.put("/stations/:id", stationsActions.edit);
 router.delete("/stations/:id", stationsActions.destroy);
@@ -78,5 +75,8 @@ router.use("/reservations", reservationRoutes);
 
 // Route pour import des données CSV
 router.post("/import/csv", upload.single("csvFile"), importCsv);
+
+// Démarrage des tâches de fond (cron jobs)
+startCronJobs();
 
 export default router;

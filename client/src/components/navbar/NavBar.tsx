@@ -15,7 +15,7 @@ function NavBar() {
       <button
         type="button"
         onClick={() => {
-          navigate("/");
+          navigate("/reservations");
         }}
       >
         <img src={borne} alt="borne" />

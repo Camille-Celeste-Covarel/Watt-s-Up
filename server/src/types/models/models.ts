@@ -19,6 +19,7 @@ export interface BookAttributes {
   id_terminal: string;
   status: string;
   expires_at: Date;
+  charge_started_at: Date | null;
   session_ends_at: Date | null;
   price: number | null;
   createdAt?: Date;
@@ -35,6 +36,7 @@ export type BookCreationAttributes = Optional<
   | "status"
   | "expires_at"
   | "session_ends_at"
+  | "charge_started_at"
   | "id_user"
 >;
 
