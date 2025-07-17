@@ -18,6 +18,7 @@ import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage.tsx";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./utils/ProtectedRoute.tsx";
+import ResetPassword from "./pages/ResetPassword.tsx";
 
 // Import additional components for new routes
 // Try creating these components in the "pages" folder
@@ -50,6 +51,11 @@ const router = createBrowserRouter([
     path: "/forgot-password",
     element: <App />,
     children: [{ index: true, element: <ForgotPassword /> }],
+  },
+  {
+    path: "/reset-password",
+    element: <App />,
+    children: [{ index: true, element: <ResetPassword /> }],
   },
   {
     path: "/informations",
