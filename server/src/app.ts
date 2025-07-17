@@ -197,7 +197,7 @@ async function startServer() {
     Plug.associate(sequelize);
     Power.associate(sequelize);
     Provider.associate(sequelize);
-    ImportLog.associate(sequelize);
+    ImportLog.associate();
     Station.associate(sequelize);
     Vehicule.associate(sequelize);
     Terminal.associate(sequelize);

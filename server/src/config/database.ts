@@ -1,5 +1,4 @@
 import { type Dialect, Sequelize } from "sequelize";
-import { LogLevel } from "../tools/logger";
 import type { DbConfig, ValidDbConfig } from "./database_types";
 
 /**

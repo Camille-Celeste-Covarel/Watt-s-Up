@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { Writable } from "node:stream";
 import { DatabaseError } from "sequelize";
-import { notifyError, notifyProgress } from "../services/importNotifier";
+import { notifyError } from "../services/importNotifier";
 import type { TransformError } from "../types/dataProcessing/importProcessingTypes";
 
 export enum LogLevel {
