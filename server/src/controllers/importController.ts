@@ -1001,3 +1001,36 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     );
   });
 };
+
+/**
+ * Récupère les 5 dernières entrées de l'historique d'importation.
+ */
+export const getImportHistory = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const history = await Models.ImportLog.findAll({
+      limit: 5,
+      order: [["import_date", "DESC"]],
+      attributes: [
+        "import_id",
+        "status",
+        "import_date",
+        "successful_lines",
+        "total_lines_processed",
+        "duration_ms",
+      ],
+    });
+    res.status(200).json(history);
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération de l'historique des imports:",
+      LogLevel.ERROR,
+      error,
+    );
+    res.status(500).json({
+      message: "Erreur serveur lors de la récupération de l'historique.",
+    });
+  }
+};

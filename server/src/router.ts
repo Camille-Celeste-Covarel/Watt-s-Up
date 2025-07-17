@@ -1,7 +1,7 @@
 import express, { type Request, type Response } from "express";
 import upload from "./config/multer";
-import { importCsv } from "./controllers/importController";
-import isAdmin from "./middleware/isAdmin"; // Importer le middleware isAdmin
+import { getImportHistory, importCsv } from "./controllers/importController";
+import isAdmin from "./middleware/isAdmin";
 import authenticateToken from "./middleware/isConnected";
 import requestActions from "./modules/requestActions";
 import stationsActions from "./modules/stationsActions";
@@ -105,6 +105,7 @@ router.delete("/stations/:id", stationsActions.destroy);
 
 // Route pour import des données CSV
 router.post("/import/csv", upload.single("csvfile"), importCsv);
+router.get("/import/history", getImportHistory);
 
 // Démarrage des tâches de fond (cron jobs)
 startCronJobs();

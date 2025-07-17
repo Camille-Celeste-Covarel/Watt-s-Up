@@ -2,12 +2,14 @@ import type React from "react";
 import { useRef, useState } from "react";
 import { useImport } from "../../contexts/ImportContext";
 import "./CsvImporter.css";
+import ImportHistory from "../ImportHistory/ImportHistory";
 
 const CsvImporter: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   // On récupère tout l'état et les fonctions depuis le contexte global.
+
   const {
     isImporting,
     isWsConnected,
@@ -157,6 +159,7 @@ const CsvImporter: React.FC = () => {
           )}
         </div>
       )}
+      <ImportHistory />
     </div>
   );
 };
