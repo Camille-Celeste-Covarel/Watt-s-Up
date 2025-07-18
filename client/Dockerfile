@@ -1,3 +1,5 @@
+# P3/client/Dockerfile
+
 # --- Étape 1 : Builder l'application React ---
 FROM node:20-alpine AS builder
 
@@ -27,9 +29,6 @@ RUN npm run build
 
 # --- Étape 2 : Servir l'application avec Nginx ---
 FROM nginx:alpine AS runner
-
-# Copie la configuration Nginx personnalisée pour gérer le routing de la SPA
-COPY client/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Copie les fichiers buildés de l'étape 'builder' vers le répertoire de service de Nginx
 COPY --from=builder /app/client/dist /usr/share/nginx/html

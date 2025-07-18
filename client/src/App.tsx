@@ -1,17 +1,17 @@
-import * as DeviceDetect from "react-device-detect";
+import { isMobile } from "react-device-detect";
+// 1. On importe useLocation pour une détection fiable du chemin
 import { Outlet, useLocation, useMatches } from "react-router-dom";
 import { Overlay } from "./components/Overlay/Overlay.tsx";
-import MapLibre from "./components/map/MapLibre.tsx"; // ✅ 1. Importer MapLibre directement
+import "./components/Overlay/Overlay.css";
 import NavBar from "./components/navbar/NavBar";
 import TopBar from "./components/topbar/TopBar";
 import { AuthProvider } from "./contexts/AuthContext";
-import { FilterProvider } from "./contexts/FilterContext.tsx";
 import { OverlayProvider } from "./contexts/OverlayContext/OverlayContext.tsx";
+import LandingPage from "./pages/LandingPage.tsx";
 
 // stylesheets
 import "./stylesheets/App.css";
 import "./stylesheets/normalize.css";
-import type React from "react";
 
 interface RouteHandle {
   isOverlay?: boolean;
@@ -19,57 +19,43 @@ interface RouteHandle {
 
 function App() {
   const matches = useMatches();
+  // 2. On récupère la localisation actuelle
   const location = useLocation();
 
   const isOverlayRoute = matches.some(
     (match) => (match.handle as RouteHandle)?.isOverlay,
   );
+  // 3. On corrige la détection : on vérifie si le chemin est EXACTEMENT "/"
   const isRootPath = location.pathname === "/";
 
-  // --- LOGIQUE DE RENDU ---
+  // --- LOGIQUE DE RENDU FINALE ---
 
-  let overlayContent: React.ReactNode = null;
-  let mainPageContent: React.ReactNode = null;
+  // Le contenu de l'overlay ne s'active QUE sur desktop pour les routes marquées.
+  const overlayContent = !isMobile && isOverlayRoute ? <Outlet /> : null;
 
-  if (isOverlayRoute && !DeviceDetect.isMobile) {
-    overlayContent = <Outlet />;
-  } else if (!isRootPath && DeviceDetect.isMobile) {
-    mainPageContent = <Outlet />;
-  }
+  // Le contenu de la page principale s'affiche si :
+  //    - On est sur mobile (et pas sur la page d'accueil).
+  //    - OU on est sur desktop ET ce n'est PAS une route d'overlay.
+  const shouldRenderInMain = isMobile || !isOverlayRoute;
+  const mainPageContent = shouldRenderInMain && !isRootPath ? <Outlet /> : null;
 
   return (
     <>
       <AuthProvider>
+        <TopBar />
         <OverlayProvider>
-          <FilterProvider>
-            <div className="app-container">
-              <TopBar />
+          {/* La LandingPage (avec la carte) est toujours la base */}
+          <LandingPage />
 
-              <main className="main-content-area">
-                {/* La carte est maintenant l'élément de fond permanent */}
-                <div className="map-container">
-                  {/* ✅ 2. On affiche la carte directement, pas la LandingPage */}
-                  <MapLibre />
-                </div>
+          {/* Ce conteneur affichera les pages "plein écran" */}
+          {mainPageContent && (
+            <div className="main-page-container">{mainPageContent}</div>
+          )}
 
-                {/*
-                  L'overlay vient se superposer à côté de la carte.
-                  Son contenu est fourni par le routeur via l'Outlet.
-                */}
-                {overlayContent && <Overlay>{overlayContent}</Overlay>}
-              </main>
+          <NavBar />
 
-              {/*
-                Ce conteneur pour les pages "pleine page" sur mobile
-                ne sera rendu QUE si mainPageContent n'est pas null.
-              */}
-              {mainPageContent && (
-                <div className="main-page-container">{mainPageContent}</div>
-              )}
-
-              <NavBar />
-            </div>
-          </FilterProvider>
+          {/* L'overlay ne recevra du contenu que sur desktop */}
+          <Overlay>{overlayContent}</Overlay>
         </OverlayProvider>
       </AuthProvider>
     </>

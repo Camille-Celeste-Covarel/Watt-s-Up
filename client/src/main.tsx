@@ -1,11 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// @ts-ignore
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
-import Filter from "./components/filter/Filter.tsx"; // ✅ 1. Importer le composant Filter
 import { ImportProvider } from "./contexts/ImportContext.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
@@ -15,25 +16,41 @@ import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
-import { ReservationConfirmation } from "./pages/ReservationPage/ReservationConfirmation.tsx";
 import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import AdminRoute from "./utils/AdminRoute.tsx";
 import ProtectedRoute from "./utils/ProtectedRoute";
 
+// Voici la nouvelle structure de routes, avec <App /> comme racine unique.
 const router = createBrowserRouter([
   {
-    element: <App />,
+    element: <App />, // App est le parent de TOUTES les pages
     children: [
-      // --- Routes principales ---
-      { path: "/", element: <LandingPage /> },
-      { path: "/login", element: <LoginPage /> },
-      { path: "/register", element: <RegisterPage /> },
-      { path: "/forgot-password", element: <ForgotPassword /> },
-      { path: "/reset-password", element: <ResetPassword /> },
-      { path: "/informations", element: <InfoPage /> },
-
-      // --- Routes "Overlay" ---
+      // --- Routes qui s'affichent toujours en pleine page ---
+      {
+        path: "/",
+        element: <LandingPage />,
+      },
+      {
+        path: "/login",
+        element: <LoginPage />,
+      },
+      {
+        path: "/register",
+        element: <RegisterPage />,
+      },
+      {
+        path: "/forgot-password",
+        element: <ForgotPassword />,
+      },
+      {
+        path: "/reset-password",
+        element: <ResetPassword />,
+      },
+      {
+        path: "/informations",
+        element: <InfoPage />,
+      },
       {
         path: "/reservations",
         element: (
@@ -52,20 +69,14 @@ const router = createBrowserRouter([
         ),
         handle: { isOverlay: true },
       },
+
+      // --- Routes qui doivent s'ouvrir dans l'overlay sur Desktop ---
+      // On ajoute la propriété `handle` pour les identifier.
       {
         path: "/station/:id",
         element: (
           <ProtectedRoute>
             <StationDetails />
-          </ProtectedRoute>
-        ),
-        handle: { isOverlay: true },
-      },
-      {
-        path: "/station/:id/confirmation",
-        element: (
-          <ProtectedRoute>
-            <ReservationConfirmation />
           </ProtectedRoute>
         ),
         handle: { isOverlay: true },
@@ -88,12 +99,6 @@ const router = createBrowserRouter([
         ),
         handle: { isOverlay: true },
       },
-      // ✅ 2. AJOUT : La nouvelle route pour les filtres
-      {
-        path: "/filters",
-        element: <Filter />, // Pour l'instant, pas besoin de ProtectedRoute
-        handle: { isOverlay: true },
-      },
     ],
   },
 ]);
@@ -111,6 +116,7 @@ createRoot(rootElement).render(
       <ImportProvider>
         <RouterProvider router={router} />
       </ImportProvider>
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   </StrictMode>,
 );

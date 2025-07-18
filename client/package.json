@@ -8,7 +8,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@headlessui/react": "^2.2.4",
     "@maplibre/maplibre-gl-geocoder": "^1.9.0",
     "@stadiamaps/maplibre-search-box": "^3.1.0",
     "@tanstack/react-query": "^5.81.5",
@@ -18,7 +17,6 @@
     "react": "^19.1.0",
     "react-device-detect": "^2.2.3",
     "react-dom": "^19.1.0",
-    "react-hot-toast": "^2.5.2",
     "react-icons": "^5.5.0",
     "react-router": "^7.4.1",
     "react-router-dom": "^7.6.3",

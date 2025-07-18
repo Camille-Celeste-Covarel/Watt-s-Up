@@ -7,11 +7,10 @@ import { useQuery } from "@tanstack/react-query";
 import type * as GeoJSON from "geojson";
 import maplibregl, { GlobeControl } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useFilter } from "../../contexts/FilterContext.tsx";
+import { useNavigate } from "react-router-dom"; // 1. On importe useNavigate
 import type { StationMapAttributes } from "../../types/types_maplibre.ts";
 import { fetchVisibleStations } from "../../utils/stationApi.ts";
-import { FilterControl } from "./FilterControl.ts"; // ✅ 1. Importer notre contrôle personnalisé
+import Filter from "../filter/Filter.tsx";
 
 function logInvalidStations(stations: StationMapAttributes[], source: string) {
   const invalidStations = stations.filter((station) => !station.geojson_geom);
@@ -27,10 +26,13 @@ function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
   const debounceTimerRef = useRef<number | null>(null);
-  const navigate = useNavigate();
+  const navigate = useNavigate(); // 2. On récupère la fonction de navigation
 
-  // On récupère les filtres depuis le contexte global
-  const { filters } = useFilter();
+  const [filters, setFilters] = useState({
+    vehicles: [] as string[],
+    powers: [] as string[],
+    plugs: [] as string[],
+  });
 
   const [bbox, setBbox] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(14);
@@ -90,6 +92,10 @@ function MapLibre() {
     source.setData(geoJsonData);
   }, [stationsData]);
 
+  const handleFilterValidation = (newFilters: typeof filters) => {
+    setFilters(newFilters);
+  };
+
   useEffect(() => {
     if (!mapContainer.current || mapRef.current) return;
 
@@ -111,13 +117,6 @@ function MapLibre() {
     );
     map.addControl(new MapLibreSearchControl({}), "top-left");
     map.addControl(new GlobeControl(), "bottom-right");
-
-    // ✅ 2. AJOUT DE NOTRE CONTRÔLE PERSONNALISÉ
-    const filterControl = new FilterControl({
-      // L'action du bouton est de naviguer vers la page des filtres
-      onClick: () => navigate("/filters"),
-    });
-    map.addControl(filterControl, "top-right");
 
     const setCursorToPointer = () => {
       if (mapRef.current) {
@@ -216,10 +215,12 @@ function MapLibre() {
       setZoom(map.getZoom());
     });
 
+    // 3. On modifie le gestionnaire de clic
     map.on("click", "unclustered-point", (e) => {
       if (!e.features?.length) return;
       const stationId = e.features[0].properties?.id;
       if (stationId) {
+        // Au lieu d'appeler openOverlay, on navigue vers la nouvelle URL
         navigate(`/station/${stationId}`);
       }
     });
@@ -260,11 +261,13 @@ function MapLibre() {
       map.remove();
       mapRef.current = null;
     };
+    // 4. On nettoie le tableau de dépendances, l'effet ne doit s'exécuter qu'une fois
   }, [navigate]);
 
   return (
     <div ref={mapContainer} className="map-wrap">
       {isLoading && <div className="loading-indicator">Chargement...</div>}
+      <Filter onFilterValidation={handleFilterValidation} />
     </div>
   );
 }

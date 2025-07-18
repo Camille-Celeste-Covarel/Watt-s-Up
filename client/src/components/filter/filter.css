@@ -1,66 +1,59 @@
-/* ✅ On renomme .filter-overlay en .filter-content pour plus de clarté */
-.filter-content {
-  /* On ajoute un padding similaire à celui de stationDetails.css pour la cohérence */
-  padding: 60px 25px 40px;
-  box-sizing: border-box;
+.filtre {
+  position: fixed;
+  background-color: var(--fondamental-color);
+  top: 70px;
+  right: 20px;
+  z-index: 1000;
+  height: 25px;
+  padding: 5px;
+  border-radius: 5px;
+}
+
+.active-filters {
+  background-color: var(--quinte-color);
+}
+
+.filter-overlay {
+  position: fixed;
+  top: 60px;
+  width: 100vw;
+  height: calc(100vh - 70px - 60px);
+  background-color: var(--fondamental-color);
   display: flex;
   flex-direction: column;
-  gap: 20px; /* Espace entre les sections */
+  z-index: 999;
+  padding: 20px;
+  overflow-y: auto;
+  border-radius: 5px;
+  box-sizing: border-box;
 }
 
-/* ✅ On supprime les anciennes règles pour .filtre et .filter-overlay */
-/* .filtre { ... } -> SUPPRIMÉ */
-/* .filter-overlay { ... } -> SUPPRIMÉ */
-
-.filter-content h2 {
-  margin-top: 10px;
-  margin-bottom: 0;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
-.filter-content select {
-  border: 1px solid #ccc;
-  width: 100%;
-  padding: 10px 5px;
+.filter-overlay select {
+  border: none;
+  width: 60vw;
+  padding: 5px 5px;
   background-color: white;
-  border-radius: 4px;
-}
-
-.confirm-filter {
-  display: flex;
-  gap: 15px;
-  margin-top: 20px;
-  border-top: 1px solid #eee;
-  padding-top: 20px;
 }
 
 .confirm-filter button {
-  margin-right: 0; /* On retire l'ancienne marge */
+  margin-right: 30px;
 }
 
-.vehicle-list,
-.power-list,
-.plug-list {
+.vehicle-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
-.vehicle-item,
-.power-item,
-.plug-item {
+.vehicle-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 10px;
   border-radius: 8px;
-  background-color: #f9f9f9;
 }
 
-.vehicle-info,
-.power-info,
-.plug-info {
+.vehicle-info {
   display: flex;
   align-items: center;
   gap: 15px;
@@ -72,31 +65,16 @@
   filter: brightness(0) saturate(100%);
 }
 
-.power-info img {
-  height: 25px;
-  width: 25px;
-  filter: brightness(0) saturate(100%);
-}
-
-.plug-info img {
-  height: 25px;
-  width: 25px;
-}
-
-.vehicle-info span,
-.power-info span,
-.plug-info span {
+.vehicle-info span {
   color: var(--quinte-color);
   font-weight: 600;
 }
 
-/* --- Styles pour le switch (inchangés) --- */
 .switch {
   position: relative;
   display: inline-block;
   width: 60px;
   height: 30px;
-  flex-shrink: 0; /* Empêche le switch de se compresser */
 }
 
 .switch input {
@@ -139,4 +117,69 @@ input:checked + .slider:before {
 
 input:focus + .slider {
   box-shadow: 0 0 1px var(--quint-color);
+}
+
+.power-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.power-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.power-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.power-info img {
+  height: 25px;
+  width: 25px;
+  filter: brightness(0) saturate(100%);
+}
+
+.power-info span {
+  color: var(--quint-color);
+  font-weight: 600;
+}
+
+.plug-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.plug-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border-radius: 8px;
+}
+
+.plug-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.plug-info img {
+  height: 25px;
+  width: 25px;
+}
+
+.plug-info span {
+  color: var(--quint-color);
+  font-weight: 600;
+}
+
+.confirm-filter button {
+  margin-top: 20px;
 }
