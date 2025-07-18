@@ -34,16 +34,19 @@ function broadcast(message: string) {
  * @param importId L'UUID de l'importation.
  * @param ws
  * @param message
+ * @param elapsedTime
  */
 export function notifyStart(
   importId: string,
   ws?: WebSocket,
   message?: string,
+  elapsedTime?: number,
 ) {
   const payload = {
     type: "start",
     message: message || "Importation démarrée...",
     importId,
+    elapsedTime,
   };
   const data = JSON.stringify(payload);
   if (ws) {
@@ -63,6 +66,7 @@ export function notifyProgress(
   message: string,
   successful_lines: number,
   ws?: WebSocket,
+  elapsedTimeInSeconds?: number,
 ) {
   const payload = {
     type: "progress",

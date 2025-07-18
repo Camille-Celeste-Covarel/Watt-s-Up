@@ -63,6 +63,28 @@ export const ImportProvider: React.FC<{ children: React.ReactNode }> = ({
     if (timerRef.current) clearInterval(timerRef.current);
   }, []);
 
+  // Gère le cycle de vie du chronomètre en se basant sur l'état d'importation
+  useEffect(() => {
+    // Si l'importation n'est pas en cours, on s'assure que le timer est arrêté.
+    if (!state.isImporting) {
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
+    }
+
+    // Démarre un timer qui incrémente le temps écoulé chaque seconde
+    timerRef.current = window.setInterval(() => {
+      setState((s) => ({ ...s, elapsedTime: s.elapsedTime + 1 }));
+    }, 1000);
+
+    // Fonction de nettoyage pour s'assurer que le timer est détruit si l'état change
+    // ou si le composant est démonté
+    return () => {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+    };
+  }, [state.isImporting]);
+
   useEffect(() => {
     const wsUrl = import.meta.env.VITE_API_URL.replace(/^http/, "ws");
     websocket.current = new WebSocket(wsUrl);
@@ -77,21 +99,13 @@ export const ImportProvider: React.FC<{ children: React.ReactNode }> = ({
       setState((s) => {
         switch (data.type) {
           case "start":
-            if (timerRef.current) clearInterval(timerRef.current);
-            timerRef.current = window.setInterval(() => {
-              setState((s_inner) => ({
-                ...s_inner,
-                elapsedTime: s_inner.elapsedTime + 1,
-              }));
-            }, 1000);
-
             return {
               ...s,
               isImporting: true,
               importId: data.importId,
               logLines: [formatLogLine(data.message)],
               errorMessages: [],
-              elapsedTime: 0,
+              elapsedTime: data.elapsedTime ?? 0, // Utilise le temps du serveur ou 0
               progressPercentage: 0,
               stats: { total: 0, success: 0, errors: 0 },
             };
@@ -108,10 +122,9 @@ export const ImportProvider: React.FC<{ children: React.ReactNode }> = ({
             };
 
           case "complete":
-            if (timerRef.current) clearInterval(timerRef.current);
             return {
               ...s,
-              isImporting: false,
+              isImporting: false, // Le useEffect va automatiquement arrêter le timer
               progressPercentage: 100,
               logLines: [...s.logLines, formatLogLine(data.message)].slice(-10),
               stats: data.stats,
@@ -127,13 +140,11 @@ export const ImportProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     websocket.current.onclose = () => {
-      setState((s) => ({ ...s, isWsConnected: false }));
-      if (timerRef.current) clearInterval(timerRef.current);
+      setState((s) => ({ ...s, isWsConnected: false, isImporting: false }));
     };
 
     return () => {
       websocket.current?.close();
-      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [formatLogLine]);
 

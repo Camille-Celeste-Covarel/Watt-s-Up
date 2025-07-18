@@ -37,12 +37,16 @@ export const createWebSocketServer = (app: Express): HttpServer => {
                   100,
               )
             : 0;
+        const elapsedTimeInSeconds = Math.round(
+          (new Date().getTime() - ongoingImport.import_date.getTime()) / 1000,
+        );
 
         // On simule les messages de démarrage et de progression pour reconstruire l'UI client.
         notifyStart(
           ongoingImport.import_id,
           ws,
           "Reconnexion à une importation en cours...",
+          elapsedTimeInSeconds,
         );
         notifyProgress(
           ongoingImport.import_id,
