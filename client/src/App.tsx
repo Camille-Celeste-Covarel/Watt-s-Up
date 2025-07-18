@@ -1,5 +1,6 @@
 import { isMobile } from "react-device-detect";
-import { Outlet, useMatches } from "react-router-dom";
+// 1. On importe useLocation pour une détection fiable du chemin
+import { Outlet, useLocation, useMatches } from "react-router-dom";
 import { Overlay } from "./components/Overlay/Overlay.tsx";
 import "./components/Overlay/Overlay.css";
 import NavBar from "./components/navbar/NavBar";
@@ -18,41 +19,42 @@ interface RouteHandle {
 
 function App() {
   const matches = useMatches();
+  // 2. On récupère la localisation actuelle
+  const location = useLocation();
 
   const isOverlayRoute = matches.some(
     (match) => (match.handle as RouteHandle)?.isOverlay,
   );
+  // 3. On corrige la détection : on vérifie si le chemin est EXACTEMENT "/"
+  const isRootPath = location.pathname === "/";
 
-  // NOUVELLE LOGIQUE DE RENDU
-  // On sépare le contenu de l'outlet (la page actuelle) du reste.
-  const outletContent = <Outlet />;
+  // --- LOGIQUE DE RENDU FINALE ---
 
-  // Si la route est une route d'overlay, son contenu va dans l'overlay.
-  const overlayContent = !isMobile && isOverlayRoute ? outletContent : null;
+  // Le contenu de l'overlay ne s'active QUE sur desktop pour les routes marquées.
+  const overlayContent = !isMobile && isOverlayRoute ? <Outlet /> : null;
 
-  // Si la route n'est PAS une route d'overlay, son contenu est une "page principale".
-  // Pour la page d'accueil (`/`), l'outlet rend LandingPage, mais on ne veut pas l'afficher
-  // deux fois. On vérifie donc si le chemin est la racine.
-  const isRootPath = matches.some((match) => match.pathname === "/");
-  const mainPageContent = !isOverlayRoute && !isRootPath ? outletContent : null;
+  // Le contenu de la page principale s'affiche si :
+  //    - On est sur mobile (et pas sur la page d'accueil).
+  //    - OU on est sur desktop ET ce n'est PAS une route d'overlay.
+  const shouldRenderInMain = isMobile || !isOverlayRoute;
+  const mainPageContent = shouldRenderInMain && !isRootPath ? <Outlet /> : null;
 
   return (
     <>
       <AuthProvider>
         <TopBar />
         <OverlayProvider>
-          {/* La LandingPage (avec la carte) est maintenant TOUJOURS rendue.
-              Elle ne sera plus jamais détruite/rechargée. */}
+          {/* La LandingPage (avec la carte) est toujours la base */}
           <LandingPage />
 
-          {/* Ce conteneur affichera les pages "plein écran" (ex: /login) */}
+          {/* Ce conteneur affichera les pages "plein écran" */}
           {mainPageContent && (
             <div className="main-page-container">{mainPageContent}</div>
           )}
 
           <NavBar />
 
-          {/* L'overlay reçoit le contenu des routes marquées comme overlay */}
+          {/* L'overlay ne recevra du contenu que sur desktop */}
           <Overlay>{overlayContent}</Overlay>
         </OverlayProvider>
       </AuthProvider>

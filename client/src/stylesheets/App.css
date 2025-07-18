@@ -18,13 +18,18 @@ body {
 /* Styles pour le conteneur des pages qui ne sont pas des overlays */
 .main-page-container {
   position: fixed;
-  top: 0;
+  /* On le décale du haut pour laisser la place au TopBar */
+  top: 60px; /* <-- MODIFICATION */
   left: 0;
   width: 100%;
-  height: 100%;
-  background-color: white; /* Ou la couleur de fond de vos pages */
-  z-index: 900; /* Juste en dessous de la navbar et de l'overlay */
+  /* On ajuste sa hauteur pour qu'il ne recouvre pas le NavBar en bas */
+  height: calc(100vh - 60px - 70px); /* <-- MODIFICATION (TopBar + NavBar height) */
+  background-color: white;
+  z-index: 900;
   overflow-y: auto;
+  /* On ajoute un padding pour que le contenu ne soit pas collé aux bords */
+  padding: 20px; /* <-- AJOUT OPTIONNEL MAIS RECOMMANDÉ */
+  box-sizing: border-box; /* <-- AJOUT IMPORTANT avec le padding */
 }
 
 .button {
