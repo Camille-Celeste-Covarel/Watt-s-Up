@@ -1,0 +1,239 @@
+/* ==========================================================================
+   Conteneur principal et contrôles
+   ========================================================================== */
+
+.importer-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 1.5rem 2rem;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #fdfdfd;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
+  transition: all 0.3s ease-in-out;
+
+  h3 {
+    text-align: center;
+    color: #333;
+    margin-top: 0;
+    margin-bottom: 2rem;
+    font-weight: 600;
+  }
+
+  .importer-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 1rem;
+
+    .importer-button-group {
+      display: flex;
+      gap: 1rem;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /*
+  Style commun pour tous les boutons
+  */
+    button,
+    .importer-browse-button {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      color: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: background-color 0.2s;
+
+      &:hover:not(:disabled) {
+        background-color: #0056b3;
+      }
+
+      &:disabled {
+        background-color: #ccc;
+        cursor: not-allowed;
+      }
+    }
+
+    button {
+      background-color: #007bff;
+    }
+
+    .importer-stop-button {
+      background-color: #dc3545;
+
+      &:hover:not(:disabled) {
+        background-color: #c82333;
+      }
+    }
+
+    .importer-browse-button {
+      background-color: #6c757d;
+
+      &:hover:not(:disabled) {
+        background-color: #5a6268;
+      }
+    }
+
+    .file-name-display {
+      margin-top: 0.5rem;
+      font-style: italic;
+      color: #555;
+    }
+  }
+
+  /* ==========================================================================
+     Nouveau Dashboard d'importation
+     ========================================================================== */
+
+  .import-dashboard {
+    margin-top: 1.5rem;
+    border-top: 1px solid #eee;
+    padding-top: 1.5rem;
+
+    .progress-bar-container {
+      width: 100%;
+      background-color: #e9ecef;
+      border-radius: 6px;
+      height: 28px;
+      overflow: hidden;
+      position: relative;
+      box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+
+      .progress-bar {
+        height: 100%;
+        transition: width 0.4s ease-in-out, background-image 0.4s ease-in-out;
+        border-radius: 6px;
+      }
+
+      .progress-bar-text {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+      }
+    }
+
+    .status-row {
+      display: flex;
+      margin-top: 1.5rem;
+      gap: 1.5rem;
+      min-height: 220px;
+
+      .log-console {
+        flex-grow: 1;
+        background-color: #2d2d2d;
+        color: #f0f0f0;
+        padding: 1rem;
+        border-radius: 4px;
+        font-family: "Courier New", Courier, monospace;
+        font-size: 0.85rem;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        overflow: hidden;
+
+        .log-line {
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          padding: 2px 0;
+        }
+      }
+
+      .timer-and-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        flex-basis: 180px;
+        flex-shrink: 0;
+
+        .timer,
+        .stats-recap {
+          background-color: #e9ecef;
+          border-radius: 4px;
+          padding: 1rem;
+          text-align: center;
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          flex-grow: 1;
+
+          span {
+            display: block;
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+          }
+        }
+
+        .timer strong {
+          font-size: 2.5rem;
+          font-weight: 300;
+          color: #343a40;
+          line-height: 1.2;
+        }
+
+        .stats-recap strong {
+          font-weight: 600;
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .error-accordion {
+      margin-top: 1.5rem;
+      border: 1px solid #f5c6cb;
+      border-radius: 4px;
+      overflow: hidden;
+
+      summary {
+        background-color: #f8d7da;
+        color: #721c24;
+        padding: 0.75rem 1rem;
+        font-weight: bold;
+        cursor: pointer;
+        list-style-position: inside;
+        transition: background-color 0.2s;
+
+        &:hover {
+          background-color: #f1c3c7;
+        }
+      }
+
+      .error-details {
+        padding: 1rem;
+        background-color: #fdf2f3;
+        font-size: 0.9rem;
+        border-top: 1px solid #f5c6cb;
+        max-height: 200px;
+        overflow-y: auto;
+
+        div {
+          padding-bottom: 0.5rem;
+          border-bottom: 1px dashed #f5c6cb;
+          margin-bottom: 0.5rem;
+
+          &:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+          }
+        }
+      }
+    }
+  }
+}

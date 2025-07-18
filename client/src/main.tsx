@@ -1,3 +1,4 @@
+// @ts-ignore
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 // Import necessary modules from React and React Router
 import { StrictMode } from "react";
@@ -10,6 +11,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 // Import the main app component
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
+import { ImportProvider } from "./contexts/ImportContext.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import InfoPage from "./pages/InfoPage";
@@ -19,6 +22,7 @@ import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
 import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import AdminRoute from "./utils/AdminRoute.tsx";
 import ProtectedRoute from "./utils/ProtectedRoute";
 
 // Import additional components for new routes
@@ -30,9 +34,7 @@ import ProtectedRoute from "./utils/ProtectedRoute";
 /* ************************************************************************* */
 
 // Create router configuration with routes
-// You can add more routes as you build out your app!
 const router = createBrowserRouter([
-  // ✅ ROUTES PUBLIQUES (inchangées)
   {
     path: "/",
     element: <App />,
@@ -64,7 +66,6 @@ const router = createBrowserRouter([
     children: [{ index: true, element: <InfoPage /> }],
   },
 
-  // ✅ ROUTES PROTÉGÉES (avec ProtectedRoute)
   {
     path: "/profil",
     element: <App />,
@@ -121,6 +122,21 @@ const router = createBrowserRouter([
       },
     ],
   },
+
+  {
+    path: "/admin/dashboard",
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: (
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        ),
+      },
+    ],
+  },
 ]);
 
 /* ************************************************************************* */
@@ -138,8 +154,10 @@ const queryClient = new QueryClient();
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ImportProvider>
+        <RouterProvider router={router} />
+      </ImportProvider>
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   </StrictMode>,
 );

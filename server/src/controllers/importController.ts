@@ -21,21 +21,33 @@ import type {
 } from "../types/models/models";
 
 import {
+  notifyCompletion,
+  notifyProgress,
+  notifyStart,
+} from "../services/importNotifier";
+import {
+  isStopRequested,
+  registerImport,
+  unregisterImport,
+} from "../services/importStateManager";
+import {
   LogLevel,
-  initializeConsoleLogStream,
   logImportErrorToFile,
+  logWithProgress,
   redirectConsoleOutput,
   restoreConsoleOutput,
 } from "../tools/logger";
-import { sendImportNotification } from "../tools/notificationService";
 
-initializeConsoleLogStream();
-redirectConsoleOutput();
+const console = {
+  log: logWithProgress,
+  error: logWithProgress,
+  warn: logWithProgress,
+};
 
 console.log("importController.ts chargé.", LogLevel.INFO);
 
 const UPLOAD_DIR = path.join(__dirname, "..", "..", "CSVCache");
-console.log("DEBUG: UPLOAD_DIR calculated as:", UPLOAD_DIR, LogLevel.INFO);
+console.log(`DEBUG: UPLOAD_DIR calculated as: ${UPLOAD_DIR}`, LogLevel.INFO);
 const FLUSH_THRESHOLD_LINES = 5000;
 const ERROR_LOG_DIR = path.join(__dirname, "..", "..", "logs");
 const PROGRESS_LOG_LINES_INTERVAL = 1000;
@@ -47,15 +59,6 @@ if (!fs.existsSync(ERROR_LOG_DIR)) {
 }
 
 const stagedStationData = new Map<string, StagedStationContent>();
-const processedStationsGlobalCache = new Map<string, Models.Station>();
-
-function getProgressBarColor(percentage: number): string {
-  const red = Math.round(255 * (1 - percentage / 100));
-  const green = Math.round(255 * (percentage / 100));
-  return `\x1b[38;2;${red};${green};0m`;
-}
-
-const ANSI_RESET_COLOR = "\x1b[0m";
 
 function getStationCompositeId(
   stationData: Partial<StationAttributes>,
@@ -74,11 +77,16 @@ function getStationCompositeId(
 
 async function processConsolidatedStations(
   stationsToProcess: StagedStationContent[],
+  importId: string,
 ): Promise<{ successfulStations: number; errors: TransformError[] }> {
   let successfulStations = 0;
   const errors: TransformError[] = [];
 
   for (const stagedStation of stationsToProcess) {
+    if (isStopRequested(importId)) {
+      break;
+    }
+
     const compositeId = getStationCompositeId(stagedStation.stationData);
     console.log(
       `Début de traitement pour la station: ${compositeId} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
@@ -99,7 +107,6 @@ async function processConsolidatedStations(
 
     try {
       const { stationData, terminals } = stagedStation;
-
       let station: Models.Station | null = null;
       let createdStation = false;
 
@@ -168,7 +175,9 @@ async function processConsolidatedStations(
 
         if (!createdStation) {
           console.log(
-            `Mise à jour de la station existante: ${station.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+            `Mise à jour de la station existante: ${station.id} (Ligne CSV: ${
+              stagedStation.lastModifiedRow
+            })`,
             LogLevel.DEBUG,
           );
           await station.update(stationData as StationAttributes, {
@@ -176,7 +185,9 @@ async function processConsolidatedStations(
           });
         } else {
           console.log(
-            `Station créée avec succès: ${station.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+            `Station créée avec succès: ${station.id} (Ligne CSV: ${
+              stagedStation.lastModifiedRow
+            })`,
             LogLevel.DEBUG,
           );
         }
@@ -219,7 +230,9 @@ async function processConsolidatedStations(
           LogLevel.DEBUG,
         );
         console.log(
-          `TerminalData pour upsert (ligne ${stagedStation.lastModifiedRow}): ${JSON.stringify(terminalData)}`,
+          `TerminalData pour upsert (ligne ${
+            stagedStation.lastModifiedRow
+          }): ${JSON.stringify(terminalData)}`,
           LogLevel.DEBUG,
         );
 
@@ -261,7 +274,9 @@ async function processConsolidatedStations(
           });
 
           console.log(
-            `Résultat findOrCreate Terminal: instance=${terminal ? terminal.id : "null"}, created=${terminalCreated} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+            `Résultat findOrCreate Terminal: instance=${terminal ? terminal.id : "null"}, created=${terminalCreated} (Ligne CSV: ${
+              stagedStation.lastModifiedRow
+            })`,
             LogLevel.DEBUG,
           );
 
@@ -283,7 +298,9 @@ async function processConsolidatedStations(
 
           if (!terminalCreated) {
             console.log(
-              `Mise à jour du terminal existant: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Mise à jour du terminal existant: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
             await terminal.update(
@@ -294,7 +311,9 @@ async function processConsolidatedStations(
             );
           } else {
             console.log(
-              `Terminal créé avec succès: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Terminal créé avec succès: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
           }
@@ -352,7 +371,9 @@ async function processConsolidatedStations(
 
           if (plugsToDelete.length > 0) {
             console.log(
-              `Suppression de ${plugsToDelete.length} plugs anciennes pour terminal: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Suppression de ${plugsToDelete.length} plugs anciennes pour terminal: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
             await Models.TerminalPlug.destroy({
@@ -363,7 +384,9 @@ async function processConsolidatedStations(
 
           if (plugsToCreate.length > 0) {
             console.log(
-              `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id} (Ligne CSV: ${stagedStation.lastModifiedRow})`,
+              `Création de ${plugsToCreate.length} nouvelles plugs pour terminal: ${terminal.id} (Ligne CSV: ${
+                stagedStation.lastModifiedRow
+              })`,
               LogLevel.DEBUG,
             );
             await Models.TerminalPlug.bulkCreate(
@@ -477,15 +500,27 @@ async function processConsolidatedStations(
   return { successfulStations, errors };
 }
 
-export const importCsv = async (req: Request, res: Response): Promise<void> => {
-  console.log("Fonction importCsv appelée.", LogLevel.INFO);
-
+/**
+ * Gère le traitement du fichier CSV en arrière-plan, de manière asynchrone,
+ * sans bloquer la réponse HTTP.
+ */
+async function processCsvInBackground(
+  importUuid: string,
+  filePath: string,
+  originalFileName: string,
+  totalLinesFromMetadata: number,
+) {
   const startTime = new Date();
+  // Restaurer le logger personnalisé pour cette tâche de fond.
+  redirectConsoleOutput();
 
   stagedStationData.clear();
-  processedStationsGlobalCache.clear();
 
-  const importUuid = uuidv4();
+  // Enregistrement de l'import pour permettre l'annulation
+  registerImport(importUuid);
+  // FUTURE: Métrique - Incrémenter le compteur 'imports_started_total'
+  // FUTURE: Métrique - Incrémenter la jauge 'imports_in_progress'
+
   const currentErrorLogFile = path.join(
     ERROR_LOG_DIR,
     `import_errors_${importUuid}.log`,
@@ -493,7 +528,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
   let importCompleted = false;
   let totalProcessedCsvLines = 0;
-  const totalLinesFromMetadata = 135913;
   let totalSuccessfulStations = 0;
   let totalErrorEntries = 0;
 
@@ -534,27 +568,11 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   }
 
-  if (!req.file) {
-    console.log("Aucun fichier CSV fourni, renvoi erreur 400.", LogLevel.INFO);
-    errorLogStream.end();
-    const duration_ms = new Date().getTime() - startTime.getTime();
-    res.status(400).json({
-      message: "Aucun fichier CSV fourni.",
-      importId: importUuid,
-      errorLogFile: currentErrorLogFile,
-      status: "FAILED",
-      duration_ms: duration_ms,
-    });
-    return;
-  }
-
-  const filePath = (req.file as CustomFile).path;
-  const originalFileName = (req.file as CustomFile).originalname;
-
   try {
     initialImportLogEntry = await Models.ImportLog.create({
       import_id: importUuid,
       file_name: originalFileName,
+      total_lines_in_file: totalLinesFromMetadata,
       total_lines_processed: 0,
       successful_lines: 0,
       error_summary: { message: "Importation en cours..." },
@@ -564,21 +582,8 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     });
     console.log("Entrée ImportLog IN_PROGRESS créée en BDD.", LogLevel.DEBUG);
 
-    const forcedError: TransformError = {
-      type: "FORCED_TEST_ERROR",
-      message:
-        "Ceci est un message d'erreur de test forcé pour vérifier la journalisation.",
-      rowNumber: 0,
-      rowData: {} as CsvRow,
-      columnName: "N/A",
-      culpritValue: "N/A",
-      originalError: new Error("Erreur de test interne forcée."),
-    };
-    logImportErrorToFile(forcedError, errorLogStream);
-    console.error(
-      "[CONSOLE ERROR] Message d'erreur de test forcé envoyé à logImportErrorToFile.",
-      LogLevel.ERROR,
-    );
+    // Notifie le client que le processus a démarré, en envoyant l'ID d'import
+    notifyStart(importUuid);
 
     const csvStream = fs
       .createReadStream(filePath)
@@ -586,19 +591,26 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
 
     let lastProgressPercentage = -1;
     let linesProcessedSinceLastFlush = 0;
+    let wasInterrupted = false;
 
     for await (const row of csvStream as AsyncIterable<CsvRow>) {
-      if (importCompleted) {
+      if (importCompleted || isStopRequested(importUuid)) {
+        wasInterrupted = true;
         console.log(
-          "Arrêt du traitement en raison d'une erreur de stream précédente.",
-          LogLevel.DEBUG,
+          "Arrêt de l'importation demandé. Interruption de la lecture du fichier CSV.",
+          LogLevel.INFO,
         );
+        // Explicitement détruire le stream pour s'assurer que la lecture du fichier s'arrête
+        // et libère les ressources, empêchant le script de continuer en arrière-plan.
+        if (!csvStream.destroyed) {
+          csvStream.destroy();
+        }
         break;
       }
 
       totalProcessedCsvLines++;
+      // FUTURE: Métrique - Incrémenter le compteur 'csv_lines_processed_total'
       linesProcessedSinceLastFlush++;
-
       const currentProgressPercentage = Math.floor(
         (totalProcessedCsvLines / totalLinesFromMetadata) * 100,
       );
@@ -608,10 +620,15 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         (totalProcessedCsvLines % PROGRESS_LOG_LINES_INTERVAL === 0 &&
           totalProcessedCsvLines > 0)
       ) {
-        const color = getProgressBarColor(currentProgressPercentage);
         console.log(
-          `${color}Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.${ANSI_RESET_COLOR}`,
+          `Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.`,
           LogLevel.INFO,
+        );
+        notifyProgress(
+          importUuid,
+          currentProgressPercentage,
+          `Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.`,
+          totalSuccessfulStations,
         );
         lastProgressPercentage = currentProgressPercentage;
       }
@@ -626,17 +643,13 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
           transformedResult.data;
         const compositeId = getStationCompositeId(stationData);
 
-        // NOUVEAU LOG : Début de la consolidation de la ligne CSV
+        // Début de la consolidation de la ligne CSV
         console.log(
           `Consolidation de la ligne CSV #${totalProcessedCsvLines} pour station ${compositeId}.`,
           LogLevel.DEBUG,
         );
 
         if (!stagedStationData.has(compositeId)) {
-          console.log(
-            `Nouvelle station ajoutée au tampon: ${compositeId} (Ligne CSV: ${totalProcessedCsvLines}). Taille du tampon: ${stagedStationData.size + 1}`,
-            LogLevel.DEBUG,
-          );
           stagedStationData.set(compositeId, {
             stationData: stationData,
             terminals: [],
@@ -647,14 +660,11 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         const stationEntry = stagedStationData.get(compositeId);
         if (stationEntry) {
           stationEntry.terminals.push({ terminalData, plugAssociations });
-          console.log(
-            `Terminal ajouté à la station existante ${compositeId}. Total terminaux pour cette station: ${stationEntry.terminals.length} (Ligne CSV: ${totalProcessedCsvLines}).`,
-            LogLevel.DEBUG,
-          );
           stationEntry.lastModifiedRow = totalProcessedCsvLines;
         }
       } else {
         totalErrorEntries++;
+        // FUTURE: Métrique - Incrémenter le compteur 'transformation_errors_total'
         console.log(
           `Erreur de transformation détectée pour la ligne ${totalProcessedCsvLines}. Appel de logImportErrorToFile.`,
           LogLevel.DEBUG,
@@ -696,7 +706,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
               stationsToFlush.push(stationContent);
               stagedStationData.delete(compositeId);
             } else {
-              console.warn(
+              console.log(
                 `Tentative d'accès à un index inexistant lors du flush: ${i}. numberToFlush: ${numberToFlush}, sortedStagedStations.length: ${sortedStagedStations.length}`,
                 LogLevel.WARN,
               );
@@ -710,8 +720,9 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
               LogLevel.INFO,
             );
             const { successfulStations, errors: processErrors } =
-              await processConsolidatedStations(stationsToFlush);
+              await processConsolidatedStations(stationsToFlush, importUuid);
             totalSuccessfulStations += successfulStations;
+            // FUTURE: Métrique - Ajouter 'successfulStations' au compteur 'stations_processed_total'
             totalErrorEntries += processErrors.length;
             console.log(
               `processConsolidatedStations a retourné ${processErrors.length} erreurs pour ce flush. Écriture dans le log d'erreur.`,
@@ -734,11 +745,13 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       }
     }
 
-    console.log(
-      `Fin du stream CSV. Traitement du dernier lot (${stagedStationData.size} stations restantes dans le tampon).`,
-      LogLevel.INFO,
-    );
-    if (stagedStationData.size > 0) {
+    if (!wasInterrupted) {
+      console.log(
+        `Fin du stream CSV. Traitement du dernier lot (${stagedStationData.size} stations restantes dans le tampon).`,
+        LogLevel.INFO,
+      );
+    }
+    if (!isStopRequested(importUuid) && stagedStationData.size > 0) {
       const stationsToFlush = Array.from(stagedStationData.values());
       stagedStationData.clear();
 
@@ -747,7 +760,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         LogLevel.DEBUG,
       );
       const { successfulStations, errors: processErrors } =
-        await processConsolidatedStations(stationsToFlush);
+        await processConsolidatedStations(stationsToFlush, importUuid);
       totalSuccessfulStations += successfulStations;
       totalErrorEntries += processErrors.length;
       console.log(
@@ -767,21 +780,35 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     await fs.promises.unlink(filePath);
     console.log("Fichier temporaire supprimé.", LogLevel.DEBUG);
 
-    errorLogStream.end();
-    console.log(
-      "Commande de fermeture du stream de log d'erreur envoyée.",
-      LogLevel.DEBUG,
-    );
+    await new Promise<void>((resolve) => {
+      // L'événement 'finish' garantit que toutes les données ont été écrites.
+      errorLogStream.on("finish", () => {
+        console.log(
+          "Stream de log d'erreur 'finish' event reçu.",
+          LogLevel.DEBUG,
+        );
+        resolve();
+      });
+      errorLogStream.end();
+    });
 
     const endTime = new Date();
     const duration_ms = endTime.getTime() - startTime.getTime();
+    console.log(
+      "Fin du script d'importation, préparation du statut final.",
+      LogLevel.DEBUG,
+    );
 
-    const finalStatus: ImportLogAttributes["status"] =
-      totalErrorEntries === 0 && totalSuccessfulStations > 0
-        ? "COMPLETED"
-        : totalSuccessfulStations > 0
-          ? "PARTIAL_SUCCESS"
-          : "FAILED";
+    // La vérification de l'annulation doit avoir la priorité sur les autres statuts.
+    const finalStatus: ImportLogAttributes["status"] = isStopRequested(
+      importUuid,
+    )
+      ? "CANCELLED"
+      : totalSuccessfulStations === 0
+        ? "FAILED"
+        : totalErrorEntries === 0
+          ? "COMPLETED"
+          : "PARTIAL_SUCCESS";
 
     const finalErrorSummary =
       totalErrorEntries > 0
@@ -794,6 +821,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     const importSummary: ImportLogCreationAttributes = {
       import_id: importUuid,
       file_name: originalFileName,
+      total_lines_in_file: totalLinesFromMetadata,
       total_lines_processed: totalProcessedCsvLines,
       successful_lines: totalSuccessfulStations,
       error_summary: finalErrorSummary,
@@ -803,43 +831,38 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       duration_ms: duration_ms,
     };
 
+    // FUTURE: Métrique - Décrémenter la jauge 'imports_in_progress'
+    // FUTURE: Métrique - Incrémenter le compteur 'imports_completed_total{status="..."}' avec le statut final
+
+    let finalDataForNotification: ImportLogAttributes;
+
     if (initialImportLogEntry) {
-      await initialImportLogEntry.update(importSummary);
-      console.log("Entrée ImportLog mise à jour en BDD.", LogLevel.DEBUG);
+      // On s'assure que l'entrée existe avant de l'updater
+      const entry = await Models.ImportLog.findByPk(initialImportLogEntry.id);
+      // On met à jour la BDD et on récupère la version la plus fraîche pour la notification
+      if (entry) {
+        const updatedEntry = await entry.update(importSummary);
+        finalDataForNotification = updatedEntry.get();
+        console.log("Entrée ImportLog mise à jour en BDD.", LogLevel.DEBUG);
+      } else {
+        const newEntry = await Models.ImportLog.create(importSummary);
+        finalDataForNotification = newEntry.get();
+      }
     } else {
-      await Models.ImportLog.create(importSummary);
-      console.log(
-        "Entrée ImportLog finale créée en BDD suite à une initialisation manquée.",
-        LogLevel.DEBUG,
-      );
+      const newEntry = await Models.ImportLog.create(importSummary);
+      finalDataForNotification = newEntry.get();
     }
 
-    await sendImportNotification(
-      initialImportLogEntry ||
-        ({
-          import_id: importUuid,
-          file_name: originalFileName,
-          total_lines_processed: totalProcessedCsvLines,
-          successful_lines: totalSuccessfulStations,
-          error_summary: finalErrorSummary,
-          error_log_file_path: currentErrorLogFile,
-          status: finalStatus,
-          import_date: new Date(),
-          duration_ms: duration_ms,
-        } as ImportLogAttributes),
+    console.log(
+      `Envoi de la notification de complétion. Statut: ${finalDataForNotification.status}`,
+      LogLevel.INFO,
     );
-
-    res.status(200).json({
-      message: "Importation CSV terminée.",
-      importId: importUuid,
-      totalLinesProcessed: totalProcessedCsvLines,
-      successfulStations: totalSuccessfulStations,
-      errorCount: totalErrorEntries,
-      errorSummary: finalErrorSummary,
-      errorLogFile: currentErrorLogFile,
-      status: finalStatus,
-      duration_ms: duration_ms,
-    });
+    // On notifie le client via WebSocket
+    notifyCompletion(finalDataForNotification);
+    console.log(
+      "Notification de complétion envoyée avec succès.",
+      LogLevel.INFO,
+    );
   } catch (generalError: unknown) {
     console.error(
       "[CONSOLE ERROR] Erreur de lecture du stream CSV ou de traitement (catch principal):",
@@ -854,7 +877,16 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
           LogLevel.DEBUG,
         );
       }
-      errorLogStream.end();
+      await new Promise<void>((resolve) => {
+        errorLogStream.on("finish", () => {
+          console.log(
+            "Stream de log d'erreur 'finish' event reçu (catch block).",
+            LogLevel.DEBUG,
+          );
+          resolve();
+        });
+        errorLogStream.end();
+      });
 
       let errorMessage = "An unknown error occurred during import.";
       if (generalError instanceof Error) {
@@ -868,10 +900,13 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
       }
 
       const duration_ms = new Date().getTime() - startTime.getTime();
+      // FUTURE: Métrique - Décrémenter la jauge 'imports_in_progress'
+      // FUTURE: Métrique - Incrémenter le compteur 'imports_completed_total{status="FAILED"}'
       const status: ImportLogAttributes["status"] = "FAILED";
       const importSummary: ImportLogCreationAttributes = {
         import_id: importUuid,
         file_name: originalFileName || "N/A (Stream Error)",
+        total_lines_in_file: totalLinesFromMetadata,
         total_lines_processed: totalProcessedCsvLines,
         successful_lines: 0,
         error_summary: {
@@ -883,22 +918,29 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         duration_ms: duration_ms,
       };
 
+      let finalDataForNotification: ImportLogAttributes;
+
       try {
         if (initialImportLogEntry) {
-          await initialImportLogEntry.update(importSummary);
+          const updatedEntry =
+            await initialImportLogEntry.update(importSummary);
+          finalDataForNotification = updatedEntry.get();
           console.log(
             "Entrée ImportLog FAILED mise à jour en BDD.",
             LogLevel.DEBUG,
           );
         } else {
-          await Models.ImportLog.create(importSummary);
-          console.log(
-            "Entrée ImportLog FAILED créée en BDD (nouvelle entrée).",
-            LogLevel.DEBUG,
-          );
+          const newEntry = await Models.ImportLog.create(importSummary);
+          finalDataForNotification = newEntry.get();
         }
-        await sendImportNotification(
-          initialImportLogEntry || (importSummary as ImportLogAttributes),
+        console.log(
+          "Envoi de la notification de complétion (catch block).",
+          LogLevel.INFO,
+        );
+        notifyCompletion(finalDataForNotification);
+        console.log(
+          "Notification de complétion envoyée (catch block).",
+          LogLevel.INFO,
         );
       } catch (logError) {
         console.error(
@@ -908,16 +950,87 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
         );
       }
 
-      res.status(500).json({
-        message: "Erreur lors de la lecture du fichier CSV.",
-        error: errorMessage,
-        importId: importUuid,
-        errorLogFile: currentErrorLogFile,
-        status: status,
-        duration_ms: duration_ms,
-      });
+      // Pas de `res.status` ici car la réponse a déjà été envoyée.
+      // On log juste l'erreur.
     }
   } finally {
+    unregisterImport(importUuid);
     restoreConsoleOutput();
+  }
+}
+
+export const importCsv = async (req: Request, res: Response): Promise<void> => {
+  console.log("Requête HTTP pour importCsv reçue.", LogLevel.INFO);
+
+  if (!req.file) {
+    res.status(400).json({ message: "Aucun fichier CSV fourni." });
+    return;
+  }
+
+  const importUuid = uuidv4();
+  const filePath = (req.file as CustomFile).path;
+  const originalFileName = (req.file as CustomFile).originalname;
+  // Pour une vraie application, ce nombre viendrait d'une analyse rapide du fichier.
+  const totalLinesFromMetadata = 135913;
+
+  // On répond IMMÉDIATEMENT au client pour ne pas le faire attendre.
+  res.status(202).json({
+    message:
+      "La demande d'importation a été acceptée et est en cours de traitement.",
+    importId: importUuid,
+  });
+
+  console.log(
+    `Réponse 202 envoyée pour l'import ${importUuid}. Lancement du traitement en arrière-plan.`,
+    LogLevel.INFO,
+  );
+
+  // On lance le traitement en arrière-plan SANS l'attendre.
+  // C'est la clé pour découpler la tâche de la requête HTTP.
+  processCsvInBackground(
+    importUuid,
+    filePath,
+    originalFileName,
+    totalLinesFromMetadata,
+  ).catch((err) => {
+    // On s'assure de capturer toute erreur non gérée dans la tâche de fond pour éviter un crash serveur.
+    console.error(
+      `Erreur non gérée dans le traitement de fond pour l'import ${importUuid}:`,
+      LogLevel.CRITICAL,
+      err,
+    );
+  });
+};
+
+/**
+ * Récupère les 5 dernières entrées de l'historique d'importation.
+ */
+export const getImportHistory = async (
+  _req: Request,
+  res: Response,
+): Promise<void> => {
+  try {
+    const history = await Models.ImportLog.findAll({
+      limit: 5,
+      order: [["import_date", "DESC"]],
+      attributes: [
+        "import_id",
+        "status",
+        "import_date",
+        "successful_lines",
+        "total_lines_processed",
+        "duration_ms",
+      ],
+    });
+    res.status(200).json(history);
+  } catch (error) {
+    console.error(
+      "Erreur lors de la récupération de l'historique des imports:",
+      LogLevel.ERROR,
+      error,
+    );
+    res.status(500).json({
+      message: "Erreur serveur lors de la récupération de l'historique.",
+    });
   }
 };
