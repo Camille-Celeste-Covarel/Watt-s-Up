@@ -7,10 +7,9 @@ import { useQuery } from "@tanstack/react-query";
 import type * as GeoJSON from "geojson";
 import maplibregl, { GlobeControl } from "maplibre-gl";
 import { useEffect, useRef, useState } from "react";
-import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
+import { useNavigate } from "react-router-dom"; // 1. On importe useNavigate
 import type { StationMapAttributes } from "../../types/types_maplibre.ts";
 import { fetchVisibleStations } from "../../utils/stationApi.ts";
-import { StationDetails } from "../StationDetails/stationDetails";
 import Filter from "../filter/Filter.tsx";
 
 function logInvalidStations(stations: StationMapAttributes[], source: string) {
@@ -26,8 +25,8 @@ function logInvalidStations(stations: StationMapAttributes[], source: string) {
 function MapLibre() {
   const mapContainer = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
-  const { openOverlay } = useOverlay();
   const debounceTimerRef = useRef<number | null>(null);
+  const navigate = useNavigate(); // 2. On récupère la fonction de navigation
 
   const [filters, setFilters] = useState({
     vehicles: [] as string[],
@@ -38,7 +37,6 @@ function MapLibre() {
   const [bbox, setBbox] = useState<string | null>(null);
   const [zoom, setZoom] = useState<number>(14);
 
-  // --- LE CŒUR : REACT QUERY  ---
   const { data: stationsData, isLoading } = useQuery<StationMapAttributes[]>({
     queryKey: ["stations", "visible", bbox, filters, zoom],
     queryFn: () => {
@@ -217,11 +215,13 @@ function MapLibre() {
       setZoom(map.getZoom());
     });
 
+    // 3. On modifie le gestionnaire de clic
     map.on("click", "unclustered-point", (e) => {
       if (!e.features?.length) return;
       const stationId = e.features[0].properties?.id;
       if (stationId) {
-        openOverlay(<StationDetails id={stationId} />);
+        // Au lieu d'appeler openOverlay, on navigue vers la nouvelle URL
+        navigate(`/station/${stationId}`);
       }
     });
 
@@ -254,7 +254,6 @@ function MapLibre() {
       if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
       map.off("moveend", debouncedUpdateMapState);
       map.off("zoomend", debouncedUpdateMapState);
-      // ---
       map.off("mouseenter", "cluster-circles", setCursorToPointer);
       map.off("mouseleave", "cluster-circles", resetCursor);
       map.off("mouseenter", "unclustered-point", setCursorToPointer);
@@ -262,7 +261,8 @@ function MapLibre() {
       map.remove();
       mapRef.current = null;
     };
-  }, [openOverlay]);
+    // 4. On nettoie le tableau de dépendances, l'effet ne doit s'exécuter qu'une fois
+  }, [navigate]);
 
   return (
     <div ref={mapContainer} className="map-wrap">
