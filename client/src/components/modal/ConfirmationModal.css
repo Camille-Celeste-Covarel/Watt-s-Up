@@ -1,0 +1,67 @@
+/* On s'assure que la modale est au-dessus de tout, même de l'overlay (z-index: 1000) */
+.relative.z-1050 {
+  z-index: 1050;
+}
+
+.modal-panel {
+  width: 100%;
+  max-width: 500px;
+  transform: translate(0, 0); /* Fix pour certaines animations */
+  overflow: hidden;
+  border-radius: 12px;
+  background-color: white;
+  padding: 24px;
+  text-align: left;
+  vertical-align: middle;
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px
+    rgb(0 0 0 / 0.1);
+  transition-property: all;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 150ms;
+}
+
+.modal-title {
+  font-size: 1.25rem; /* 20px */
+  line-height: 1.75rem; /* 28px */
+  font-weight: 600;
+  color: #111827; /* Gris foncé */
+}
+
+.modal-content {
+  margin-top: 16px;
+  font-size: 0.9rem;
+  color: #4b5563; /* Gris moyen */
+}
+
+.modal-actions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-actions button {
+  border-radius: 8px;
+  padding: 10px 20px;
+  font-weight: 600;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.modal-actions .button-primary {
+  background-color: var(--quinte-color);
+  color: white;
+}
+.modal-actions .button-primary:hover {
+  background-color: #2c241e; /* Un peu plus foncé */
+}
+
+.modal-actions .button-secondary {
+  background-color: #e5e7eb; /* Gris clair */
+  color: #374151; /* Gris foncé */
+  border-color: #d1d5db; /* Bordure grise */
+}
+.modal-actions .button-secondary:hover {
+  background-color: #d1d5db;
+}

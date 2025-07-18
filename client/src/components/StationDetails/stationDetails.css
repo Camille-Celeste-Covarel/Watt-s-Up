@@ -1,13 +1,17 @@
 /* Style pour le CONTENU de l'overlay (les infos de la station) */
 .station-details-content {
-  /* On remet le padding pour l'espacement intérieur */
-  padding: 20px 25px 40px;
+  /*
+   * CORRECTION : On augmente le padding du haut (de 20px à 60px)
+   * pour laisser la place au bouton "Fermer" de l'overlay.
+   */
+  padding: 60px 25px 40px;
   box-sizing: border-box; /* Important pour que le padding ne crée pas de bug de taille */
 }
 
 .station-details-content h2 {
   color: #333;
-  margin-top: 40px; /* Espace pour le bouton fermer */
+  /* La marge n'est plus nécessaire car le padding du parent gère l'espace */
+  margin-top: 0;
   margin-bottom: 20px;
   text-align: left;
 }

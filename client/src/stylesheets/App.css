@@ -15,21 +15,21 @@ body {
   font-family: "Montserrat", sans-serif;
 }
 
-/* Styles pour le conteneur des pages qui ne sont pas des overlays */
+/* Styles pour le conteneur des pages qui ne sont pas des overlays (MOBILE) */
 .main-page-container {
   position: fixed;
   /* On le décale du haut pour laisser la place au TopBar */
-  top: 60px; /* <-- MODIFICATION */
+  top: 60px;
   left: 0;
   width: 100%;
   /* On ajuste sa hauteur pour qu'il ne recouvre pas le NavBar en bas */
-  height: calc(100vh - 60px - 70px); /* <-- MODIFICATION (TopBar + NavBar height) */
+  height: calc(100vh - 60px - 70px);
   background-color: white;
   z-index: 900;
   overflow-y: auto;
   /* On ajoute un padding pour que le contenu ne soit pas collé aux bords */
-  padding: 20px; /* <-- AJOUT OPTIONNEL MAIS RECOMMANDÉ */
-  box-sizing: border-box; /* <-- AJOUT IMPORTANT avec le padding */
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .button {
@@ -68,4 +68,29 @@ h3 {
 
 form input:focus {
   outline: none;
+}
+
+/* --- NOUVELLES CLASSES POUR LA MISE EN PAGE FLEXBOX (DESKTOP) --- */
+
+/* Conteneur global de l'application */
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden; /* Empêche les doubles barres de défilement */
+}
+
+/* La zone principale entre le header et le footer */
+.main-content-area {
+  display: flex;
+  flex-direction: row; /* Aligne les enfants (carte et overlay) horizontalement */
+  flex-grow: 1; /* Fait en sorte que cette zone prenne toute la hauteur restante */
+  overflow: hidden; /* Empêche le contenu de déborder */
+}
+
+/* Conteneur pour la carte */
+.map-container {
+  flex-grow: 1; /* La carte prend toute la place disponible */
+  position: relative; /* Nécessaire pour le positionnement interne de Leaflet */
 }

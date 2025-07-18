@@ -1,6 +1,9 @@
 import "./topbar.css";
 import { useNavigate } from "react-router";
 import logo from "../../assets/images/topbar/logo.svg";
+// ✅ 3. On retire l'import de l'icône de filtre
+// import filtreIcon from "../../assets/images/topbar/filtre.svg";
+
 import { useAuth } from "../../contexts/AuthContext";
 
 function TopBar() {
@@ -16,12 +19,14 @@ function TopBar() {
     <div className="topbar-container">
       <button
         type="button"
+        className="logo-button"
         onClick={() => {
           navigate("/");
         }}
       >
         <img src={logo} alt="logo" className="logo" />
       </button>
+
       {!isAuthenticated ? (
         <button
           type="button"
