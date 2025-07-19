@@ -104,20 +104,32 @@ h3 {
   top: 10px;
   right: 10px;
   z-index: 10;
-  background-color: rgba(255, 255, 255, 0.9);
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  background-color: var(--fondamental-color);
+  border: none;
   padding: 5px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 1px 4px;
+  transition: background-color 0.2s ease, color 0.2s ease;
+
+  color: #333;
 }
 
-@media (max-width: 768px) {
-  .station-details-panel {
-    width: 0 !important;
-    box-shadow: none !important;
-  }
+.filter-map-button:hover {
+  background-color: #fff;
+}
+
+.filter-map-button img {
+  width: 24px;
+  height: 24px;
+  /* ❌ On n'a plus besoin de la propriété 'filter' */
+}
+
+/* Style pour le bouton quand des filtres sont actifs */
+.filter-map-button.active-filters {
+  background-color: #a62100; /* Votre couleur principale */
+  border-color: #a62100;
+  /* ✅ On change la couleur de l'icône en blanc */
+  color: white;
 }

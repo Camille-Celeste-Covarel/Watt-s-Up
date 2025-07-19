@@ -111,7 +111,6 @@ const browseVisible: RequestHandler = async (req, res, next) => {
     }
     const [west, south, east, north] = bboxParts;
 
-    // --- ÉTAPE 1 : Obtenir les IDs des stations (inchangée) ---
     const filterOptions: {
       where: {
         [Op.and]: (WhereOptions | ReturnType<typeof sequelize.literal>)[];
@@ -128,7 +127,6 @@ const browseVisible: RequestHandler = async (req, res, next) => {
       include: [],
     };
 
-    // Logique de filtres (inchangée)
     if (vehicles && typeof vehicles === "string" && vehicles.includes("bike")) {
       filterOptions.where[Op.and].push({ station_deux_roues: true });
     }
@@ -163,8 +161,12 @@ const browseVisible: RequestHandler = async (req, res, next) => {
         isTerminalFilterApplied = true;
       }
     }
-    if (plugs && typeof plugs === "string") {
-      const plugList = plugs.split(",");
+
+    if (plugs) {
+      const plugList = Array.isArray(plugs)
+        ? (plugs as string[])
+        : [plugs as string];
+
       if (plugList.length > 0) {
         const plugNameMapping: { [key: string]: string } = {
           chademo: "Chademo",
@@ -178,11 +180,13 @@ const browseVisible: RequestHandler = async (req, res, next) => {
           as: "plugs",
           attributes: [],
           required: true,
+          through: { attributes: [] },
           where: { name: { [Op.in]: mappedPlugs } },
         });
         isTerminalFilterApplied = true;
       }
     }
+
     if (isTerminalFilterApplied) {
       filterOptions.include.push(terminalInclude);
     }
