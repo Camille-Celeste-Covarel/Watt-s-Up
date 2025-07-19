@@ -2,8 +2,8 @@ import { isMobile } from "react-device-detect";
 import { Outlet, useLocation, useMatches } from "react-router-dom";
 import { Overlay } from "./components/Overlay/Overlay.tsx";
 import "./components/Overlay/Overlay.css";
-import NavBar from "./components/navbar/NavBar";
-import TopBar from "./components/topbar/TopBar";
+import Footer from "./components/Footer/Footer.tsx";
+import Header from "./components/Header/Header.tsx";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FilterProvider } from "./contexts/FilterContext.tsx";
 import { OverlayProvider } from "./contexts/OverlayContext/OverlayContext.tsx";
@@ -35,7 +35,7 @@ function AppContent() {
 
   return (
     <div className="app-container">
-      <TopBar />
+      <Header />
       <main className="main-content">
         {shouldShowOverlay && <Overlay title="">{routeContent}</Overlay>}
 
@@ -44,7 +44,7 @@ function AppContent() {
       {(shouldShowFullPage || shouldShowMobilePage) && (
         <div className="main-page-container">{routeContent}</div>
       )}
-      <NavBar />
+      <Footer />
     </div>
   );
 }

@@ -74,7 +74,8 @@ h3 {
 }
 
 .filter-map-button:hover {
-  background-color: #fff;
+  background-color: var(--quinte-color);
+  transform-style: preserve-3d;
 }
 
 .filter-map-button img {
@@ -86,4 +87,13 @@ h3 {
   background-color: #a62100;
   border-color: #a62100;
   color: white;
+}
+
+@media (min-width: 768px) {
+  .map-wrap {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 35px - 60px);
+    cursor: default;
+  }
 }

@@ -10,6 +10,7 @@ import {
 interface User {
   firstName: string;
   isAdmin: boolean;
+  avatarUrl: string | null;
 }
 
 interface AuthContextType {
@@ -42,9 +43,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         method: "POST",
         credentials: "include",
       });
-    } catch (e) {
-      // Gérer l'erreur si nécessaire
-    }
+    } catch (e) {}
     setUser(null);
     setIsAdmin(false);
     setIsAuthenticated(false);
@@ -79,7 +78,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // On vérifie l'authentification une seule fois au chargement du provider
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
