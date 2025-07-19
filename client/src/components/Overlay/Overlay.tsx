@@ -1,7 +1,6 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useState } from "react";
 import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
 
-// On ajoute une prop "title" pour le contenu du titre
 export function Overlay({
   children,
   title,
@@ -10,8 +9,22 @@ export function Overlay({
   title: string;
 }) {
   const { closeOverlay } = useOverlay();
+  const [isAnimatingOpen, setIsAnimatingOpen] = useState(false);
 
-  // ❌ Toute la logique avec useRef et useEffect pour le <dialog> est supprimée.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAnimatingOpen(true);
+    }, 10);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleClose = () => {
+    setIsAnimatingOpen(false);
+    setTimeout(() => {
+      closeOverlay();
+    }, 300);
+  };
 
   if (!children) {
     return null;
@@ -19,7 +32,7 @@ export function Overlay({
 
   return (
     <div
-      className="station-details-overlay open"
+      className={`station-details-overlay ${isAnimatingOpen ? "open" : ""}`}
       aria-labelledby="overlay-title"
     >
       <h2 id="overlay-title" className="visually-hidden">
@@ -28,7 +41,7 @@ export function Overlay({
       <button
         type="button"
         className="close-button"
-        onClick={closeOverlay}
+        onClick={handleClose}
         aria-label="Fermer"
       >
         &times;

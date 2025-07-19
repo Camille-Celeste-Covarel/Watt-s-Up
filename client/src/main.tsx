@@ -7,13 +7,13 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
-import Filter from "./components/filter/Filter.tsx"; // ✅ Importer le composant
+import Filter from "./components/filter/Filter.tsx";
 import { ImportProvider } from "./contexts/ImportContext.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import InfoPage from "./pages/InfoPage";
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/LandingPage.tsx";
 import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
@@ -27,8 +27,9 @@ const router = createBrowserRouter([
     element: <App />,
     children: [
       {
-        path: "/",
+        index: true,
         element: <LandingPage />,
+        /*element: null, a voir dans le temps si <LandingPage />, ne pose pas souci*/
       },
       {
         path: "/login",
@@ -95,7 +96,6 @@ const router = createBrowserRouter([
         ),
         handle: { isOverlay: true },
       },
-      // ✅ AJOUT DE LA NOUVELLE ROUTE POUR LES FILTRES
       {
         path: "/filtres",
         element: <Filter />,

@@ -38,72 +38,30 @@ h3 {
   overflow: hidden;
 }
 
-.station-details-panel {
-  position: fixed;
-  top: 0;
-  right: 0;
-  width: 0;
-  height: 100vh;
-  background-color: white;
-  box-shadow: -2px 0 5px rgba(0, 0, 0, 0.2);
-  overflow-x: hidden;
-  transition: width 0.3s ease-in-out;
-  z-index: 1000;
-}
-
-.station-details-panel.open {
-  width: 30vw;
-}
-
-.station-details-panel .close-button {
+.map-controls-container {
   position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: right 0.3s ease-in-out;
+}
+
+.map-controls-container.top-right {
   top: 10px;
   right: 10px;
-  z-index: 10; /* Pour être au-dessus de la carte mais sous les popups si besoin */
-  background-color: rgba(255, 255, 255, 0.8);
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  padding: 5px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
-  transition: background-color 0.2s ease;
 }
 
-.station-details-panel ul {
-  list-style: none;
-  padding: 0;
+.map-controls-container.bottom-right {
+  bottom: 10px;
+  right: 10px;
 }
 
-.station-details-panel li {
-  margin-bottom: 5px;
-  color: #666;
-}
-
-.station-details-panel .button-reservation-popup {
-  display: block;
-  width: 100%;
-  padding: 10px;
-  background-color: #007bff;
-  color: white;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  font-size: 16px;
-  margin-top: 20px;
-}
-
-.station-details-panel .button-reservation-popup:hover {
-  background-color: #0056b3;
+.main-content:has(.station-details-overlay.open) .map-controls-container {
+  right: calc(min(max(var(--overlay-width), 320px), 500px) + 10px);
 }
 
 .filter-map-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 10;
   background-color: var(--fondamental-color);
   border: none;
   padding: 5px;
@@ -112,7 +70,6 @@ h3 {
   align-items: center;
   justify-content: center;
   transition: background-color 0.2s ease, color 0.2s ease;
-
   color: #333;
 }
 
@@ -123,13 +80,10 @@ h3 {
 .filter-map-button img {
   width: 24px;
   height: 24px;
-  /* ❌ On n'a plus besoin de la propriété 'filter' */
 }
 
-/* Style pour le bouton quand des filtres sont actifs */
 .filter-map-button.active-filters {
-  background-color: #a62100; /* Votre couleur principale */
+  background-color: #a62100;
   border-color: #a62100;
-  /* ✅ On change la couleur de l'icône en blanc */
   color: white;
 }

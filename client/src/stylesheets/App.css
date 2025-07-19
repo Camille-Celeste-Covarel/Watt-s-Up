@@ -18,18 +18,15 @@ body {
 /* Styles pour le conteneur des pages qui ne sont pas des overlays */
 .main-page-container {
   position: fixed;
-  /* On le décale du haut pour laisser la place au TopBar */
-  top: 60px; /* <-- MODIFICATION */
+  top: 60px;
   left: 0;
   width: 100%;
-  /* On ajuste sa hauteur pour qu'il ne recouvre pas le NavBar en bas */
-  height: calc(100vh - 60px - 70px); /* <-- MODIFICATION (TopBar + NavBar height) */
+  height: calc(100vh - 60px - 70px);
   background-color: white;
   z-index: 900;
   overflow-y: auto;
-  /* On ajoute un padding pour que le contenu ne soit pas collé aux bords */
-  padding: 20px; /* <-- AJOUT OPTIONNEL MAIS RECOMMANDÉ */
-  box-sizing: border-box; /* <-- AJOUT IMPORTANT avec le padding */
+  padding: 20px;
+  box-sizing: border-box;
 }
 
 .button {
@@ -54,6 +51,7 @@ body {
   --seconde-color: #d9631e;
   --tierce-color: #f2f2f2;
   --quarte-color: #c8f230;
+  --overlay-width: 33vw;
 }
 
 h2 {
@@ -80,6 +78,5 @@ form input:focus {
 .main-content {
   position: relative;
   flex-grow: 1;
-  display: flex;
   overflow: hidden;
 }

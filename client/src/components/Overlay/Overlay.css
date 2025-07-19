@@ -1,32 +1,25 @@
-/* Style pour le CONTENANT de l'overlay (le panneau qui glisse) */
 .station-details-overlay {
-  /* La règle la plus importante pour le positionnement ! */
-  position: fixed;
+  position: absolute;
   top: 0;
   right: 0;
-  left: auto;
-  width: 35vw;
+  height: calc(100% - 70px);
+  box-sizing: border-box;
+  width: var(--overlay-width);
   max-width: 500px;
   min-width: 320px;
-  height: 100vh;
-  background-color: white;
-  border: none;
-  padding: 0;
-  margin: 0;
-  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-
-  /* Animation d'apparition depuis la droite */
-  transform: translateX(100%);
   transition: transform 0.3s ease-in-out;
+  transform: translateX(100%);
+  background-color: white;
+  overflow-x: hidden;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
 }
 
-/* Quand le dialogue est ouvert (attribut `open` ajouté par le navigateur) */
-.station-details-overlay[open] {
+.station-details-overlay.open {
   transform: translateX(0);
 }
 
-/* Le bouton de fermeture */
 .station-details-overlay .close-button {
   position: absolute;
   top: 10px;
@@ -44,9 +37,7 @@
   justify-content: center;
 }
 
-/* Le conteneur du contenu à l'intérieur */
 .station-details-overlay .station-details-content {
-  /* On s'assure qu'il prend toute la place et permet le scroll */
   overflow-y: auto;
   height: 100%;
   width: 100%;

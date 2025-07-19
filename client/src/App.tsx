@@ -6,10 +6,7 @@ import NavBar from "./components/navbar/NavBar";
 import TopBar from "./components/topbar/TopBar";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FilterProvider } from "./contexts/FilterContext.tsx";
-import {
-  OverlayProvider,
-  useOverlay,
-} from "./contexts/OverlayContext/OverlayContext.tsx";
+import { OverlayProvider } from "./contexts/OverlayContext/OverlayContext.tsx";
 import LandingPage from "./pages/LandingPage.tsx";
 
 // stylesheets
@@ -21,7 +18,6 @@ interface RouteHandle {
 }
 
 function AppContent() {
-  const { isOverlayOpen } = useOverlay();
   const matches = useMatches();
   const location = useLocation();
 
@@ -30,19 +26,23 @@ function AppContent() {
   );
   const isRootPath = location.pathname === "/";
 
-  const overlayContent = !isMobile && isOverlayRoute ? <Outlet /> : null;
-  const shouldRenderInMain = isMobile || !isOverlayRoute;
-  const mainPageContent = shouldRenderInMain && !isRootPath ? <Outlet /> : null;
+  // --- Logique d'affichage ---
+  const shouldShowOverlay = !isMobile && isOverlayRoute;
+  const shouldShowFullPage = !isRootPath && !isOverlayRoute;
+  const shouldShowMobilePage = isMobile && !isRootPath;
+
+  const routeContent = <Outlet />;
 
   return (
     <div className="app-container">
       <TopBar />
       <main className="main-content">
+        {shouldShowOverlay && <Overlay title="">{routeContent}</Overlay>}
+
         <LandingPage />
-        {isOverlayOpen && <Overlay title="">{overlayContent}</Overlay>}
       </main>
-      {mainPageContent && (
-        <div className="main-page-container">{mainPageContent}</div>
+      {(shouldShowFullPage || shouldShowMobilePage) && (
+        <div className="main-page-container">{routeContent}</div>
       )}
       <NavBar />
     </div>
