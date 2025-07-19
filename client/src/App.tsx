@@ -6,7 +6,10 @@ import NavBar from "./components/navbar/NavBar";
 import TopBar from "./components/topbar/TopBar";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FilterProvider } from "./contexts/FilterContext.tsx";
-import { OverlayProvider } from "./contexts/OverlayContext/OverlayContext.tsx";
+import {
+  OverlayProvider,
+  useOverlay,
+} from "./contexts/OverlayContext/OverlayContext.tsx";
 import LandingPage from "./pages/LandingPage.tsx";
 
 // stylesheets
@@ -17,7 +20,8 @@ interface RouteHandle {
   isOverlay?: boolean;
 }
 
-function App() {
+function AppContent() {
+  const { isOverlayOpen } = useOverlay();
   const matches = useMatches();
   const location = useLocation();
 
@@ -27,28 +31,33 @@ function App() {
   const isRootPath = location.pathname === "/";
 
   const overlayContent = !isMobile && isOverlayRoute ? <Outlet /> : null;
-
   const shouldRenderInMain = isMobile || !isOverlayRoute;
   const mainPageContent = shouldRenderInMain && !isRootPath ? <Outlet /> : null;
 
   return (
-    <>
-      <AuthProvider>
-        <TopBar />
-        <OverlayProvider>
-          <FilterProvider>
-            <LandingPage />
+    <div className="app-container">
+      <TopBar />
+      <main className="main-content">
+        <LandingPage />
+        {isOverlayOpen && <Overlay title="">{overlayContent}</Overlay>}
+      </main>
+      {mainPageContent && (
+        <div className="main-page-container">{mainPageContent}</div>
+      )}
+      <NavBar />
+    </div>
+  );
+}
 
-            {mainPageContent && (
-              <div className="main-page-container">{mainPageContent}</div>
-            )}
-            <NavBar />
-
-            <Overlay title={""}>{overlayContent}</Overlay>
-          </FilterProvider>
-        </OverlayProvider>
-      </AuthProvider>
-    </>
+function App() {
+  return (
+    <AuthProvider>
+      <OverlayProvider>
+        <FilterProvider>
+          <AppContent />
+        </FilterProvider>
+      </OverlayProvider>
+    </AuthProvider>
   );
 }
 
