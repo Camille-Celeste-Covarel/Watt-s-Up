@@ -55,7 +55,7 @@ function App() {
           <NavBar />
 
           {/* L'overlay ne recevra du contenu que sur desktop */}
-          <Overlay>{overlayContent}</Overlay>
+          <Overlay title={""}>{overlayContent}</Overlay>
         </OverlayProvider>
       </AuthProvider>
     </>
