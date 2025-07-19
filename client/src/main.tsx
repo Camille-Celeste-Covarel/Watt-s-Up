@@ -7,6 +7,7 @@ import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
+import Filter from "./components/filter/Filter.tsx"; // ✅ Importer le composant
 import { ImportProvider } from "./contexts/ImportContext.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
@@ -21,12 +22,10 @@ import ResetPassword from "./pages/ResetPassword.tsx";
 import AdminRoute from "./utils/AdminRoute.tsx";
 import ProtectedRoute from "./utils/ProtectedRoute";
 
-// Voici la nouvelle structure de routes, avec <App /> comme racine unique.
 const router = createBrowserRouter([
   {
-    element: <App />, // App est le parent de TOUTES les pages
+    element: <App />,
     children: [
-      // --- Routes qui s'affichent toujours en pleine page ---
       {
         path: "/",
         element: <LandingPage />,
@@ -69,9 +68,6 @@ const router = createBrowserRouter([
         ),
         handle: { isOverlay: true },
       },
-
-      // --- Routes qui doivent s'ouvrir dans l'overlay sur Desktop ---
-      // On ajoute la propriété `handle` pour les identifier.
       {
         path: "/station/:id",
         element: (
@@ -97,6 +93,12 @@ const router = createBrowserRouter([
             <ContactPage />
           </ProtectedRoute>
         ),
+        handle: { isOverlay: true },
+      },
+      // ✅ AJOUT DE LA NOUVELLE ROUTE POUR LES FILTRES
+      {
+        path: "/filtres",
+        element: <Filter />,
         handle: { isOverlay: true },
       },
     ],
