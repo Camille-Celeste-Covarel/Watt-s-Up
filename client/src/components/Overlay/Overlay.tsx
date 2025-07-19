@@ -3,7 +3,6 @@ import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
 
 export function Overlay({
   children,
-  title,
 }: {
   children: ReactNode;
   title: string;
@@ -35,9 +34,6 @@ export function Overlay({
       className={`station-details-overlay ${isAnimatingOpen ? "open" : ""}`}
       aria-labelledby="overlay-title"
     >
-      <h2 id="overlay-title" className="visually-hidden">
-        {title}
-      </h2>
       <button
         type="button"
         className="close-button"
