@@ -7,6 +7,7 @@ import requestActions from "./modules/requestActions";
 import stationsActions from "./modules/stationsActions";
 import userActions from "./modules/userActions";
 import vehiculeActions from "./modules/vehiculeActions";
+import plugActions from "./modules/plugActions";
 import bookRoutes from "./routes/book.routes";
 import reservationRoutes from "./routes/reservation.routes";
 import { startCronJobs } from "./tools/cron.service";
@@ -55,6 +56,9 @@ router.get("/auth/check", authenticateToken, (req, res) => {
 router.get("/stations", stationsActions.browse);
 router.get("/stations/visible", stationsActions.browseVisible);
 router.get("/stations/:id", stationsActions.read);
+
+// Routes pour les plugs
+router.get("/plugs", plugActions.browse);
 
 /* ************************************************************************* */
 // 🛡️ Wall d'autorisation - Tout ce qui suit nécessite d'être connecté

@@ -8,6 +8,7 @@ interface Vehicule {
   license_plate: string;
   id_plug: string;
   photo_url?: string;
+  plug?: { name: string };
 }
 
 interface User {
@@ -98,22 +99,24 @@ function ProfilPage() {
         {user.vehicles && user.vehicles.length > 0 ? (
           user.vehicles.map((vehicule) => (
             <div className="profil-vehicle-infos" key={vehicule.id}>
-              {vehicule.photo_url && (
-                <img
-                  src={`${import.meta.env.VITE_API_URL}${vehicule.photo_url}`}
-                  alt="véhicule"
-                  className="vehicle-photo"
-                />
-              )}
               <p>
                 <strong>Nom :</strong> {vehicule.name}
               </p>
+              {vehicule.photo_url && (
+                <div className="vehicle-photo-container">
+                  <img
+                    src={`${import.meta.env.VITE_API_URL}${vehicule.photo_url}`}
+                    alt="véhicule"
+                    className="vehicle-photo"
+                  />
+                </div>
+              )}
               <p>
                 <strong>Plaque d'immatriculation :</strong>{" "}
                 {vehicule.license_plate}
               </p>
               <p>
-                <strong>Type de prise :</strong> {vehicule.id_plug}
+                <strong>Type de prise :</strong> {vehicule.plug?.name}
               </p>
             </div>
           ))

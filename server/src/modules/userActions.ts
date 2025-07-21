@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { Op } from "sequelize";
 import type { AuthRequest } from "../middleware/isConnected";
-import { User, Vehicule } from "../models/_index";
+import { User, Vehicule, Plug } from "../models/_index";
 
 // Ajoute ceci :
 interface MulterFiles {
@@ -332,6 +332,13 @@ const getMe = async (req: AuthRequest, res: Response, next: NextFunction) => {
         {
           model: Vehicule,
           as: "vehicles",
+          include: [
+            {
+              model: Plug,
+              as: "plug",
+              attributes: ["name"],
+            },
+          ],
         },
       ],
     });

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import "../style/registerpage.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
@@ -79,6 +79,13 @@ function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [vehiclePhotoFile, setVehiclePhotoFile] = useState<File | null>(null);
+  const [plugs, setPlugs] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/api/plugs`)
+      .then((res) => res.json())
+      .then((data) => setPlugs(data));
+  }, []);
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
@@ -569,10 +576,12 @@ function RegisterPage() {
               className={errors.id_plug ? "error" : ""}
             >
               <option value="">Sélectionnez votre prise</option>
-              <option value="chademo">CHAdeMO</option>
-              <option value="type2">Type 2</option>
-              <option value="combo-ccs">Combo CCS</option>
-              <option value="type-ef">Type EF</option>
+              {Array.isArray(plugs) &&
+                plugs.map((plug) => (
+                  <option key={plug.id} value={plug.id}>
+                    {plug.name}
+                  </option>
+                ))}
             </select>
             {errors.id_plug && (
               <span className="error-message">{errors.id_plug}</span>
