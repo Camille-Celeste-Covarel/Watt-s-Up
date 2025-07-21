@@ -16,23 +16,6 @@ import { startCronJobs } from "./tools/cron.service";
 
 const router = express.Router();
 router.use(express.static(path.join(__dirname, "..", "public")));
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    if (file.fieldname === "avatar") {
-      cb(null, "uploads/avatars/");
-    } else if (file.fieldname === "vehicle_photo") {
-      cb(null, "uploads/vehicle_photos/");
-    } else {
-      cb(null, "uploads/");
-    }
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
-  },
-});
-const upload = multer({ storage });
-const multiUpload = multer({ storage });
 
 /* ************************************************************************* */
 // 🌍 Routes PUBLIQUES (accessibles à tous)

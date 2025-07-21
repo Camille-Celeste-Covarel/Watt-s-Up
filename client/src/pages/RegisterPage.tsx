@@ -78,7 +78,6 @@ function RegisterPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [vehiclePhotoFile, setVehiclePhotoFile] = useState<File | null>(null);
   const [plugs, setPlugs] = useState<{ id: string; name: string }[]>([]);
 

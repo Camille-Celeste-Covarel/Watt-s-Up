@@ -2,9 +2,15 @@ import path from "node:path";
 import type { Request } from "express";
 import multer from "multer";
 
-const avatarStorage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb) => {
-    cb(null, path.join(__dirname, "..", "..", "public/uploads/avatars"));
+const profilUpload = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (file.fieldname === "avatar") {
+      cb(null, "uploads/avatars/");
+    } else if (file.fieldname === "vehicle_photo") {
+      cb(null, "uploads/vehicle_photos/");
+    } else {
+      cb(null, "uploads/");
+    }
   },
   filename: (req: Request, file: Express.Multer.File, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
@@ -12,6 +18,8 @@ const avatarStorage = multer.diskStorage({
     cb(null, `${file.fieldname}-${uniqueSuffix}${extension}`);
   },
 });
+const upload = multer({ storage: profilUpload });
+const multiUpload = multer({ storage: profilUpload });
 
 const imageFileFilter = (
   req: Request,
@@ -26,7 +34,7 @@ const imageFileFilter = (
 };
 
 const uploadAvatar = multer({
-  storage: avatarStorage,
+  storage: profilUpload,
   fileFilter: imageFileFilter,
   limits: {
     fileSize: 1024 * 1024 * 5,
