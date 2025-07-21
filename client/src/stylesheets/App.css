@@ -15,6 +15,20 @@ body {
   font-family: "Montserrat", sans-serif;
 }
 
+/* Styles pour le conteneur des pages qui ne sont pas des overlays */
+.main-page-container {
+  position: fixed;
+  top: 60px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 60px - 70px);
+  background-color: white;
+  z-index: 900;
+  overflow-y: auto;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
 .button {
   width: 130px;
   height: 40px;
@@ -37,6 +51,7 @@ body {
   --seconde-color: #d9631e;
   --tierce-color: #f2f2f2;
   --quarte-color: #c8f230;
+  --overlay-width: 33vw;
 }
 
 h2 {
@@ -51,4 +66,17 @@ h3 {
 
 form input:focus {
   outline: none;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.main-content {
+  position: relative;
+  flex-grow: 1;
+  overflow: hidden;
 }

@@ -49,6 +49,40 @@ const CsvImporter: React.FC = () => {
     return `${mins}:${secs}`;
   };
 
+  // Helper to interpolate between two RGB colors based on a factor (0 to 1).
+  const interpolateRgb = (
+    color1: number[],
+    color2: number[],
+    factor: number,
+  ) => {
+    const result = color1.slice();
+    for (let i = 0; i < 3; i++) {
+      result[i] = Math.round(result[i] + factor * (color2[i] - result[i]));
+    }
+    return `rgb(${result[0]}, ${result[1]}, ${result[2]})`;
+  };
+
+  const getProgressBarGradient = (percentage: number) => {
+    const red = "#d32f2f";
+    const yellow = "#fbc02d";
+
+    const redRgb = [211, 47, 47];
+    const yellowRgb = [251, 192, 45];
+    const greenRgb = [56, 142, 60];
+
+    if (percentage <= 50) {
+      // From 0 to 50%, we build a simple gradient from red to the interpolated color.
+      const factor = percentage / 50;
+      const currentColor = interpolateRgb(redRgb, yellowRgb, factor);
+      return `linear-gradient(to right, ${red}, ${currentColor})`;
+    }
+    // Above 50%, the gradient goes from red to green, with a stop at yellow.
+    const yellowStopPosition = (50 / percentage) * 100;
+    const factor = (percentage - 50) / 50;
+    const currentColor = interpolateRgb(yellowRgb, greenRgb, factor);
+    return `linear-gradient(to right, ${red}, ${yellow} ${yellowStopPosition}%, ${currentColor})`;
+  };
+
   // Le dashboard est visible si un import est en cours ou vient de se terminer.
   const isDashboardVisible = isImporting || importId;
 
@@ -110,12 +144,7 @@ const CsvImporter: React.FC = () => {
               className="progress-bar"
               style={{
                 width: `${progressPercentage}%`,
-                // La couleur change dynamiquement du rouge (teinte 0) au vert (teinte 120)
-                // en passant par le jaune (teinte 60) dans l'espace couleur HSL.
-                // On mappe la progression 0-100% sur l'échelle de teinte 0-120.
-                backgroundColor: `hsl(${progressPercentage * 1.2}, 70%, 45%)`,
-                transition:
-                  "width 0.25s ease-out, background-color 0.5s linear",
+                backgroundImage: getProgressBarGradient(progressPercentage),
               }}
             />
             <span className="progress-bar-text">{progressPercentage}%</span>

@@ -1,6 +1,6 @@
 import "./navbar.css";
 
-import { FaUserShield } from "react-icons/fa"; // Importer l'icône d'administration de react-icons
+import { FaUserShield } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import borne from "../../assets/images/navbar/borne.svg";
 import contact from "../../assets/images/navbar/contact.svg";
@@ -11,21 +11,30 @@ import { useAuth } from "../../contexts/AuthContext";
 
 function NavBar() {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth(); // Récupérer le statut admin
+  const { isAdmin } = useAuth();
 
   return (
     <div className="navbar-container">
       <button
         type="button"
         onClick={() => {
+          navigate("/");
+        }}
+      >
+        <img src={borne} alt="Carte" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
           navigate("/reservations");
         }}
       >
-        <img src={borne} alt="borne" />
+        <img src={reservation} alt="Réserver une borne" />
       </button>
-      <img src={reservation} alt="reserver une borne" />
+
       <button type="button" onClick={() => navigate("/profil")}>
-        <img src={profil} alt="votre profil" />
+        <img src={profil} alt="Votre profil" />
       </button>
       <button
         type="button"
@@ -33,7 +42,7 @@ function NavBar() {
           navigate("/contact");
         }}
       >
-        <img src={contact} alt="nous contacter" />
+        <img src={contact} alt="Nous contacter" />
       </button>
       <button
         type="button"
@@ -41,7 +50,7 @@ function NavBar() {
           navigate("/informations");
         }}
       >
-        <img src={info} alt="informations" />
+        <img src={info} alt="Informations" />
       </button>
       {/* Affiche le bouton uniquement si l'utilisateur est admin */}
       {isAdmin && (
@@ -50,7 +59,7 @@ function NavBar() {
           onClick={() => navigate("/admin/dashboard")}
           title="Administration"
         >
-          <FaUserShield size={35} /> {/* Utiliser l'icône de react-icons */}
+          <FaUserShield size={35} />
         </button>
       )}
     </div>
