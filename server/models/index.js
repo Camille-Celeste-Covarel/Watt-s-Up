@@ -39,7 +39,7 @@ for (const file of fs.readdirSync(__dirname)) {
 // Associate models if an 'associate' method is defined
 for (const modelName of Object.keys(db)) {
   if (db[modelName].associate) {
-    db[modelName].associate(db);
+    db[modelName].associate();
   }
 }
 

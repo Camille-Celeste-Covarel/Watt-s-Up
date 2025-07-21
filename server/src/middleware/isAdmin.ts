@@ -1,44 +1,37 @@
 import type { NextFunction, Request, Response } from "express";
-import jwt from "jsonwebtoken";
 
-interface TokenPayload {
-  id: string;
-  isAdmin: boolean;
+// On étend le type Request d'Express pour inclure la propriété `user`
+// que le middleware `authenticateToken` est censé ajouter.
+interface AuthenticatedRequest extends Request {
+  user?: {
+    id: string;
+    isAdmin: boolean;
+  };
 }
 
-const isAdmin = (req: Request, res: Response, next: NextFunction): void => {
-  const token = req.cookies.authToken;
-
-  if (!token) {
-    res.status(401).json({ error: "Connexion requise" });
+const isAdmin = (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+): void => {
+  // 1. On vérifie que `authenticateToken` a bien fait son travail
+  //    et que la propriété `isAdmin` est bien un booléen.
+  if (!req.user || typeof req.user.isAdmin !== "boolean") {
+    // Si ce n'est pas le cas, c'est une anomalie (token malformé, etc.).
+    res.status(403).json({ error: "Permissions invalides ou manquantes." });
     return;
   }
 
-  const jwtSecret = process.env.JWT_SECRET;
-  if (!jwtSecret) {
-    res.status(500).json({ error: "Erreur serveur" });
+  // 2. On vérifie la valeur du booléen.
+  if (!req.user.isAdmin) {
+    res
+      .status(403)
+      .json({ error: "Accès refusé. Droits administrateur requis." });
     return;
   }
 
-  jwt.verify(
-    token,
-    jwtSecret,
-    (err: jwt.VerifyErrors | null, decoded: unknown) => {
-      if (err) {
-        res.status(403).json({ error: "Token invalide" });
-        return;
-      }
-
-      const payload = decoded as TokenPayload;
-
-      if (!payload.isAdmin) {
-        res.status(403).json({ error: "Accès refusé. Droits admin requis." });
-        return;
-      }
-
-      next();
-    },
-  );
+  // 3. Si tout est bon, l'utilisateur est admin, on passe à la suite.
+  next();
 };
 
 export default isAdmin;

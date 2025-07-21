@@ -1,34 +1,23 @@
-import {
-  type ReactNode,
-  createContext,
-  useCallback,
-  useContext,
-  useState,
-} from "react";
-import type { globalContextType } from "./OverlayType.ts";
+import { type ReactNode, createContext, useCallback, useContext } from "react";
+import { useNavigate } from "react-router-dom";
 
-const OverlayContext = createContext<globalContextType | undefined>(undefined);
+interface OverlayContextType {
+  closeOverlay: () => void;
+}
+
+const OverlayContext = createContext<OverlayContextType | undefined>(undefined);
 
 export const OverlayProvider = ({ children }: { children: ReactNode }) => {
-  const [isOverlayOpen, setIsOverlayOpen] = useState(false);
-  const [overlayContent, setOverlayContent] = useState<ReactNode | null>(null);
-
-  const openOverlay = useCallback((content: ReactNode) => {
-    setOverlayContent(content);
-    setIsOverlayOpen(true);
-  }, []);
+  const navigate = useNavigate();
 
   const closeOverlay = useCallback(() => {
-    setIsOverlayOpen(false);
-    setTimeout(() => setOverlayContent(null), 300);
-  }, []);
+    navigate("/");
+  }, [navigate]);
+
+  const value = { closeOverlay };
 
   return (
-    <OverlayContext.Provider
-      value={{ isOverlayOpen, overlayContent, openOverlay, closeOverlay }}
-    >
-      {children}
-    </OverlayContext.Provider>
+    <OverlayContext.Provider value={value}>{children}</OverlayContext.Provider>
   );
 };
 

@@ -29,7 +29,7 @@ const browse: RequestHandler = async (req, res, next) => {
 // Récupère un utilisateur spécifique par son ID.
 const read: RequestHandler = async (req, res, next) => {
   try {
-    const userId = req.params.id; // <-- UUID string
+    const userId = req.params.id;
     const user = await User.findByPk(userId);
 
     if (user == null) {
@@ -45,13 +45,13 @@ const read: RequestHandler = async (req, res, next) => {
 // L'opération BREAD : Add (Create)
 // Ajoute un nouvel utilisateur à la base de données.
 const add: RequestHandler = async (req, res, next) => {
-  // ...à compléter si besoin
+  res.status(501).json({ message: "Fonction non implémentée." });
 };
 
 // L'opération BREAD : Edit (Update)
 const edit: RequestHandler = async (req, res, next) => {
   try {
-    const userId = req.params.id; // <-- UUID string
+    const userId = req.params.id;
     const [affectedCount] = await User.update(req.body, {
       where: { id: userId },
     });
@@ -70,7 +70,7 @@ const edit: RequestHandler = async (req, res, next) => {
 // Supprime un utilisateur par son ID.
 const destroy: RequestHandler = async (req, res, next) => {
   try {
-    const userId = req.params.id; // <-- UUID string
+    const userId = req.params.id;
     const deletedCount = await User.destroy({
       where: { id: userId },
     });
@@ -102,7 +102,8 @@ const register: RequestHandler = async (req, res, next) => {
       gender,
     } = req.body;
 
-    // Vérifie si l'utilisateur existe déjà
+    const avatarFileName = req.file ? req.file.filename : null;
+
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       res.status(400).json({
@@ -140,7 +141,7 @@ const register: RequestHandler = async (req, res, next) => {
       postcode,
       country,
       gender,
-      avatar_url,
+      avatar_url: avatarFileName ?? undefined,
       is_admin: false,
     });
 
@@ -201,12 +202,18 @@ const login: RequestHandler = async (req, res, next) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || "24h" } as jwt.SignOptions,
     );
 
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const avatarUrl = user.avatar_url
+      ? `${baseUrl}/api/uploads/avatars/${user.avatar_url}`
+      : null;
+
     const userResponse = {
       id: user.id,
       email: user.email,
-      first_name: user.first_name,
-      last_name: user.last_name,
-      is_admin: user.is_admin,
+      firstName: user.first_name,
+      lastName: user.last_name,
+      isAdmin: user.is_admin,
+      avatarUrl: avatarUrl,
     };
 
     res.cookie("authToken", token, {
@@ -238,6 +245,40 @@ const logout: RequestHandler = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+const check: RequestHandler = async (req: AuthRequest, res, next) => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ error: "Utilisateur non authentifié." });
+      return;
+    }
+
+    const userFromDb = await User.findByPk(req.user.id, {
+      attributes: ["id", "first_name", "is_admin", "avatar_url"],
+    });
+
+    if (!userFromDb) {
+      res.status(404).json({ error: "Utilisateur non trouvé en BDD." });
+      return;
+    }
+
+    const baseUrl = `${req.protocol}://${req.get("host")}`;
+    const avatarUrl = userFromDb.avatar_url
+      ? `${baseUrl}/api/uploads/avatars/${userFromDb.avatar_url}`
+      : null;
+
+    res.json({
+      authenticated: true,
+      user: {
+        firstName: userFromDb.first_name,
+        isAdmin: userFromDb.is_admin,
+        avatarUrl: avatarUrl,
+      },
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -363,5 +404,6 @@ export default {
   logout,
   forgotPassword,
   resetPassword,
+  check,
   getMe,
 };

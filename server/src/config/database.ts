@@ -1,5 +1,4 @@
 import { type Dialect, Sequelize } from "sequelize";
-import { LogLevel } from "../tools/logger";
 import type { DbConfig, ValidDbConfig } from "./database_types";
 
 /**
@@ -10,9 +9,7 @@ import type { DbConfig, ValidDbConfig } from "./database_types";
  * @returns Un objet de configuration validé et typé.
  */
 function getValidatedConfig(config: DbConfig): ValidDbConfig {
-  // --- GUARD CLAUSES ---
   // On vérifie chaque variable requise. Si une manque, on lance une erreur.
-  // TypeScript comprend qu'après chaque ligne, la variable ne peut plus être undefined.
   if (!config.user)
     throw new Error("Variable d'environnement manquante : DB_USER");
   if (!config.password)
@@ -26,21 +23,17 @@ function getValidatedConfig(config: DbConfig): ValidDbConfig {
   if (!config.dialect)
     throw new Error("Variable d'environnement manquante : DB_DIALECT");
 
-  // --- TRANSFORMATION ---
-  // À ce stade, TypeScript sait que config.port est un `string`, pas `string | undefined`.
-  // Nous pouvons donc créer notre objet de retour en toute sécurité, sans utiliser "!"
   return {
     user: config.user,
     password: config.password,
     database: config.database,
     host: config.host,
-    port: Number(config.port), // Transformation sûre
+    port: Number(config.port),
     dialect: config.dialect as Dialect,
     nodeEnv: config.nodeEnv,
   };
 }
 
-// 1. Récupérer la configuration brute depuis l'environnement
 const rawDbConfig: DbConfig = {
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
@@ -51,12 +44,9 @@ const rawDbConfig: DbConfig = {
   nodeEnv: process.env.NODE_ENV,
 };
 
-// 2. Valider et transformer la configuration.
 // La fonction lancera une erreur si quelque chose ne va pas.
 const validConfig = getValidatedConfig(rawDbConfig);
 
-// 3. Utiliser la configuration validée et parfaitement typée.
-// Le code est maintenant propre, lisible et sans "!"
 const sequelize = new Sequelize(
   validConfig.database,
   validConfig.user,
@@ -65,10 +55,7 @@ const sequelize = new Sequelize(
     host: validConfig.host,
     port: validConfig.port,
     dialect: validConfig.dialect,
-    /*logging: validConfig.nodeEnv === "development" ? console.log : false,*/
-    logging: (sql) => {
-      console.log(sql, LogLevel.DEBUG);
-    },
+    logging: false,
     pool: {
       max: 100,
       min: 0,

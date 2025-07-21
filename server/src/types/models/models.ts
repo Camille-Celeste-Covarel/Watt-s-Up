@@ -55,13 +55,19 @@ export interface ImportLogAttributes {
   id: string;
   import_id: string;
   file_name: string;
+  total_lines_in_file: number;
   total_lines_processed: number;
   successful_lines: number;
   error_summary: Record<string, unknown> | null;
   error_log_file_path: string | null;
-  status: "IN_PROGRESS" | "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED";
+  status:
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "PARTIAL_SUCCESS"
+    | "FAILED"
+    | "CANCELLED";
   import_date: Date;
-  duration_ms?: number | null;
+  duration_ms: number | null;
   createdAt?: Date;
   updatedAt?: Date;
 }

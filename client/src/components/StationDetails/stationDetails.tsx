@@ -1,55 +1,49 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import type {
   EnrichedStationAttributes,
   Plug,
   TerminalGroup,
 } from "../../types/stationDetailsTypes.ts";
-import type { StationDetailsProps } from "../../types/types_maplibre.ts";
+import { fetchStationDetails } from "../../utils/stationApi.ts"; // Assurez-vous que cette fonction existe et accepte un ID
 import { PlugIcon } from "../DisplaySVGPlug/DisplaySVGPlug";
 import "./stationDetails.css";
 
-export function StationDetails({ id: stationId }: StationDetailsProps) {
-  const [station, setStation] = useState<EnrichedStationAttributes | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function StationDetails() {
+  // 1. On récupère l'ID directement depuis l'URL grâce à React Router
+  const { id: stationId } = useParams<{ id: string }>();
+
+  // Hooks pour l'état de l'interface utilisateur (inchangés)
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
   const [isReserving, setIsReserving] = useState(false);
   const [reservationError, setReservationError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
+  const queryClient = useQueryClient();
 
-  const fetchStationDetails = useCallback(async () => {
-    if (!stationId) {
-      setError("Station ID is missing.");
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
-      );
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+  // 2. On utilise useQuery pour récupérer les données de manière moderne et robuste
+  const {
+    data: station,
+    isLoading,
+    error,
+  } = useQuery<EnrichedStationAttributes, Error>({
+    // La clé de la requête inclut l'ID pour être unique et se mettre à jour correctement
+    queryKey: ["stationDetails", stationId],
+    // La fonction de requête est appelée par useQuery
+    queryFn: () => {
+      if (!stationId) {
+        // Ce garde-fou est essentiel
+        throw new Error("Station ID is missing in URL.");
       }
-      const data: EnrichedStationAttributes = await response.json();
-      setStation(data);
-    } catch (err) {
-      console.error("Error fetching station details:", err);
-      setError("Impossible de charger les détails de la station.");
-    } finally {
-      setLoading(false);
-    }
-  }, [stationId]);
+      // On assume que vous avez une fonction qui fetch par ID
+      return fetchStationDetails(stationId);
+    },
+    // La requête ne s'exécute que si l'ID est bien présent dans l'URL
+    enabled: !!stationId,
+  });
 
-  useEffect(() => {
-    void fetchStationDetails();
-  }, [fetchStationDetails]);
-
+  // 3. Votre logique de groupement des terminaux reste INCHANGÉE
   const terminalGroups = useMemo(() => {
     if (!station?.terminals) return [];
     const groups = new Map<string, TerminalGroup>();
@@ -83,33 +77,8 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
     setSelectedGroupKey(key === selectedGroupKey ? null : key);
   };
 
-  // --- Blocs de rendu conditionnel ---
-  if (loading) {
-    return (
-      <div className="station-details-content">
-        <p>Chargement des détails de la station...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="station-details-content error">
-        <p>Erreur: {error}</p>
-      </div>
-    );
-  }
-
-  if (!station) {
-    return (
-      <div className="station-details-content">
-        <p>Aucun détail de station trouvé.</p>
-      </div>
-    );
-  }
-
   const handleReserve = async () => {
-    if (!isAuthenticated || !selectedGroupKey) {
+    if (!isAuthenticated || !selectedGroupKey || !stationId) {
       setReservationError("Veuillez sélectionner un groupe et être connecté.");
       return;
     }
@@ -118,7 +87,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
       (g) => g.key === selectedGroupKey,
     );
     if (!selectedGroup) {
-      console.error("Groupe sélectionné non trouvé.");
       setReservationError("Une erreur est survenue, groupe non trouvé.");
       return;
     }
@@ -131,9 +99,7 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
         `${import.meta.env.VITE_API_URL}/api/reservations`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({
             stationId: stationId,
@@ -144,7 +110,6 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
       );
 
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.message || "La réservation a échoué.");
       }
@@ -152,8 +117,10 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
       alert(
         "Réservation confirmée ! Vous avez 30 minutes pour démarrer la charge.",
       );
-      // On rafraîchit les données de la station pour mettre à jour l'interface
-      await fetchStationDetails();
+      // On invalide la requête pour forcer le rafraîchissement des données
+      await queryClient.invalidateQueries({
+        queryKey: ["stationDetails", stationId],
+      });
       setSelectedGroupKey(null);
     } catch (err) {
       const errorMessage =
@@ -169,6 +136,31 @@ export function StationDetails({ id: stationId }: StationDetailsProps) {
   const handleCancel = () => {
     setSelectedGroupKey(null);
   };
+
+  // --- 4. Vos blocs de rendu conditionnel et votre JSX restent INCHANGÉS ---
+  if (isLoading) {
+    return (
+      <div className="station-details-content">
+        <p>Chargement des détails de la station...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="station-details-content error">
+        <p>Erreur: {error.message}</p>
+      </div>
+    );
+  }
+
+  if (!station) {
+    return (
+      <div className="station-details-content">
+        <p>Aucun détail de station trouvé.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="station-details-content">

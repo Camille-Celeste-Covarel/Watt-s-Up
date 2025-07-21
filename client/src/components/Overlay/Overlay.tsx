@@ -1,20 +1,48 @@
+import { type ReactNode, useEffect, useState } from "react";
 import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
-import "./Overlay.css";
 
-export function Overlay() {
-  const { isOverlayOpen, overlayContent, closeOverlay } = useOverlay();
+export function Overlay({
+  children,
+}: {
+  children: ReactNode;
+  title: string;
+}) {
+  const { closeOverlay } = useOverlay();
+  const [isAnimatingOpen, setIsAnimatingOpen] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsAnimatingOpen(true);
+    }, 10);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleClose = () => {
+    setIsAnimatingOpen(false);
+    setTimeout(() => {
+      closeOverlay();
+    }, 300);
+  };
+
+  if (!children) {
+    return null;
+  }
 
   return (
-    <div className={`station-details-overlay ${isOverlayOpen ? "open" : ""}`}>
+    <div
+      className={`station-details-overlay ${isAnimatingOpen ? "open" : ""}`}
+      aria-labelledby="overlay-title"
+    >
       <button
-        onClick={closeOverlay}
-        className="close-button"
-        aria-label="Fermer"
         type="button"
+        className="close-button"
+        onClick={handleClose}
+        aria-label="Fermer"
       >
         &times;
       </button>
-      <div className="station-details-content">{overlayContent}</div>
+      <div className="station-details-content">{children}</div>
     </div>
   );
 }

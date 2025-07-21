@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-
-import "../style/registerpage.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
 import vehicleDefaultIcon from "../assets/images/vehicleIcons/carProfile.svg";
+import "../style/registerpage.css";
 
 interface FormData {
   // Champs User selon le modèle
@@ -75,6 +74,8 @@ function RegisterPage() {
 
   const [errors, setErrors] = useState<FormErrors>({});
   const [avatar, setAvatar] = useState<string>(avatarIcon);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -90,64 +91,50 @@ function RegisterPage() {
   const validateForm = () => {
     const newErrors: FormErrors = {};
 
-    // Validation User (champs obligatoires selon le modèle)
     if (!formData.first_name.trim()) {
       newErrors.first_name = "Le prénom est requis";
     }
-
     if (!formData.last_name.trim()) {
       newErrors.last_name = "Le nom est requis";
     }
-
     if (!formData.email.trim()) {
       newErrors.email = "L'email est requis";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = "L'email n'est pas valide";
     }
-
     if (!formData.password) {
       newErrors.password = "Le mot de passe est requis";
     } else if (formData.password.length < 6) {
       newErrors.password =
         "Le mot de passe doit contenir au moins 6 caractères";
     }
-
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Veuillez confirmer votre mot de passe";
     } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Les mots de passe ne correspondent pas";
     }
-
     if (!formData.birthdate) {
       newErrors.birthdate = "La date de naissance est requise";
     }
-
     if (!formData.address.trim()) {
       newErrors.address = "L'adresse est requise";
     }
-
     if (!formData.city.trim()) {
       newErrors.city = "La ville est requise";
     }
-
     if (!formData.postcode.trim()) {
       newErrors.postcode = "Le code postal est requis";
     }
-
     if (!formData.country.trim()) {
       newErrors.country = "Le pays est requis";
     }
-
     if (!formData.vehicle_name.trim()) {
       newErrors.vehicle_name = "Le nom du véhicule est requis";
     }
-
     if (!formData.id_plug) {
       newErrors.id_plug = "Le type de prise est requis";
     }
-
     const plateRegex = /^[A-Z]{2}-\d{3}-[A-Z]{2}$/i;
-
     if (!formData.license_plate) {
       newErrors.license_plate = "La plaque d'immatriculation est requise";
     } else if (!plateRegex.test(formData.license_plate.trim())) {
@@ -223,6 +210,7 @@ function RegisterPage() {
           alert(data.error || "Erreur lors de la création du compte");
         }
       } catch (err) {
+        console.error(err);
         alert("Erreur réseau");
       }
     }
@@ -244,6 +232,7 @@ function RegisterPage() {
     fileInput?.click();
   };
 
+  // Cette fonction a le même problème que handleImageUpload, il faudra la corriger de la même manière.
   const handleVehicleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {

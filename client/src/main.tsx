@@ -1,131 +1,115 @@
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// @ts-ignore
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-// Import necessary modules from React and React Router
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
-/* ************************************************************************* */
-
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-// Import the main app component
 import App from "./App";
 import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
+import Filter from "./components/filter/Filter.tsx";
+import { ImportProvider } from "./contexts/ImportContext.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import InfoPage from "./pages/InfoPage";
-import LandingPage from "./pages/LandingPage";
+import LandingPage from "./pages/LandingPage.tsx";
 import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
 import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
 import ResetPassword from "./pages/ResetPassword.tsx";
+import AdminRoute from "./utils/AdminRoute.tsx";
 import ProtectedRoute from "./utils/ProtectedRoute";
 
-// Import additional components for new routes
-// Try creating these components in the "pages" folder
-
-// import About from "./pages/About";
-// import Contact from "./pages/Contact";
-
-/* ************************************************************************* */
-
-// Create router configuration with routes
-// You can add more routes as you build out your app!
 const router = createBrowserRouter([
-  // ✅ ROUTES PUBLIQUES (inchangées)
   {
-    path: "/",
-    element: <App />,
-    children: [{ index: true, element: <LandingPage /> }],
-  },
-  {
-    path: "/login",
-    element: <App />,
-    children: [{ index: true, element: <LoginPage /> }],
-  },
-  {
-    path: "/register",
-    element: <App />,
-    children: [{ index: true, element: <RegisterPage /> }],
-  },
-  {
-    path: "/forgot-password",
-    element: <App />,
-    children: [{ index: true, element: <ForgotPassword /> }],
-  },
-  {
-    path: "/reset-password",
-    element: <App />,
-    children: [{ index: true, element: <ResetPassword /> }],
-  },
-  {
-    path: "/informations",
-    element: <App />,
-    children: [{ index: true, element: <InfoPage /> }],
-  },
-
-  // ✅ ROUTES PROTÉGÉES (avec ProtectedRoute)
-  {
-    path: "/profil",
     element: <App />,
     children: [
       {
         index: true,
-        element: (
-          <ProtectedRoute>
-            <ProfilPage />
-          </ProtectedRoute>
-        ),
+        element: <LandingPage />,
+        /*element: null, a voir dans le temps si <LandingPage />, ne pose pas souci*/
       },
-    ],
-  },
-  {
-    path: "/contact",
-    element: <App />,
-    children: [
       {
-        index: true,
-        element: (
-          <ProtectedRoute>
-            <ContactPage />
-          </ProtectedRoute>
-        ),
+        path: "/login",
+        element: <LoginPage />,
+        handle: { isOverlay: true },
       },
-    ],
-  },
-  {
-    path: "/station/:id",
-    element: <App />,
-    children: [
       {
-        index: true,
-        element: (
-          <ProtectedRoute>
-            <StationDetails />
-          </ProtectedRoute>
-        ),
+        path: "/register",
+        element: <RegisterPage />,
+        handle: { isOverlay: true },
       },
-    ],
-  },
-  {
-    path: "/reservations",
-    element: <App />,
-    children: [
       {
-        index: true,
+        path: "/forgot-password",
+        element: <ForgotPassword />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/reset-password",
+        element: <ResetPassword />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/informations",
+        element: <InfoPage />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/reservations",
         element: (
           <ProtectedRoute>
             <ReservationPage />
           </ProtectedRoute>
         ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/admin/dashboard",
+        element: (
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/station/:id",
+        element: (
+          <ProtectedRoute>
+            <StationDetails />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/profil",
+        element: (
+          <ProtectedRoute>
+            <ProfilPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/contact",
+        element: (
+          <ProtectedRoute>
+            <ContactPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/filtres",
+        element: <Filter />,
+        handle: { isOverlay: true },
       },
     ],
   },
 ]);
 
-/* ************************************************************************* */
-
-// Find the root element in the HTML document
 const rootElement = document.getElementById("root");
 if (rootElement == null) {
   throw new Error(`Your HTML Document should contain a <div id="root"></div>`);
@@ -133,38 +117,13 @@ if (rootElement == null) {
 
 const queryClient = new QueryClient();
 
-// Render the app inside the root element
-
 createRoot(rootElement).render(
   <StrictMode>
     <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-      <ReactQueryDevtools initialIsOpen={false} />
+      <ImportProvider>
+        <RouterProvider router={router} />
+      </ImportProvider>
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
     </QueryClientProvider>
   </StrictMode>,
 );
-
-/**
- * Helpful Notes:
- *
- * 1. Adding More Routes:
- *    To add more pages to your app, first create a new component (e.g., About.tsx).
- *    Then, import that component above like this:
- *
- *    import About from "./pages/About";
- *
- *    Add a new route to the router:
- *
- *      {
- *        path: "/about",
- *        element: <About />,  // Renders the About component
- *      }
- *
- * 2. Try Nested Routes:
- *    For more complex applications, you can nest routes. This lets you have sub-pages within a main page.
- *    Documentation: https://reactrouter.com/en/main/start/tutorial#nested-routes
- *
- * 3. Experiment with Dynamic Routes:
- *    You can create routes that take parameters (e.g., /users/:id).
- *    Documentation: https://reactrouter.com/en/main/start/tutorial#url-params-in-loaders
- */

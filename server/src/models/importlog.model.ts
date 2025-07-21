@@ -11,12 +11,19 @@ export class ImportLog
   public id!: string;
   public import_id!: string;
   public file_name!: string;
+  public total_lines_in_file!: number;
   public total_lines_processed!: number;
   public successful_lines!: number;
   public error_summary!: ImportLogAttributes["error_summary"];
   public error_log_file_path!: string | null;
-  public status!: "IN_PROGRESS" | "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED";
+  public status!:
+    | "IN_PROGRESS"
+    | "COMPLETED"
+    | "PARTIAL_SUCCESS"
+    | "FAILED"
+    | "CANCELLED";
   public import_date!: Date;
+  public duration_ms!: number | null;
 
   public readonly createdAt!: Date;
   public readonly updatedAt!: Date;
@@ -37,6 +44,10 @@ export class ImportLog
         },
         file_name: {
           type: DataTypes.STRING(255),
+          allowNull: false,
+        },
+        total_lines_in_file: {
+          type: DataTypes.INTEGER,
           allowNull: false,
         },
         total_lines_processed: {
@@ -61,12 +72,17 @@ export class ImportLog
             "COMPLETED",
             "PARTIAL_SUCCESS",
             "FAILED",
+            "CANCELLED",
           ),
           allowNull: false,
         },
         import_date: {
           type: DataTypes.DATE,
           allowNull: false,
+        },
+        duration_ms: {
+          type: DataTypes.INTEGER,
+          allowNull: true,
         },
       },
       {
@@ -79,5 +95,5 @@ export class ImportLog
     );
   }
 
-  static associate(sequelize: Sequelize) {}
+  static associate() {}
 }

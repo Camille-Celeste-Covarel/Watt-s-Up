@@ -1,8 +1,37 @@
+/* Style pour le CONTENU de l'overlay  */
+.station-details-content {
+  padding: 20px 25px 40px;
+  box-sizing: border-box;
+}
+
+.station-details-content h2 {
+  color: #333;
+  margin-top: 40px;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.station-details-content p {
+  margin-bottom: 10px;
+  line-height: 1.6;
+  color: #555;
+}
+
+.station-details-content p strong {
+  color: #333;
+}
+
+.station-details-content .error {
+  color: #d9534f;
+  font-weight: bold;
+}
+
 /* --- STYLES POUR LES INFORMATIONS GÉNÉRALES --- */
 .station-info-details {
   margin-top: 20px;
   margin-bottom: 20px;
   border-top: 1px solid #eee;
+  padding-top: 10px;
 }
 
 .station-info__text {
@@ -25,7 +54,7 @@
   padding-top: 20px;
 }
 
-/* --- STYLES POUR LA GRILLE DES BORNES --- */
+/* --- STYLES POUR LA GRILLE DES BORNES  --- */
 .terminal-groups-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -54,65 +83,52 @@
   transition: border-color 0.2s ease-in-out, transform 0.2s ease-in-out, opacity
     0.2s ease-in-out;
   border: 3px solid transparent;
+}
 
-  /* --- États de la carte --- */
+/* --- États de la carte --- */
+.terminal-group-card.available {
+  border-color: var(--quarte-color);
+}
 
-  /* État : Disponible */
-  &.available {
-    border-color: var(--quarte-color);
+.terminal-group-card.available:hover {
+  border-color: var(--seconde-color);
+  transition-duration: 0.4s;
+}
 
-    &:hover {
-      border-color: var(--seconde-color);
-      transition-duration: 0.4s;
-    }
+.terminal-group-card.available .group-plugs .plug-icon {
+  fill: var(--fondamental-color);
+}
 
-    .group-plugs {
-      min-height: 50px;
-      .plug-icon {
-        fill: var(--fondamental-color);
+.terminal-group-card.available .group-plugs .plug-icon .cls-1 {
+  fill: var(--fondamental-color);
+}
 
-        .cls-1 {
-          fill: var(--fondamental-color);
-        }
-      }
-    }
+.terminal-group-card.available .group-power,
+.terminal-group-card.available .group-availability {
+  color: var(--fondamental-color);
+}
 
-    .group-power,
-    .group-availability {
-      color: var(--fondamental-color);
-    }
-  }
+.terminal-group-card.unavailable {
+  border-color: var(--seconde-color);
+  background-color: var(--seconde-color);
+}
 
-  /* État : Indisponible */
-  &.unavailable {
-    border-color: var(--seconde-color);
-    background-color: var(--seconde-color);
+.terminal-group-card.unavailable .group-power,
+.terminal-group-card.unavailable .group-availability {
+  color: white;
+}
 
-    .group-power,
-    .group-availability {
-      color: white;
-    }
+.terminal-group-card.unavailable .group-plugs .plug-icon {
+  fill: white;
+}
 
-    .group-plugs .plug-icon {
-      fill: white;
-    }
-  }
+.terminal-group-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.9;
+}
 
-  /* État : Désactivé (non cliquable) */
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.9;
-  }
-
-  /* État : Sélectionné */
-  &.selected {
-    border-color: var(--seconde-color);
-  }
-
-  /* --- Styles responsifs pour la carte --- */
-  @media (max-width: 768px) {
-    padding: 10px;
-  }
+.terminal-group-card.selected {
+  border-color: var(--seconde-color);
 }
 
 /* --- ÉLÉMENTS INTERNES DE LA CARTE --- */
@@ -120,22 +136,19 @@
   display: flex;
   gap: 8px;
   margin-bottom: 10px;
+  min-height: 50px;
+}
 
-  .plug-icon {
-    max-height: 50px;
-    width: 100%;
-    height: 100%;
-  }
+.group-plugs .plug-icon {
+  max-height: 50px;
+  width: 100%;
+  height: 100%;
 }
 
 .group-power {
   font-size: 1.8em;
   font-weight: bold;
   color: #333;
-
-  @media (max-width: 768px) {
-    font-size: 1.5em;
-  }
 }
 
 .group-availability {
@@ -151,19 +164,19 @@
   margin-top: 30px;
   padding-top: 20px;
   border-top: 1px solid #eee;
+}
 
-  .action-button {
-    padding: 10px;
-    font-size: 1em;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.4s ease, transform 0.4s ease;
+.action-buttons-container .action-button {
+  padding: 10px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.4s ease, transform 0.4s ease;
+}
 
-    &:hover {
-      transform: none;
-      opacity: 1;
-    }
-  }
+.action-buttons-container .action-button:hover {
+  transform: none;
+  opacity: 1;
 }
 
 .reserve-button {
@@ -171,30 +184,32 @@
   font-size: 1em;
   width: 100px;
   border: none;
+  color: white;
+}
 
-  &:hover {
-    background-color: var(--seconde-color);
-    transition-duration: 0.4s;
-    color: white;
-  }
-  &:disabled {
-    background-color: #555555;
-    color: white;
-    cursor: default;
-    opacity: 0.3;
-  }
+.reserve-button:hover {
+  background-color: var(--seconde-color);
+  transition-duration: 0.4s;
+  color: white;
+}
+
+.reserve-button:disabled {
+  background-color: #555555;
+  color: white;
+  cursor: default;
+  opacity: 0.3;
 }
 
 .cancel-button {
   background-color: white;
   border: var(--fondamental-color) solid 3px;
   color: var(--fondamental-color);
+}
 
-  &:hover {
-    background-color: var(--fondamental-color);
-    transition-duration: 0.4s;
-    color: white;
-  }
+.cancel-button:hover {
+  background-color: var(--fondamental-color);
+  transition-duration: 0.4s;
+  color: white;
 }
 
 .reservation-error-message {
@@ -202,4 +217,11 @@
   font-weight: bold;
   margin-top: 15px;
   text-align: center;
+}
+
+/* --- Styles responsive --- */
+@media (max-width: 768px) {
+  .group-power {
+    font-size: 1.5em;
+  }
 }

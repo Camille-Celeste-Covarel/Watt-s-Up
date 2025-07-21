@@ -34,15 +34,6 @@ redirectConsoleOutput();
 async function startServer() {
   const app = express();
 
-  // Ce middleware s'exécutera pour CHAQUE requête, avant toute autre chose.
-  app.use((req, _res, next) => {
-    console.log(
-      `--- NOUVELLE REQUÊTE REÇUE --- METHODE: ${req.method}, URL: ${req.originalUrl}`,
-      LogLevel.DEBUG,
-    );
-    next();
-  });
-
   // --- 1. MIDDLEWARES DE BASE ET CONFIGURATION CORS ---
   const allowedOrigins = [process.env.CLIENT_URL].filter(Boolean) as string[];
 
@@ -115,6 +106,47 @@ async function startServer() {
   app.use(logErrors);
   app.use(apiErrorHandler);
 
+  /**
+   * Nettoie les importations qui étaient "IN_PROGRESS" lorsque le serveur s'est arrêté.
+   * Cela évite les "importations fantômes" au redémarrage.
+   */
+  async function cleanupStaleImports() {
+    try {
+      const [count] = await ImportLog.update(
+        {
+          status: "FAILED",
+          error_summary: {
+            message:
+              "Importation interrompue par un redémarrage ou un arrêt inattendu du serveur.",
+          },
+        },
+        {
+          where: {
+            status: "IN_PROGRESS",
+          },
+        },
+      );
+
+      if (count > 0) {
+        console.log(
+          `Nettoyage : ${count} importation(s) 'zombie' ont été marquées comme FAILED.`,
+          LogLevel.WARN,
+        );
+      } else {
+        console.log(
+          "Nettoyage : Aucune importation 'zombie' à nettoyer.",
+          LogLevel.INFO,
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Erreur critique lors du nettoyage des importations 'zombie'.",
+        LogLevel.CRITICAL,
+        error,
+      );
+    }
+  }
+
   try {
     // --- 5. CONNEXION BDD ET INITIALISATION ---
     await sequelize.authenticate();
@@ -136,7 +168,6 @@ async function startServer() {
     // --- INITIALISATION DES MODÈLES ---
 
     // NIVEAU 0 : Modèles sans dépendances ou avec des dépendances simples
-    console.log("Initialisation - Niveau 0", LogLevel.DEBUG);
     User.initialize(sequelize);
     Access.initialize(sequelize);
     Compagny.initialize(sequelize);
@@ -147,22 +178,17 @@ async function startServer() {
     ImportLog.initialize(sequelize);
 
     // NIVEAU 1 : Modèles dépendant du niveau 0
-    console.log("Initialisation - Niveau 1", LogLevel.DEBUG);
     Station.initialize(sequelize);
     Vehicule.initialize(sequelize);
 
     // NIVEAU 2 : Modèles dépendant du niveau 1
-    console.log("Initialisation - Niveau 2", LogLevel.DEBUG);
     Terminal.initialize(sequelize);
     Observation.initialize(sequelize);
 
     // NIVEAU 3 : Modèles dépendant du niveau 2
-    console.log("Initialisation - Niveau 3", LogLevel.DEBUG);
     Book.initialize(sequelize);
     request.initialize(sequelize);
     TerminalPlug.initialize(sequelize);
-
-    console.log("Tous les modèles ont été initialisés.", LogLevel.DEBUG);
 
     // --- DÉFINITION DES ASSOCIATIONS ---
     User.associate(sequelize);
@@ -172,7 +198,7 @@ async function startServer() {
     Plug.associate(sequelize);
     Power.associate(sequelize);
     Provider.associate(sequelize);
-    ImportLog.associate(sequelize);
+    ImportLog.associate();
     Station.associate(sequelize);
     Vehicule.associate(sequelize);
     Terminal.associate(sequelize);
@@ -181,8 +207,10 @@ async function startServer() {
     request.associate(sequelize);
     TerminalPlug.associate(sequelize);
 
-    console.log("Toutes les associations ont été définies.", LogLevel.DEBUG);
-    console.log("🚀 sequelize.sync remplacé par les migrations", LogLevel.INFO);
+    console.log("sequelize.sync est géré par les migrations.", LogLevel.INFO);
+
+    // On nettoie les anciens imports maintenant que les modèles sont initialisés.
+    await cleanupStaleImports();
 
     return app;
   } catch (error) {
