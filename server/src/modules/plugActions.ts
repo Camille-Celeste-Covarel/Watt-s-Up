@@ -1,5 +1,5 @@
-import { Plug } from "../models/plug.model";
 import type { RequestHandler } from "express";
+import { Plug } from "../models/plug.model";
 
 const browse: RequestHandler = async (req, res, next) => {
   try {

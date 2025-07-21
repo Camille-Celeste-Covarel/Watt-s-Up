@@ -6,7 +6,7 @@ import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { Op } from "sequelize";
 import type { AuthRequest } from "../middleware/isConnected";
-import { User, Vehicule, Plug } from "../models/_index";
+import { Plug, User, Vehicule } from "../models/_index";
 
 // Ajoute ceci :
 interface MulterFiles {

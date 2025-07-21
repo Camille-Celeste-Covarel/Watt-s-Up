@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 import "../style/registerpage.css";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
