@@ -1,14 +1,12 @@
 import type { Dispatch, ReactNode, SetStateAction } from "react";
 import { createContext, useContext, useState } from "react";
 
-// ✅ On exporte l'interface pour la réutiliser
 export interface FilterState {
   vehicles: string[];
   powers: string[];
   plugs: string[];
 }
 
-// ... le reste du fichier est inchangé
 interface FilterContextType {
   filters: FilterState;
   setFilters: Dispatch<SetStateAction<FilterState>>;

@@ -1,13 +1,12 @@
-/* Style pour le CONTENU de l'overlay (les infos de la station) */
+/* Style pour le CONTENU de l'overlay  */
 .station-details-content {
-  /* On remet le padding pour l'espacement intérieur */
   padding: 20px 25px 40px;
-  box-sizing: border-box; /* Important pour que le padding ne crée pas de bug de taille */
+  box-sizing: border-box;
 }
 
 .station-details-content h2 {
   color: #333;
-  margin-top: 40px; /* Espace pour le bouton fermer */
+  margin-top: 40px;
   margin-bottom: 20px;
   text-align: left;
 }
@@ -55,7 +54,7 @@
   padding-top: 20px;
 }
 
-/* --- STYLES POUR LA GRILLE DES BORNES (inchangés) --- */
+/* --- STYLES POUR LA GRILLE DES BORNES  --- */
 .terminal-groups-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
@@ -220,7 +219,7 @@
   text-align: center;
 }
 
-/* --- Styles responsifs --- */
+/* --- Styles responsive --- */
 @media (max-width: 768px) {
   .group-power {
     font-size: 1.5em;

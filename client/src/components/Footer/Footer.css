@@ -1,0 +1,39 @@
+.navbar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: var(--fondamental-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 10px;
+  box-sizing: border-box;
+  height: 70px;
+}
+
+.navbar-container img {
+  height: 35px;
+}
+
+.navbar-container button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 10px;
+}
+
+.navbar-container button img {
+  height: 35px;
+  width: auto;
+}
+
+@media (min-width: 768px) {
+  .navbar-container {
+    height: 35px;
+  }
+}

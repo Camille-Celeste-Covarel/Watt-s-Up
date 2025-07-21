@@ -34,22 +34,27 @@ const router = createBrowserRouter([
       {
         path: "/login",
         element: <LoginPage />,
+        handle: { isOverlay: true },
       },
       {
         path: "/register",
         element: <RegisterPage />,
+        handle: { isOverlay: true },
       },
       {
         path: "/forgot-password",
         element: <ForgotPassword />,
+        handle: { isOverlay: true },
       },
       {
         path: "/reset-password",
         element: <ResetPassword />,
+        handle: { isOverlay: true },
       },
       {
         path: "/informations",
         element: <InfoPage />,
+        handle: { isOverlay: true },
       },
       {
         path: "/reservations",

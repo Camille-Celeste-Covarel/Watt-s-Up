@@ -42,3 +42,9 @@
   height: 100%;
   width: 100%;
 }
+
+@media (min-width: 768px) {
+  .station-details-overlay {
+    height: calc(100% - 35px);
+  }
+}
