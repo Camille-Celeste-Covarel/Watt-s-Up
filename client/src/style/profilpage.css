@@ -10,18 +10,39 @@
   background-color: var(--fondamental-color, #f2c641);
   padding: 2rem 1.5rem;
   margin-bottom: 2rem;
-  max-width: 600px;
   margin-left: auto;
   margin-right: auto;
 }
 
 .profil-avatar-block {
   display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.profil-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.profil-names {
+  display: flex;
   flex-direction: column;
+  min-width: 150px;
+}
+
+.profil-names p {
+  margin: 0;
+}
+
+.profil-infos {
+  margin-top: 1.5rem;
 }
 
 .profil-infos p {
-  margin: 0.3rem 0;
+  margin: 0.1rem 0;
 }
 
 .profil-vehicle-section {

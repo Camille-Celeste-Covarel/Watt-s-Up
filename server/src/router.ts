@@ -1,5 +1,6 @@
+import path from "node:path";
 import express from "express";
-import upload from "./config/multer";
+import multer from "multer";
 import { importCsv } from "./controllers/importController";
 import authenticateToken from "./middleware/isConnected";
 import requestActions from "./modules/requestActions";
@@ -11,6 +12,23 @@ import reservationRoutes from "./routes/reservation.routes";
 import { startCronJobs } from "./tools/cron.service";
 
 const router = express.Router();
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    if (file.fieldname === "avatar") {
+      cb(null, "uploads/avatars/");
+    } else if (file.fieldname === "vehicle_photo") {
+      cb(null, "uploads/vehicle_photos/");
+    } else {
+      cb(null, "uploads/");
+    }
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    cb(null, `${Date.now()}-${Math.round(Math.random() * 1e9)}${ext}`);
+  },
+});
+const upload = multer({ storage });
+const multiUpload = multer({ storage });
 
 /* ************************************************************************* */
 // 🌍 Routes PUBLIQUES (accessibles à tous)
@@ -18,7 +36,14 @@ const router = express.Router();
 
 // Routes d'authentification
 router.post("/auth/login", userActions.login);
-router.post("/auth/register", userActions.register);
+router.post(
+  "/auth/register",
+  multiUpload.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "vehicle_photo", maxCount: 1 },
+  ]),
+  userActions.register,
+);
 router.post("/auth/logout", userActions.logout);
 router.post("/auth/forgot-password", userActions.forgotPassword);
 router.post("/auth/reset-password", userActions.resetPassword);
@@ -42,8 +67,9 @@ router.use(authenticateToken);
 /* ************************************************************************* */
 
 // Routes utilisateurs
-router.get("/users", userActions.browse);
+router.get("/users/me", userActions.getMe);
 router.get("/users/:id", userActions.read);
+router.get("/users", userActions.browse);
 router.post("/users", userActions.add);
 router.put("/users/:id", userActions.edit);
 router.delete("/users/:id", userActions.destroy);

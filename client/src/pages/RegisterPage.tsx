@@ -77,6 +77,8 @@ function RegisterPage() {
   const [avatar, setAvatar] = useState<string>(avatarIcon);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [vehiclePhotoFile, setVehiclePhotoFile] = useState<File | null>(null);
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
@@ -171,27 +173,37 @@ function RegisterPage() {
 
     if (validateForm()) {
       try {
+        const formDataToSend = new FormData();
+        formDataToSend.append("email", formData.email);
+        formDataToSend.append("password", formData.password);
+        formDataToSend.append("first_name", formData.first_name);
+        formDataToSend.append("last_name", formData.last_name);
+        formDataToSend.append("birthdate", formData.birthdate);
+        formDataToSend.append("address", formData.address);
+        formDataToSend.append("address_bis", formData.address_bis);
+        formDataToSend.append("city", formData.city);
+        formDataToSend.append("postcode", formData.postcode);
+        formDataToSend.append("country", formData.country);
+        formDataToSend.append("gender", formData.gender);
+
+        // AJOUTE ICI :
+        formDataToSend.append("vehicle_name", formData.vehicle_name);
+        formDataToSend.append("license_plate", formData.license_plate);
+        formDataToSend.append("id_plug", formData.id_plug);
+
+        if (avatarFile) {
+          formDataToSend.append("avatar", avatarFile);
+        }
+
+        if (vehiclePhotoFile) {
+          formDataToSend.append("vehicle_photo", vehiclePhotoFile);
+        }
+
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/auth/register`,
           {
             method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              email: formData.email,
-              password: formData.password,
-              first_name: formData.first_name,
-              last_name: formData.last_name,
-              birthdate: formData.birthdate,
-              address: formData.address,
-              address_bis: formData.address_bis,
-              city: formData.city,
-              postcode: formData.postcode,
-              country: formData.country,
-              gender: formData.gender,
-              avatar_url: avatar,
-            }),
+            body: formDataToSend,
           },
         );
 
@@ -211,8 +223,8 @@ function RegisterPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (file) {
+      setAvatarFile(file);
       const imageUrl = URL.createObjectURL(file);
       setAvatar(imageUrl);
     }
@@ -228,6 +240,7 @@ function RegisterPage() {
   const handleVehicleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setVehiclePhotoFile(file);
       const imageUrl = URL.createObjectURL(file);
       setFormData((prev) => ({
         ...prev,
