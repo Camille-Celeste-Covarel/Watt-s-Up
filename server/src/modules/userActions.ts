@@ -11,7 +11,11 @@ import { User } from "../models/_index";
 // Récupère tous les utilisateurs de la base de données.
 const browse: RequestHandler = async (req, res, next) => {
   try {
-    const users = await User.findAll();
+    const users = await User.findAll({
+      attributes: {
+        exclude: ["password", "reset_token", "reset_token_expiry"],
+      },
+    });
     res.json(users);
   } catch (err) {
     next(err);
@@ -23,8 +27,11 @@ const browse: RequestHandler = async (req, res, next) => {
 const read: RequestHandler = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const user = await User.findByPk(userId);
-
+    const user = await User.findByPk(userId, {
+      attributes: {
+        exclude: ["password", "reset_token", "reset_token_expiry"],
+      },
+    });
     if (user == null) {
       res.sendStatus(404);
     } else {
@@ -41,10 +48,12 @@ const add: RequestHandler = async (req, res, next) => {
   res.status(501).json({ message: "Fonction non implémentée." });
 };
 
+// Add (update)
 const edit: RequestHandler = async (req, res, next) => {
   try {
     const userId = req.params.id;
-    const [affectedCount] = await User.update(req.body, {
+    const { password, is_admin, ...updateData } = req.body;
+    const [affectedCount] = await User.update(updateData, {
       where: { id: userId },
     });
 

@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
-
+import { useAuth } from "../contexts/AuthContext.tsx";
 import "../style/loginpage.css";
 
 function LoginPage() {
@@ -8,6 +8,7 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -27,6 +28,8 @@ function LoginPage() {
       );
 
       if (response.ok) {
+        const data = await response.json();
+        login(data.user);
         navigate("/");
       } else {
         setError("Email ou mot de passe incorrect");

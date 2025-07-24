@@ -67,6 +67,29 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
+  // --- CRÉATION AUTOMATIQUE DES DOSSIERS D'UPLOAD ---
+  try {
+    // On cible le dossier 'uploads/avatars' à la racine du dossier 'server'
+    const avatarsDir = path.join(__dirname, "..", "uploads", "avatars");
+
+    // fs.mkdirSync avec { recursive: true } crée les dossiers parents si besoin
+    // et ne renvoie pas d'erreur s'ils existent déjà.
+    fs.mkdirSync(avatarsDir, { recursive: true });
+    console.log(
+      "✅ Le dossier pour les uploads d'avatars est prêt.",
+      LogLevel.INFO,
+    );
+  } catch (error) {
+    console.error(
+      "❌ Erreur lors de la création du dossier d'uploads :",
+      error,
+      LogLevel.CRITICAL,
+    );
+  }
+
+  // On sert le dossier 'uploads' comme un dossier statique
+  app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+
   // --- 2. ROUTEUR DE L'API ---
   // Toutes les requêtes commençant par /api sont gérées par notre routeur.
   app.use("/api", router);
