@@ -34,6 +34,9 @@ const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
 const uploadAvatar = multer({
   storage: avatarStorage,
   fileFilter,
+  limits: {
+    fileSize: 1024 * 1024 * 1, // 1 Mo max
+  },
 });
 
 export default uploadAvatar;
