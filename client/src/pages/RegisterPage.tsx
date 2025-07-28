@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
@@ -78,6 +78,14 @@ function RegisterPage() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [vehiclePhotoFile, setVehiclePhotoFile] = useState<File | null>(null);
+  const [plugs, setPlugs] = useState<{ id: string; name: string }[]>([]);
+
+  useEffect(() => {
+    fetch(`${import.meta.env.VITE_API_URL}/api/plugs`)
+      .then((res) => res.json())
+      .then((data) => setPlugs(data));
+  }, []);
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
@@ -157,32 +165,38 @@ function RegisterPage() {
     e.preventDefault();
 
     if (validateForm()) {
-      const dataToSend = new FormData();
-
-      dataToSend.append("email", formData.email);
-      dataToSend.append("password", formData.password);
-      dataToSend.append("first_name", formData.first_name);
-      dataToSend.append("last_name", formData.last_name);
-      dataToSend.append("birthdate", formData.birthdate);
-      dataToSend.append("address", formData.address);
-      dataToSend.append("address_bis", formData.address_bis);
-      dataToSend.append("city", formData.city);
-      dataToSend.append("postcode", formData.postcode);
-      dataToSend.append("country", formData.country);
-      dataToSend.append("gender", formData.gender);
-
-      if (avatarFile) {
-        dataToSend.append("avatar", avatarFile);
-      }
-
       try {
+        const formDataToSend = new FormData();
+        formDataToSend.append("email", formData.email);
+        formDataToSend.append("password", formData.password);
+        formDataToSend.append("first_name", formData.first_name);
+        formDataToSend.append("last_name", formData.last_name);
+        formDataToSend.append("birthdate", formData.birthdate);
+        formDataToSend.append("address", formData.address);
+        formDataToSend.append("address_bis", formData.address_bis);
+        formDataToSend.append("city", formData.city);
+        formDataToSend.append("postcode", formData.postcode);
+        formDataToSend.append("country", formData.country);
+        formDataToSend.append("gender", formData.gender);
+
+        // AJOUTE ICI :
+        formDataToSend.append("vehicle_name", formData.vehicle_name);
+        formDataToSend.append("license_plate", formData.license_plate);
+        formDataToSend.append("id_plug", formData.id_plug);
+
+        if (avatarFile) {
+          formDataToSend.append("avatar", avatarFile);
+        }
+
+        if (vehiclePhotoFile) {
+          formDataToSend.append("vehicle_photo", vehiclePhotoFile);
+        }
+
         const response = await fetch(
           `${import.meta.env.VITE_API_URL}/api/auth/register`,
           {
             method: "POST",
-            // On ne met PAS de header 'Content-Type'.
-            // Le navigateur le fera automatiquement pour `multipart/form-data`.
-            body: dataToSend,
+            body: formDataToSend,
           },
         );
 
@@ -203,11 +217,8 @@ function RegisterPage() {
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-
     if (file) {
-      // On stocke le fichier pour l'envoi
       setAvatarFile(file);
-      // On crée une URL locale pour la prévisualisation
       const imageUrl = URL.createObjectURL(file);
       setAvatar(imageUrl);
     }
@@ -224,6 +235,7 @@ function RegisterPage() {
   const handleVehicleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setVehiclePhotoFile(file);
       const imageUrl = URL.createObjectURL(file);
       setFormData((prev) => ({
         ...prev,
@@ -552,10 +564,12 @@ function RegisterPage() {
               className={errors.id_plug ? "error" : ""}
             >
               <option value="">Sélectionnez votre prise</option>
-              <option value="chademo">CHAdeMO</option>
-              <option value="type2">Type 2</option>
-              <option value="combo-ccs">Combo CCS</option>
-              <option value="type-ef">Type EF</option>
+              {Array.isArray(plugs) &&
+                plugs.map((plug) => (
+                  <option key={plug.id} value={plug.id}>
+                    {plug.name}
+                  </option>
+                ))}
             </select>
             {errors.id_plug && (
               <span className="error-message">{errors.id_plug}</span>

@@ -3,6 +3,7 @@ import type {
   UserAttributes,
   UserCreationAttributes,
 } from "../types/models/models";
+import { Vehicule } from "./vehicule.model";
 
 export class User
   extends Model<UserAttributes, UserCreationAttributes>
@@ -137,5 +138,7 @@ export class User
     );
   }
 
-  static associate(sequelize: Sequelize) {}
+  static associate(sequelize: Sequelize) {
+    User.hasMany(Vehicule, { foreignKey: "id_user", as: "vehicles" });
+  }
 }

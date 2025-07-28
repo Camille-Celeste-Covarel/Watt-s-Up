@@ -1,11 +1,29 @@
 import crypto from "node:crypto";
 import bcrypt from "bcrypt";
 import type { RequestHandler } from "express";
+import type { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { Op } from "sequelize";
 import type { AuthRequest } from "../middleware/isConnected";
-import { User } from "../models/_index";
+import { Plug, User, Vehicule } from "../models/_index";
+
+interface MulterFiles {
+  avatar?: Express.Multer.File[];
+  vehicle_photo?: Express.Multer.File[];
+}
+
+type VehiculeWithPlug = {
+  [key: string]: unknown;
+  photo_url?: string;
+  plug?: { name: string };
+};
+
+type UserWithVehicles = {
+  [key: string]: unknown;
+  avatar_url?: string;
+  vehicles?: VehiculeWithPlug[];
+};
 
 // L'opération BREAD : Browse (Read All)
 // Récupère tous les utilisateurs de la base de données.
@@ -48,7 +66,7 @@ const add: RequestHandler = async (req, res, next) => {
   res.status(501).json({ message: "Fonction non implémentée." });
 };
 
-// Add (update)
+// L'opération BREAD : Edit (Update)
 const edit: RequestHandler = async (req, res, next) => {
   try {
     const userId = req.params.id;
@@ -100,15 +118,25 @@ const register: RequestHandler = async (req, res, next) => {
       postcode,
       country,
       gender,
+      vehicle_name,
+      license_plate,
+      id_plug,
     } = req.body;
 
-    const avatarFileName = req.file ? req.file.filename : null;
+    const files = req.files as MulterFiles;
+    const avatarFile = files?.avatar?.[0];
+    const vehiclePhotoFile = files?.vehicle_photo?.[0];
+
+    const avatar_url = avatarFile ? avatarFile.filename : undefined;
+    const vehicle_photo_url = vehiclePhotoFile
+      ? vehiclePhotoFile.filename
+      : undefined;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      res.status(400).json({
-        error: "Un utilisateur avec cet email existe déjà",
-      });
+      res
+        .status(400)
+        .json({ error: "Un utilisateur avec cet email existe déjà" });
       return;
     }
 
@@ -126,9 +154,19 @@ const register: RequestHandler = async (req, res, next) => {
       postcode,
       country,
       gender,
-      avatar_url: avatarFileName ?? undefined,
+      avatar_url,
       is_admin: false,
     });
+
+    if (vehicle_name && license_plate && id_plug) {
+      await Vehicule.create({
+        name: vehicle_name,
+        license_plate,
+        id_plug,
+        id_user: user.id,
+        photo_url: vehicle_photo_url,
+      });
+    }
 
     res.status(201).json({
       message: "Utilisateur créé avec succès",
@@ -137,6 +175,7 @@ const register: RequestHandler = async (req, res, next) => {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
+        avatar_url: user.avatar_url,
       },
     });
   } catch (err) {
@@ -304,7 +343,6 @@ const resetPassword: RequestHandler = async (req, res, next) => {
   try {
     const { token, password } = req.body;
 
-    // Vérification de la longueur du mot de passe
     if (!password || password.length < 6) {
       res
         .status(400)
@@ -335,11 +373,50 @@ const resetPassword: RequestHandler = async (req, res, next) => {
   }
 };
 
-/* En vrai ça il va falloir l'organiser autrement.
-Ce n'est pas censé être un bordel comme ça
-Que ça soit crud ou bread
-On ne devrait pas avoir autant de logique
-Eparpillé à la base des routes */
+const getMe = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  try {
+    const user = await User.findByPk(req.user?.id, {
+      attributes: {
+        exclude: ["password", "reset_token", "reset_token_expiry"],
+      },
+      include: [
+        {
+          model: Vehicule,
+          as: "vehicles",
+          include: [
+            {
+              model: Plug,
+              as: "plug",
+              attributes: ["name"],
+            },
+          ],
+        },
+      ],
+    });
+    if (!user) {
+      res.status(404).json({ message: "Utilisateur non trouvé" });
+      return;
+    }
+
+    const userJson = user.toJSON() as unknown as UserWithVehicles;
+
+    if (userJson.avatar_url) {
+      userJson.avatar_url = `/api/uploads/avatars/${userJson.avatar_url}`;
+    }
+    if (userJson.vehicles) {
+      userJson.vehicles = userJson.vehicles.map((v) => ({
+        ...v,
+        photo_url: v.photo_url
+          ? `/api/uploads/vehicules/${v.photo_url}`
+          : undefined,
+      }));
+    }
+
+    res.json(userJson);
+  } catch (err) {
+    next(err);
+  }
+};
 
 export default {
   browse,
@@ -353,4 +430,5 @@ export default {
   forgotPassword,
   resetPassword,
   check,
+  getMe,
 };

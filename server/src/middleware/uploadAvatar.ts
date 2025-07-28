@@ -1,35 +1,41 @@
+import fs from "node:fs";
 import path from "node:path";
-import type { Request } from "express";
 import multer from "multer";
 
 const avatarStorage = multer.diskStorage({
-  destination: (req: Request, file: Express.Multer.File, cb) => {
-    cb(null, path.join(__dirname, "..", "..", "public/uploads/avatars"));
+  destination: (req, file, cb) => {
+    let dest = "";
+    if (file.fieldname === "avatar") {
+      dest = path.join(__dirname, "..", "..", "public/uploads/avatars");
+    } else if (file.fieldname === "vehicle_photo") {
+      dest = path.join(__dirname, "..", "..", "public/uploads/vehicules");
+    }
+    // Crée le dossier si besoin
+    fs.mkdirSync(dest, { recursive: true });
+    cb(null, dest);
   },
-  filename: (req: Request, file: Express.Multer.File, cb) => {
+  filename: (req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const extension = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${extension}`);
+    cb(
+      null,
+      `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`,
+    );
   },
 });
 
-const imageFileFilter = (
-  req: Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback,
-) => {
+const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
-    cb(new Error("Le fichier n'est pas une image !"));
+    cb(new Error("Seules les images sont autorisées !"));
   }
 };
 
 const uploadAvatar = multer({
   storage: avatarStorage,
-  fileFilter: imageFileFilter,
+  fileFilter,
   limits: {
-    fileSize: 1024 * 1024 * 5,
+    fileSize: 1024 * 1024 * 1, // 1 Mo max
   },
 });
 

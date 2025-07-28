@@ -5,6 +5,7 @@ import { getImportHistory, importCsv } from "./controllers/importController";
 import isAdmin from "./middleware/isAdmin";
 import authenticateToken from "./middleware/isConnected";
 import uploadAvatar from "./middleware/uploadAvatar";
+import plugActions from "./modules/plugActions";
 import requestActions from "./modules/requestActions";
 import stationsActions from "./modules/stationsActions";
 import userActions from "./modules/userActions";
@@ -24,7 +25,10 @@ router.use(express.static(path.join(__dirname, "..", "public")));
 router.post("/auth/login", userActions.login);
 router.post(
   "/auth/register",
-  uploadAvatar.single("avatar"),
+  uploadAvatar.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "vehicle_photo", maxCount: 1 },
+  ]),
   userActions.register,
 );
 
@@ -38,6 +42,9 @@ router.get("/stations", stationsActions.browse);
 router.get("/stations/visible", stationsActions.browseVisible);
 router.get("/stations/:id", stationsActions.read);
 
+// Routes pour les plugs
+router.get("/plugs", plugActions.browse);
+
 /* ************************************************************************* */
 // 🛡️ Wall d'autorisation - Tout ce qui suit nécessite d'être connecté
 /* ************************************************************************* */
@@ -47,6 +54,8 @@ router.use(authenticateToken);
 /* ************************************************************************* */
 // 🔒 Routes PROTÉGÉES (utilisateur connecté requis)
 /* ************************************************************************* */
+
+router.get("/users/me", userActions.getMe);
 
 // Réservations
 router.use("/books", bookRoutes);
@@ -67,8 +76,8 @@ router.use(isAdmin);
 /* ************************************************************************* */
 
 // Routes utilisateurs
-router.get("/users", userActions.browse);
 router.get("/users/:id", userActions.read);
+router.get("/users", userActions.browse);
 router.post("/users", userActions.add);
 router.put("/users/:id", userActions.edit);
 router.delete("/users/:id", userActions.destroy);

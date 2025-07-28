@@ -66,6 +66,7 @@ async function startServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
+  app.use("/uploads", express.static("uploads"));
 
   // --- CRÉATION AUTOMATIQUE DES DOSSIERS D'UPLOAD ---
   try {
