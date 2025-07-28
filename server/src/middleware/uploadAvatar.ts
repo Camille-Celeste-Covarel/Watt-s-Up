@@ -23,6 +23,17 @@ const avatarStorage = multer.diskStorage({
   },
 });
 
-const uploadAvatar = multer({ storage: avatarStorage });
+const fileFilter: multer.Options["fileFilter"] = (req, file, cb) => {
+  if (file.mimetype.startsWith("image/")) {
+    cb(null, true);
+  } else {
+    cb(new Error("Seules les images sont autorisées !"));
+  }
+};
+
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  fileFilter,
+});
 
 export default uploadAvatar;

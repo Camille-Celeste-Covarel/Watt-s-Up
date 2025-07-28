@@ -13,6 +13,18 @@ interface MulterFiles {
   vehicle_photo?: Express.Multer.File[];
 }
 
+type VehiculeWithPlug = {
+  [key: string]: unknown;
+  photo_url?: string;
+  plug?: { name: string };
+};
+
+type UserWithVehicles = {
+  [key: string]: unknown;
+  avatar_url?: string;
+  vehicles?: VehiculeWithPlug[];
+};
+
 // L'opération BREAD : Browse (Read All)
 // Récupère tous les utilisateurs de la base de données.
 const browse: RequestHandler = async (req, res, next) => {
@@ -396,18 +408,6 @@ const getMe = async (req: AuthRequest, res: Response, next: NextFunction) => {
   } catch (err) {
     next(err);
   }
-};
-
-type VehiculeWithPlug = {
-  [key: string]: unknown;
-  photo_url?: string;
-  plug?: { name: string };
-};
-
-type UserWithVehicles = {
-  [key: string]: unknown;
-  avatar_url?: string;
-  vehicles?: VehiculeWithPlug[];
 };
 
 export default {
