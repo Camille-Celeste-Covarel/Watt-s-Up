@@ -1,14 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import "./ImportHistory.css";
-
-interface HistoryEntry {
-  import_id: string;
-  status: "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED" | "CANCELLED";
-  import_date: string;
-  successful_lines: number;
-  total_lines_processed: number;
-}
+import type { HistoryEntry } from "../../types/components/componentsTypes.ts";
 
 const fetchImportHistory = async (): Promise<HistoryEntry[]> => {
   const response = await fetch(

@@ -1,9 +1,6 @@
 import { type ReactNode, createContext, useCallback, useContext } from "react";
 import { useNavigate } from "react-router-dom";
-
-interface OverlayContextType {
-  closeOverlay: () => void;
-}
+import type { OverlayContextType } from "../../types/contexts/contextsTypes";
 
 const OverlayContext = createContext<OverlayContextType | undefined>(undefined);
 

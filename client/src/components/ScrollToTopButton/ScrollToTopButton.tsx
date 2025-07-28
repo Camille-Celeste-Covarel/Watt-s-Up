@@ -1,37 +1,56 @@
 import { useEffect, useState } from "react";
 import "./ScrollToTopButton.css";
+import type { ScrollToTopButtonProps } from "../../types/components/componentsTypes";
 
-const ScrollToTopButton = () => {
+const ScrollToTopButton = ({ targetRef }: ScrollToTopButtonProps) => {
   const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
+    const targetElement = targetRef?.current;
+    const listenerTarget = targetElement ?? window;
+
     const handleScroll = () => {
-      if (window.scrollY > 300) {
+      const scrollTop = targetElement
+        ? targetElement.scrollTop
+        : window.scrollY;
+
+      if (scrollTop > 300) {
         setIsVisible(true);
       } else {
         setIsVisible(false);
       }
     };
 
-    window.addEventListener("scroll", handleScroll);
+    if (listenerTarget) {
+      listenerTarget.addEventListener("scroll", handleScroll, {
+        passive: true,
+      });
+    }
 
     return () => {
-      window.removeEventListener("scroll", handleScroll);
+      if (listenerTarget) {
+        listenerTarget.removeEventListener("scroll", handleScroll);
+      }
     };
-  }, []);
+  }, [targetRef]);
 
   const scrollToTop = () => {
-    window.scrollTo({
+    const scrollableElement = targetRef?.current ?? window;
+    scrollableElement.scrollTo({
       top: 0,
       behavior: "smooth",
     });
   };
 
+  const buttonClass = `scroll-to-top-button ${isVisible ? "visible" : ""} ${
+    targetRef ? "in-container" : ""
+  }`;
+
   return (
     <button
       onClick={scrollToTop}
       type="button"
-      className={`scroll-to-top-button ${isVisible ? "visible" : ""}`}
+      className={buttonClass}
       aria-label="Retour en haut de la page"
       title="Retour en haut"
     >

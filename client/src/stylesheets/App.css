@@ -46,7 +46,7 @@ body {
 }
 
 :root {
-  --fondamental-color: #f2c641;
+  --fondamental-color: rgb(242, 198, 65);
   --quinte-color: #40352c;
   --seconde-color: #d9631e;
   --tierce-color: #f2f2f2;

@@ -7,8 +7,8 @@ import type {
   EnrichedStationAttributes,
   Plug,
   TerminalGroup,
-} from "../../types/stationDetailsTypes.ts";
-import { createReservation } from "../../utils/reservationApi.ts"; // --- CORRECTION ---
+} from "../../types/components/componentsTypes.ts";
+import { createReservation } from "../../utils/reservationApi.ts";
 import { fetchStationDetails } from "../../utils/stationApi.ts";
 import { useToastStore } from "../../utils/useToast.ts";
 import { PlugIcon } from "../DisplaySVGPlug/DisplaySVGPlug";

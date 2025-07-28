@@ -1,4 +1,4 @@
-import type { EnrichedStationAttributes } from "../types/stationDetailsTypes";
+import type { EnrichedStationAttributes } from "../types/components/componentsTypes.ts";
 import type { StationMapAttributes } from "../types/types_maplibre";
 
 export async function fetchVisibleStations(

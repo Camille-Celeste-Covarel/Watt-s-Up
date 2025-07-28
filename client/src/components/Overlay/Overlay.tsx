@@ -1,5 +1,6 @@
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
+import ScrollToTopButton from "../ScrollToTopButton/ScrollToTopButton.tsx";
 
 export function Overlay({
   children,
@@ -9,6 +10,7 @@ export function Overlay({
 }) {
   const { closeOverlay } = useOverlay();
   const [isAnimatingOpen, setIsAnimatingOpen] = useState(false);
+  const contentRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -42,7 +44,10 @@ export function Overlay({
       >
         &times;
       </button>
-      <div className="station-details-content">{children}</div>
+      <div ref={contentRef} className="station-details-content">
+        {children}
+      </div>
+      <ScrollToTopButton targetRef={contentRef} />
     </div>
   );
 }

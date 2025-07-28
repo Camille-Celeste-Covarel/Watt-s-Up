@@ -83,7 +83,6 @@ const CsvImporter: React.FC = () => {
     return `linear-gradient(to right, ${red}, ${yellow} ${yellowStopPosition}%, ${currentColor})`;
   };
 
-  // Le dashboard est visible si un import est en cours ou vient de se terminer.
   const isDashboardVisible = isImporting || importId;
 
   return (
