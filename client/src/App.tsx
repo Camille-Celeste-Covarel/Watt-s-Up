@@ -4,6 +4,7 @@ import { Overlay } from "./components/Overlay/Overlay.tsx";
 import "./components/Overlay/Overlay.css";
 import Footer from "./components/Footer/Footer.tsx";
 import Header from "./components/Header/Header.tsx";
+import ToastContainer from "./components/Toast/ToastContainer";
 import { AuthProvider } from "./contexts/AuthContext";
 import { FilterProvider } from "./contexts/FilterContext.tsx";
 import { OverlayProvider } from "./contexts/OverlayContext/OverlayContext.tsx";
@@ -45,6 +46,7 @@ function AppContent() {
         <div className="main-page-container">{routeContent}</div>
       )}
       <Footer />
+      <ToastContainer />
     </div>
   );
 }

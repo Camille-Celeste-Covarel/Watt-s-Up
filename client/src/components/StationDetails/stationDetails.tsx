@@ -1,49 +1,83 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useAuth } from "../../contexts/AuthContext";
 import type {
   EnrichedStationAttributes,
   Plug,
   TerminalGroup,
 } from "../../types/stationDetailsTypes.ts";
-import { fetchStationDetails } from "../../utils/stationApi.ts"; // Assurez-vous que cette fonction existe et accepte un ID
+import { fetchStationDetails } from "../../utils/stationApi.ts";
+import { useToastStore } from "../../utils/useToast.ts";
 import { PlugIcon } from "../DisplaySVGPlug/DisplaySVGPlug";
 import "./stationDetails.css";
 
-export function StationDetails() {
-  // 1. On récupère l'ID directement depuis l'URL grâce à React Router
-  const { id: stationId } = useParams<{ id: string }>();
+const createReservation = async (payload: {
+  stationId: string;
+  power: number;
+  plugIds: string[];
+}) => {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/reservations`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify(payload),
+    },
+  );
 
-  // Hooks pour l'état de l'interface utilisateur (inchangés)
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "La réservation a échoué.");
+  }
+  return data;
+};
+
+export function StationDetails() {
+  const { id: stationId } = useParams<{ id: string }>();
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
-  const [isReserving, setIsReserving] = useState(false);
-  const [reservationError, setReservationError] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const { showToast } = useToastStore();
+  const navigate = useNavigate();
 
-  // 2. On utilise useQuery pour récupérer les données de manière moderne et robuste
   const {
     data: station,
     isLoading,
     error,
   } = useQuery<EnrichedStationAttributes, Error>({
-    // La clé de la requête inclut l'ID pour être unique et se mettre à jour correctement
     queryKey: ["stationDetails", stationId],
-    // La fonction de requête est appelée par useQuery
     queryFn: () => {
-      if (!stationId) {
-        // Ce garde-fou est essentiel
-        throw new Error("Station ID is missing in URL.");
-      }
-      // On assume que vous avez une fonction qui fetch par ID
+      if (!stationId) throw new Error("Station ID is missing in URL.");
       return fetchStationDetails(stationId);
     },
-    // La requête ne s'exécute que si l'ID est bien présent dans l'URL
     enabled: !!stationId,
   });
 
-  // 3. Votre logique de groupement des terminaux reste INCHANGÉE
+  const handleMutationError = (err: unknown) => {
+    const message =
+      err instanceof Error ? err.message : "Une erreur inconnue est survenue.";
+    showToast({ type: "error", message });
+  };
+
+  const reservationMutation = useMutation({
+    mutationFn: createReservation,
+    onSuccess: () => {
+      showToast({
+        type: "success",
+        message: "Réservation confirmée !",
+      });
+      void queryClient.invalidateQueries({
+        queryKey: ["stationDetails", stationId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["reservations", "me"] });
+      setSelectedGroupKey(null);
+      setTimeout(() => navigate("/reservations"), 1500);
+    },
+    onError: handleMutationError, // Utilisation de la fonction
+  });
+
   const terminalGroups = useMemo(() => {
     if (!station?.terminals) return [];
     const groups = new Map<string, TerminalGroup>();
@@ -77,60 +111,25 @@ export function StationDetails() {
     setSelectedGroupKey(key === selectedGroupKey ? null : key);
   };
 
-  const handleReserve = async () => {
+  const handleReserve = () => {
     if (!isAuthenticated || !selectedGroupKey || !stationId) {
-      setReservationError("Veuillez sélectionner un groupe et être connecté.");
+      showToast({
+        type: "error",
+        message: "Veuillez sélectionner une borne et être connecté.",
+      });
       return;
     }
 
     const selectedGroup = terminalGroups.find(
       (g) => g.key === selectedGroupKey,
     );
-    if (!selectedGroup) {
-      setReservationError("Une erreur est survenue, groupe non trouvé.");
-      return;
-    }
+    if (!selectedGroup) return;
 
-    setIsReserving(true);
-    setReservationError(null);
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/reservations`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            stationId: stationId,
-            power: selectedGroup.power,
-            plugIds: selectedGroup.plugs.map((p) => p.id),
-          }),
-        },
-      );
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "La réservation a échoué.");
-      }
-
-      alert(
-        "Réservation confirmée ! Vous avez 30 minutes pour démarrer la charge.",
-      );
-      // On invalide la requête pour forcer le rafraîchissement des données
-      await queryClient.invalidateQueries({
-        queryKey: ["stationDetails", stationId],
-      });
-      setSelectedGroupKey(null);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Une erreur inconnue est survenue.";
-      setReservationError(errorMessage);
-    } finally {
-      setIsReserving(false);
-    }
+    reservationMutation.mutate({
+      stationId,
+      power: selectedGroup.power,
+      plugIds: selectedGroup.plugs.map((p) => p.id),
+    });
   };
 
   const handleCancel = () => {
@@ -274,9 +273,13 @@ export function StationDetails() {
               type="button"
               className="action-button reserve-button"
               onClick={handleReserve}
-              disabled={!selectedGroupKey || !isAuthenticated || isReserving}
+              disabled={
+                !selectedGroupKey ||
+                !isAuthenticated ||
+                reservationMutation.isPending
+              }
             >
-              {isReserving ? "Réservation..." : "Réserver"}
+              {reservationMutation.isPending ? "Réservation..." : "Réserver"}
             </button>
             <button
               type="button"
@@ -287,9 +290,6 @@ export function StationDetails() {
               Annuler
             </button>
           </div>
-          {reservationError && (
-            <p className="reservation-error-message">{reservationError}</p>
-          )}
         </>
       )}
     </div>
