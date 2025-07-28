@@ -4,6 +4,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -28,13 +29,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [isAdmin, setIsAdmin] = useState<boolean>(false);
 
+  const isAuthenticated = !!user;
+  const isAdmin = user?.isAdmin ?? false;
+
+  // --- FONCTIONS D'ACTION ---
+  // La fonction login met simplement à jour l'utilisateur.
   const login = useCallback((userData: User) => {
     setUser(userData);
-    setIsAdmin(userData.isAdmin);
-    setIsAuthenticated(true);
   }, []);
 
   const logout = useCallback(async () => {
@@ -43,15 +45,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         method: "POST",
         credentials: "include",
       });
-    } catch (e) {}
-    setUser(null);
-    setIsAdmin(false);
-    setIsAuthenticated(false);
+    } catch (error) {
+      console.error("Erreur lors de la déconnexion:", error);
+    } finally {
+      setUser(null);
+    }
   }, []);
 
   const checkAuth = useCallback(async () => {
-    setIsLoading(true);
-
     try {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/auth/check`,
@@ -63,16 +64,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (response.ok) {
         const data = await response.json();
-        setIsAuthenticated(true);
         setUser(data.user);
-        setIsAdmin(data.user.isAdmin);
       } else {
-        setIsAuthenticated(false);
-        setIsAdmin(false);
+        setUser(null);
       }
     } catch (error) {
-      setIsAdmin(false);
-      setIsAuthenticated(false);
+      console.error("Erreur lors de la vérification de la session:", error);
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
@@ -82,15 +80,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     checkAuth();
   }, [checkAuth]);
 
-  const value = {
-    user,
-    isAuthenticated,
-    isAdmin,
-    isLoading,
-    login,
-    logout,
-    checkAuth,
-  };
+  const value = useMemo(
+    () => ({
+      user,
+      isAuthenticated,
+      isAdmin,
+      isLoading,
+      login,
+      logout,
+      checkAuth,
+    }),
+    [user, isAuthenticated, isAdmin, isLoading, login, logout, checkAuth],
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
