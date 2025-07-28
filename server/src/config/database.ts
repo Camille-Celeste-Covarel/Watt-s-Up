@@ -1,5 +1,5 @@
 import { type Dialect, Sequelize } from "sequelize";
-import type { DbConfig, ValidDbConfig } from "./database_types";
+import type { DbConfig, ValidDbConfig } from "../types/database_types";
 
 /**
  * Valide et transforme la configuration de la base de données.

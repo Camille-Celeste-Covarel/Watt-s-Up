@@ -1,0 +1,97 @@
+.success-page-container {
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 700px;
+  margin: 2rem auto;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.success-page-container h2 {
+  color: #28a745;
+  margin-bottom: 1rem;
+  font-size: 2rem;
+}
+
+.success-page-container p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  color: #555;
+}
+
+.success-page-container .success-actions {
+  margin-top: 2rem;
+}
+
+.success-page-container.error h2 {
+  color: #dc3545;
+}
+
+.expires-info {
+  margin-top: 2rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+
+/* --- Styles pour le résumé de la réservation (anciennement la carte) --- */
+.reservation-summary {
+  /* On retire le fond, la bordure, l'ombre, etc. */
+  margin: 2rem 0;
+  text-align: left;
+}
+
+.summary-header {
+  padding: 1rem 0; /* Moins de padding vertical */
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.summary-header h3 {
+  margin: 0 0 0.25rem 0;
+  color: #1a3a6b;
+}
+
+.summary-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.summary-details {
+  display: flex;
+  padding: 1.5rem 0; /* Moins de padding vertical */
+  gap: 2rem;
+}
+
+.detail-block {
+  flex: 1;
+}
+
+.detail-block h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #333;
+  font-size: 1rem;
+}
+
+.detail-block ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #555;
+}
+
+.detail-block li {
+  margin-bottom: 0.5rem;
+}
+
+.status {
+  font-weight: bold;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 0.85rem;
+}
+
+.status-ACTIVE {
+  background-color: #007bff;
+}

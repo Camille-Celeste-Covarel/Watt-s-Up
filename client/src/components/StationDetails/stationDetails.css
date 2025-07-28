@@ -219,6 +219,28 @@
   text-align: center;
 }
 
+.reservation-success-view {
+  text-align: center;
+  padding: 40px 20px;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.reservation-success-view h2 {
+  color: #28a745;
+  margin-bottom: 1rem;
+}
+
+.reservation-success-view p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 1.5rem;
+  color: #555;
+}
+
+.reservation-success-view .success-actions {
+  margin-top: 2rem;
+}
+
 /* --- Styles responsive --- */
 @media (max-width: 768px) {
   .group-power {

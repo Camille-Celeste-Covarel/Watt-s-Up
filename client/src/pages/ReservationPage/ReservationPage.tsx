@@ -1,19 +1,20 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
+import Modal from "../../components/Modal/Modal";
 import { useAuth } from "../../contexts/AuthContext";
+import { useToastStore } from "../../utils/useToast";
 import "./ReservationPage.css";
 
 interface Plug {
   id: string;
   name: string;
 }
-
 interface Station {
   id: string;
   nom_station: string;
   adresse_station: string;
 }
-
 interface Terminal {
   id: string;
   puissance_nominale: number;
@@ -21,7 +22,6 @@ interface Terminal {
   station: Station;
   plugs: Plug[];
 }
-
 interface Reservation {
   id: string;
   status: "ACTIVE" | "IN_USE" | "COMPLETED" | "EXPIRED" | "CANCELLED";
@@ -32,8 +32,6 @@ interface Reservation {
   terminal: Terminal;
 }
 
-// --- Fonctions utilitaires
-
 const statusLabels: { [key in Reservation["status"]]: string } = {
   ACTIVE: "Réservée",
   IN_USE: "En charge",
@@ -41,7 +39,6 @@ const statusLabels: { [key in Reservation["status"]]: string } = {
   EXPIRED: "Expirée",
   CANCELLED: "Annulée",
 };
-
 const getRemainingTime = (expiresAt: string) => {
   const diff = new Date(expiresAt).getTime() - new Date().getTime();
   if (diff <= 0) return "Expirée";
@@ -49,73 +46,109 @@ const getRemainingTime = (expiresAt: string) => {
   const seconds = Math.floor((diff % 60000) / 1000);
   return `${minutes}m ${seconds}s`;
 };
-
 const getElapsedTime = (startTime: string) => {
   const diff = new Date().getTime() - new Date(startTime).getTime();
   if (diff < 0) return "00:00:00";
-
   const hours = String(Math.floor(diff / 3600000)).padStart(2, "0");
   const minutes = String(Math.floor((diff % 3600000) / 60000)).padStart(2, "0");
   const seconds = String(Math.floor((diff % 60000) / 1000)).padStart(2, "0");
   return `${hours}:${minutes}:${seconds}`;
 };
-
-// --- Sous-composant pour l'affichage ---
 const ReservationCard = ({ reservation }: { reservation: Reservation }) => {
   const { terminal } = reservation;
   const { station, plugs } = terminal;
-
   const formattedDate = new Date(reservation.createdAt).toLocaleDateString(
     "fr-FR",
-    {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    },
+    { year: "numeric", month: "long", day: "numeric" },
   );
-
   return (
     <div className="reservation-card">
+      {" "}
       <div className="reservation-card-header">
-        <h3>{station.nom_station}</h3>
-        <p>{station.adresse_station}</p>
-      </div>
-
+        {" "}
+        <h3>{station.nom_station}</h3> <p>{station.adresse_station}</p>{" "}
+      </div>{" "}
       <div className="reservation-details">
+        {" "}
         <div className="detail-block">
-          <h4>Borne</h4>
+          {" "}
+          <h4>Borne</h4>{" "}
           <ul>
-            <li>Puissance: {terminal.puissance_nominale} kW</li>
-            <li>Prises: {plugs.map((p) => p.name).join(", ")}</li>
-          </ul>
-        </div>
+            {" "}
+            <li>Puissance: {terminal.puissance_nominale} kW</li>{" "}
+            <li>Prises: {plugs.map((p) => p.name).join(", ")}</li>{" "}
+          </ul>{" "}
+        </div>{" "}
         <div className="detail-block">
-          <h4>Réservation</h4>
+          {" "}
+          <h4>Réservation</h4>{" "}
           <ul>
-            <li>Date: {formattedDate}</li>
+            {" "}
+            <li>Date: {formattedDate}</li>{" "}
             <li>
+              {" "}
               Statut:{" "}
               <span className={`status status-${reservation.status}`}>
-                {statusLabels[reservation.status]}
-              </span>
-            </li>
-          </ul>
-        </div>
-      </div>
+                {" "}
+                {statusLabels[reservation.status]}{" "}
+              </span>{" "}
+            </li>{" "}
+          </ul>{" "}
+        </div>{" "}
+      </div>{" "}
     </div>
   );
 };
 
-// --- Composant principal ---
-export function ReservationPage() {
-  const { isAuthenticated, isLoading } = useAuth();
-  const [reservations, setReservations] = useState<Reservation[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isActionLoading, setIsActionLoading] = useState(false);
+const apiAction = async (url: string, method: "POST" | "DELETE") => {
+  const response = await fetch(url, { method, credentials: "include" });
+  const data = await response.json();
+  if (!response.ok) {
+    throw new Error(data.message || "L'opération a échoué.");
+  }
+  return data;
+};
 
-  // --- Filtrage des réservations ---
-  const { activeReservation, pastReservations } = useMemo(() => {
+export function ReservationPage() {
+  const { isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { showToast } = useToastStore();
+  const queryClient = useQueryClient();
+
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    action: null as "cancel" | "stop" | null,
+    reservationId: null as string | null,
+    title: "",
+    message: "",
+  });
+  const [remainingTime, setRemainingTime] = useState("");
+
+  const {
+    data: reservations = [],
+    isLoading: isReservationsLoading,
+    error,
+  } = useQuery<Reservation[], Error>({
+    queryKey: ["reservations", "me"],
+    queryFn: async () => {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/reservations/me`,
+        { credentials: "include" },
+      );
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(
+          data.message || "Erreur lors du chargement des réservations.",
+        );
+      }
+      return response.json();
+    },
+    enabled: isAuthenticated,
+  });
+
+  const { activeReservation, pastReservations } = useMemo((): {
+    activeReservation: Reservation | undefined;
+    pastReservations: Reservation[];
+  } => {
     const active = reservations.find(
       (r) => r.status === "ACTIVE" || r.status === "IN_USE",
     );
@@ -125,178 +158,164 @@ export function ReservationPage() {
     return { activeReservation: active, pastReservations: past };
   }, [reservations]);
 
-  const [remainingTime, setRemainingTime] = useState("");
+  const handleMutationError = (err: unknown) => {
+    const message =
+      err instanceof Error ? err.message : "Une erreur inconnue est survenue.";
+    showToast({ type: "error", message });
+  };
 
-  // On enveloppe la fonction dans useCallback pour la stabiliser
-  const fetchReservations = useCallback(async () => {
-    if (!isAuthenticated) {
-      setLoading(false);
-      setError("Vous devez être connecté pour voir vos réservations.");
-      return;
-    }
+  // --- Mutations distinctes pour chaque action (plus clair) ---
+  const startChargeMutation = useMutation({
+    mutationFn: (reservationId: string) =>
+      apiAction(
+        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}/start`,
+        "POST",
+      ),
+    onSuccess: () => {
+      showToast({ type: "success", message: "La charge a bien démarré !" });
+      void queryClient.invalidateQueries({ queryKey: ["reservations", "me"] });
+    },
+    onError: handleMutationError,
+  });
 
-    setLoading(true);
-    setError(null);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/reservations/me`,
-        {
-          credentials: "include",
-        },
-      );
+  const cancelReservationMutation = useMutation({
+    mutationFn: (reservationId: string) =>
+      apiAction(
+        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}`,
+        "DELETE",
+      ),
+    onSuccess: () => {
+      showToast({
+        type: "success",
+        message: "Réservation annulée avec succès.",
+      });
+      void queryClient.invalidateQueries({ queryKey: ["reservations", "me"] });
+    },
+    onError: handleMutationError,
+    onSettled: () =>
+      setModalState({
+        isOpen: false,
+        action: null,
+        reservationId: null,
+        title: "",
+        message: "",
+      }),
+  });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(
-          data.message || "Erreur lors du chargement des réservations.",
-        );
-      }
+  const stopChargeMutation = useMutation({
+    mutationFn: (reservationId: string) =>
+      apiAction(
+        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}/stop`,
+        "POST",
+      ),
+    onSuccess: () => {
+      showToast({ type: "success", message: "Charge arrêtée avec succès." });
+      void queryClient.invalidateQueries({ queryKey: ["reservations", "me"] });
+    },
+    onError: handleMutationError,
+    onSettled: () =>
+      setModalState({
+        isOpen: false,
+        action: null,
+        reservationId: null,
+        title: "",
+        message: "",
+      }),
+  });
 
-      const data: Reservation[] = await response.json();
-      setReservations(data);
-    } catch (err) {
-      console.error("Échec du chargement des réservations:", err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Une erreur inconnue est survenue.",
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, [isAuthenticated]);
+  const isActionPending =
+    startChargeMutation.isPending ||
+    cancelReservationMutation.isPending ||
+    stopChargeMutation.isPending;
 
+  // --- Fonctions de gestion des événements ---
   useEffect(() => {
     if (!activeReservation) return;
-
     const interval = setInterval(() => {
-      if (activeReservation.status === "ACTIVE") {
+      if (activeReservation.status === "ACTIVE")
         setRemainingTime(getRemainingTime(activeReservation.expires_at));
-      } else if (
+      else if (
         activeReservation.status === "IN_USE" &&
         activeReservation.charge_started_at
-      ) {
+      )
         setRemainingTime(getElapsedTime(activeReservation.charge_started_at));
-      }
     }, 1000);
-
     return () => clearInterval(interval);
   }, [activeReservation]);
 
-  useEffect(() => {
-    if (!isLoading) {
-      void fetchReservations();
-    }
-  }, [isLoading, fetchReservations]);
+  const openCancelModal = (reservationId: string) => {
+    setModalState({
+      isOpen: true,
+      action: "cancel",
+      reservationId,
+      title: "Annuler la réservation",
+      message: "Êtes-vous sûr de vouloir annuler cette réservation ?",
+    });
+  };
 
-  const handleCancelReservation = async (reservationId: string) => {
-    if (
-      !window.confirm("Êtes-vous sûr de vouloir annuler cette réservation ?")
-    ) {
-      return;
-    }
+  const openStopModal = (reservationId: string) => {
+    setModalState({
+      isOpen: true,
+      action: "stop",
+      reservationId,
+      title: "Arrêter la charge",
+      message: "Êtes-vous sûr de vouloir arrêter la charge en cours ?",
+    });
+  };
 
-    setIsActionLoading(true);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}`,
-        {
-          method: "DELETE",
-          credentials: "include",
-        },
-      );
+  const handleConfirmAction = () => {
+    if (!modalState.action || !modalState.reservationId) return;
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "L'annulation a échoué.");
-      }
-
-      await fetchReservations();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
-    } finally {
-      setIsActionLoading(false);
+    if (modalState.action === "cancel") {
+      cancelReservationMutation.mutate(modalState.reservationId);
+    } else if (modalState.action === "stop") {
+      stopChargeMutation.mutate(modalState.reservationId);
     }
   };
 
-  const handleStartCharge = async (reservationId: string) => {
-    setIsActionLoading(true);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}/start`,
-        {
-          method: "POST",
-          credentials: "include",
-        },
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "Le démarrage de la charge a échoué.");
-      }
-
-      await fetchReservations();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  const handleStopCharge = async (reservationId: string) => {
-    if (
-      !window.confirm("Êtes-vous sûr de vouloir arrêter la charge en cours ?")
-    ) {
-      return;
-    }
-
-    setIsActionLoading(true);
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/reservations/me/${reservationId}/stop`,
-        {
-          method: "POST",
-          credentials: "include",
-        },
-      );
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.message || "L'arrêt de la charge a échoué.");
-      }
-
-      await fetchReservations();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Une erreur est survenue.");
-    } finally {
-      setIsActionLoading(false);
-    }
-  };
-
-  if (loading || isLoading) {
+  if (isReservationsLoading || isAuthLoading)
     return (
       <div className="page-content">Chargement de vos réservations...</div>
     );
-  }
-
-  if (error) {
-    return <div className="page-content error">Erreur: {error}</div>;
-  }
-
-  if (!isAuthenticated) {
+  if (error)
+    return <div className="page-content error">Erreur: {error.message}</div>;
+  if (!isAuthenticated)
     return (
       <div className="page-content">
         Veuillez vous connecter pour voir vos réservations.
       </div>
     );
-  }
 
   return (
     <div className="page-content reservations-page">
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={() => setModalState({ ...modalState, isOpen: false })}
+        title={modalState.title}
+      >
+        <p>{modalState.message}</p>
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setModalState({ ...modalState, isOpen: false })}
+          >
+            Non, annuler
+          </button>
+          <button
+            type="button"
+            className="btn btn-danger"
+            onClick={handleConfirmAction}
+            disabled={isActionPending}
+          >
+            {isActionPending ? "Confirmation..." : "Oui, confirmer"}
+          </button>
+        </div>
+      </Modal>
+
       <h1>Mes Réservations</h1>
 
-      {/* --- Section Réservation en cours --- */}
-      {activeReservation && (
+      {activeReservation ? (
         <section className="reservation-section">
           <h2>
             {activeReservation.status === "IN_USE"
@@ -304,8 +323,6 @@ export function ReservationPage() {
               : "Borne réservée"}
           </h2>
           <ReservationCard reservation={activeReservation} />
-
-          {/* Affiche les infos et actions pour une réservation ACTIVE */}
           {activeReservation.status === "ACTIVE" && (
             <>
               <p>
@@ -315,30 +332,29 @@ export function ReservationPage() {
                 <button
                   type="button"
                   className="btn btn-primary"
-                  onClick={() => handleStartCharge(activeReservation.id)}
-                  disabled={isActionLoading}
+                  onClick={() =>
+                    startChargeMutation.mutate(activeReservation.id)
+                  }
+                  disabled={isActionPending}
                 >
                   Commencer la charge
                 </button>
                 <button
                   type="button"
                   className="btn btn-secondary"
-                  onClick={() => handleCancelReservation(activeReservation.id)}
-                  disabled={isActionLoading}
+                  onClick={() => openCancelModal(activeReservation.id)}
+                  disabled={isActionPending}
                 >
                   Annuler
                 </button>
               </div>
             </>
           )}
-
-          {/* Affiche les infos et actions pour une charge IN_USE */}
           {activeReservation.status === "IN_USE" && (
             <>
               <p style={{ marginTop: "1rem" }}>
                 Temps de charge : <strong>{remainingTime}</strong>
               </p>
-              {/* --- Ligne de debug pour le dev --- */}
               {activeReservation.session_ends_at && (
                 <p
                   style={{
@@ -357,8 +373,8 @@ export function ReservationPage() {
                 <button
                   type="button"
                   className="btn btn-danger"
-                  onClick={() => handleStopCharge(activeReservation.id)}
-                  disabled={isActionLoading}
+                  onClick={() => openStopModal(activeReservation.id)}
+                  disabled={isActionPending}
                 >
                   Arrêter la charge
                 </button>
@@ -366,9 +382,19 @@ export function ReservationPage() {
             </>
           )}
         </section>
+      ) : (
+        <section className="reservation-section">
+          <h2>Aucune réservation active</h2>
+          <p>
+            Vous n'avez pas de réservation en cours. Trouvez une borne et
+            réservez-la dès maintenant !
+          </p>
+          <Link to="/" className="btn">
+            Trouver une borne
+          </Link>
+        </section>
       )}
 
-      {/*Section Historique*/}
       {pastReservations.length > 0 && (
         <section className="reservation-section">
           <h2>Historique</h2>
@@ -389,7 +415,6 @@ export function ReservationPage() {
         </section>
       )}
 
-      {/* --- Section d'aide --- */}
       <section className="reservation-section">
         <h2>Un problème ?</h2>
         <p>

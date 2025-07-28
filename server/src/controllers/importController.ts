@@ -518,8 +518,8 @@ async function processCsvInBackground(
 
   // Enregistrement de l'import pour permettre l'annulation
   registerImport(importUuid);
-  // FUTURE: Métrique - Incrémenter le compteur 'imports_started_total'
-  // FUTURE: Métrique - Incrémenter la jauge 'imports_in_progress'
+  // [GRAFANA]: Métrique - Incrémenter le compteur 'imports_started_total'
+  // [GRAFANA]: Métrique - Incrémenter la jauge 'imports_in_progress'
 
   const currentErrorLogFile = path.join(
     ERROR_LOG_DIR,
@@ -609,7 +609,7 @@ async function processCsvInBackground(
       }
 
       totalProcessedCsvLines++;
-      // FUTURE: Métrique - Incrémenter le compteur 'csv_lines_processed_total'
+      // [GRAFANA]: Métrique - Incrémenter le compteur 'csv_lines_processed_total'
       linesProcessedSinceLastFlush++;
       const currentProgressPercentage = Math.floor(
         (totalProcessedCsvLines / totalLinesFromMetadata) * 100,
@@ -664,7 +664,7 @@ async function processCsvInBackground(
         }
       } else {
         totalErrorEntries++;
-        // FUTURE: Métrique - Incrémenter le compteur 'transformation_errors_total'
+        // [GRAFANA]: Métrique - Incrémenter le compteur 'transformation_errors_total'
         console.log(
           `Erreur de transformation détectée pour la ligne ${totalProcessedCsvLines}. Appel de logImportErrorToFile.`,
           LogLevel.DEBUG,
@@ -722,7 +722,7 @@ async function processCsvInBackground(
             const { successfulStations, errors: processErrors } =
               await processConsolidatedStations(stationsToFlush, importUuid);
             totalSuccessfulStations += successfulStations;
-            // FUTURE: Métrique - Ajouter 'successfulStations' au compteur 'stations_processed_total'
+            // [GRAFANA]: Métrique - Ajouter 'successfulStations' au compteur 'stations_processed_total'
             totalErrorEntries += processErrors.length;
             console.log(
               `processConsolidatedStations a retourné ${processErrors.length} erreurs pour ce flush. Écriture dans le log d'erreur.`,
@@ -831,8 +831,8 @@ async function processCsvInBackground(
       duration_ms: duration_ms,
     };
 
-    // FUTURE: Métrique - Décrémenter la jauge 'imports_in_progress'
-    // FUTURE: Métrique - Incrémenter le compteur 'imports_completed_total{status="..."}' avec le statut final
+    // [GRFANA]: Métrique - Décrémenter la jauge 'imports_in_progress'
+    // [GRFANA]: Métrique - Incrémenter le compteur 'imports_completed_total{status="..."}' avec le statut final
 
     let finalDataForNotification: ImportLogAttributes;
 
@@ -900,8 +900,8 @@ async function processCsvInBackground(
       }
 
       const duration_ms = new Date().getTime() - startTime.getTime();
-      // FUTURE: Métrique - Décrémenter la jauge 'imports_in_progress'
-      // FUTURE: Métrique - Incrémenter le compteur 'imports_completed_total{status="FAILED"}'
+      // [GRAFANA]: Métrique - Décrémenter la jauge 'imports_in_progress'
+      // [GRAFANA]: Métrique - Incrémenter le compteur 'imports_completed_total{status="FAILED"}'
       const status: ImportLogAttributes["status"] = "FAILED";
       const importSummary: ImportLogCreationAttributes = {
         import_id: importUuid,
@@ -949,9 +949,6 @@ async function processCsvInBackground(
           logError,
         );
       }
-
-      // Pas de `res.status` ici car la réponse a déjà été envoyée.
-      // On log juste l'erreur.
     }
   } finally {
     unregisterImport(importUuid);
@@ -970,8 +967,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   const importUuid = uuidv4();
   const filePath = (req.file as CustomFile).path;
   const originalFileName = (req.file as CustomFile).originalname;
-  // Pour une vraie application, ce nombre viendrait d'une analyse rapide du fichier.
-  const totalLinesFromMetadata = 135913;
+  const totalLinesFromMetadata = 140000;
 
   // On répond IMMÉDIATEMENT au client pour ne pas le faire attendre.
   res.status(202).json({
@@ -986,7 +982,6 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   );
 
   // On lance le traitement en arrière-plan SANS l'attendre.
-  // C'est la clé pour découpler la tâche de la requête HTTP.
   processCsvInBackground(
     importUuid,
     filePath,

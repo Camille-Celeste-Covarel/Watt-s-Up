@@ -1,5 +1,6 @@
 import "./filter.css";
 
+import { useNavigate } from "react-router-dom";
 import powerIcon from "../../assets/images/icon/power.svg";
 import chademoIcon from "../../assets/images/plug/Chademo_type4.svg";
 import comboCssIcon from "../../assets/images/plug/Combo-ccs.svg";
@@ -25,10 +26,9 @@ const plugOptions = [
 ];
 
 function Filter() {
-  // On récupère l'état et les fonctions du contexte
   const { filters, setFilters } = useFilters();
+  const navigate = useNavigate();
 
-  // ✅ Fonction de bascule générique pour éviter la répétition
   const toggleFilter = (category: keyof FilterState, value: string) => {
     setFilters((prev) => {
       const currentValues = prev[category];
@@ -118,9 +118,16 @@ function Filter() {
         ))}
       </div>
 
-      <div className="confirm-filter">
+      <div className="filter-actions">
         <button type="button" className="button-classic" onClick={handleReset}>
           Réinitialiser
+        </button>
+        <button
+          type="button"
+          className="button-classic mobile-back-button"
+          onClick={() => navigate("/")}
+        >
+          Revenir à la carte
         </button>
       </div>
     </div>

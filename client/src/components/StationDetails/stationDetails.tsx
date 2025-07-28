@@ -1,49 +1,63 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
+import Modal from "../../components/Modal/Modal";
 import { useAuth } from "../../contexts/AuthContext";
 import type {
   EnrichedStationAttributes,
   Plug,
   TerminalGroup,
 } from "../../types/stationDetailsTypes.ts";
-import { fetchStationDetails } from "../../utils/stationApi.ts"; // Assurez-vous que cette fonction existe et accepte un ID
+import { createReservation } from "../../utils/reservationApi.ts"; // --- CORRECTION ---
+import { fetchStationDetails } from "../../utils/stationApi.ts";
+import { useToastStore } from "../../utils/useToast.ts";
 import { PlugIcon } from "../DisplaySVGPlug/DisplaySVGPlug";
 import "./stationDetails.css";
 
 export function StationDetails() {
-  // 1. On récupère l'ID directement depuis l'URL grâce à React Router
   const { id: stationId } = useParams<{ id: string }>();
-
-  // Hooks pour l'état de l'interface utilisateur (inchangés)
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
-  const [isReserving, setIsReserving] = useState(false);
-  const [reservationError, setReservationError] = useState<string | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const { isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
+  const { showToast } = useToastStore();
+  const navigate = useNavigate();
 
-  // 2. On utilise useQuery pour récupérer les données de manière moderne et robuste
   const {
     data: station,
     isLoading,
     error,
   } = useQuery<EnrichedStationAttributes, Error>({
-    // La clé de la requête inclut l'ID pour être unique et se mettre à jour correctement
     queryKey: ["stationDetails", stationId],
-    // La fonction de requête est appelée par useQuery
     queryFn: () => {
-      if (!stationId) {
-        // Ce garde-fou est essentiel
-        throw new Error("Station ID is missing in URL.");
-      }
-      // On assume que vous avez une fonction qui fetch par ID
+      if (!stationId) throw new Error("Station ID is missing in URL.");
       return fetchStationDetails(stationId);
     },
-    // La requête ne s'exécute que si l'ID est bien présent dans l'URL
     enabled: !!stationId,
   });
 
-  // 3. Votre logique de groupement des terminaux reste INCHANGÉE
+  const reservationMutation = useMutation({
+    mutationFn: createReservation,
+    onSuccess: (data) => {
+      navigate(`/reservation/success/${data.id}`, {
+        state: { reservation: data, station, selectedGroup },
+      });
+
+      void queryClient.invalidateQueries({
+        queryKey: ["stationDetails", stationId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["reservations", "me"] });
+      setSelectedGroupKey(null);
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Une erreur inconnue est survenue.";
+      showToast({ type: "error", message });
+    },
+  });
+
   const terminalGroups = useMemo(() => {
     if (!station?.terminals) return [];
     const groups = new Map<string, TerminalGroup>();
@@ -57,9 +71,7 @@ export function StationDetails() {
       const existingGroup = groups.get(groupKey);
       if (existingGroup) {
         existingGroup.count++;
-        if (!terminal.is_booked) {
-          existingGroup.availableCount++;
-        }
+        if (!terminal.is_booked) existingGroup.availableCount++;
       } else {
         groups.set(groupKey, {
           key: groupKey,
@@ -73,225 +85,142 @@ export function StationDetails() {
     return Array.from(groups.values());
   }, [station]);
 
-  const handleCardInteraction = (key: string) => {
-    setSelectedGroupKey(key === selectedGroupKey ? null : key);
-  };
+  const selectedGroup = useMemo(
+    () => terminalGroups.find((g) => g.key === selectedGroupKey),
+    [terminalGroups, selectedGroupKey],
+  );
 
-  const handleReserve = async () => {
-    if (!isAuthenticated || !selectedGroupKey || !stationId) {
-      setReservationError("Veuillez sélectionner un groupe et être connecté.");
-      return;
-    }
-
-    const selectedGroup = terminalGroups.find(
-      (g) => g.key === selectedGroupKey,
-    );
-    if (!selectedGroup) {
-      setReservationError("Une erreur est survenue, groupe non trouvé.");
-      return;
-    }
-
-    setIsReserving(true);
-    setReservationError(null);
-
-    try {
-      const response = await fetch(
-        `${import.meta.env.VITE_API_URL}/api/reservations`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({
-            stationId: stationId,
-            power: selectedGroup.power,
-            plugIds: selectedGroup.plugs.map((p) => p.id),
-          }),
-        },
-      );
-
-      const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "La réservation a échoué.");
-      }
-
-      alert(
-        "Réservation confirmée ! Vous avez 30 minutes pour démarrer la charge.",
-      );
-      // On invalide la requête pour forcer le rafraîchissement des données
-      await queryClient.invalidateQueries({
-        queryKey: ["stationDetails", stationId],
+  const handleReserveClick = () => {
+    if (!isAuthenticated || !selectedGroupKey) {
+      showToast({
+        type: "error",
+        message: "Veuillez sélectionner une borne et être connecté.",
       });
+      return;
+    }
+    setIsModalOpen(true);
+  };
+
+  const handleConfirmReservation = () => {
+    if (!stationId || !selectedGroup) return;
+    setIsModalOpen(false);
+    reservationMutation.mutate({
+      stationId,
+      power: selectedGroup.power,
+      plugIds: selectedGroup.plugs.map((p) => p.id),
+    });
+  };
+
+  const handleCancelClick = () => {
+    if (selectedGroupKey) {
       setSelectedGroupKey(null);
-    } catch (err) {
-      const errorMessage =
-        err instanceof Error
-          ? err.message
-          : "Une erreur inconnue est survenue.";
-      setReservationError(errorMessage);
-    } finally {
-      setIsReserving(false);
+    } else {
+      navigate("/");
     }
   };
 
-  const handleCancel = () => {
-    setSelectedGroupKey(null);
-  };
-
-  // --- 4. Vos blocs de rendu conditionnel et votre JSX restent INCHANGÉS ---
-  if (isLoading) {
+  if (isLoading)
     return (
       <div className="station-details-content">
-        <p>Chargement des détails de la station...</p>
+        <p>Chargement...</p>
       </div>
     );
-  }
-
-  if (error) {
+  if (error)
     return (
       <div className="station-details-content error">
         <p>Erreur: {error.message}</p>
       </div>
     );
-  }
-
-  if (!station) {
+  if (!station)
     return (
       <div className="station-details-content">
-        <p>Aucun détail de station trouvé.</p>
+        <p>Station non trouvée.</p>
       </div>
     );
-  }
 
   return (
     <div className="station-details-content">
-      <h2>La station</h2>
-      <p className="station-info__text">{station.nom_station}</p>
-      {station.adresse_station && (
-        <p className="station-info__text">{station.adresse_station}</p>
-      )}
-      <div className="station-info-details">
-        {station.implantation_station && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Implantation:</strong>{" "}
-            {station.implantation_station}
-          </p>
-        )}
-        {station.paiement_cb !== null && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Paiement par CB:</strong>{" "}
-            {station.paiement_cb ? "Oui" : "Non"}
-          </p>
-        )}
-        {station.paiement_autre && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Autre paiement:</strong>{" "}
-            {station.paiement_autre ? "Oui" : "Non"}
-          </p>
-        )}
-        {station.tarification && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Tarification:</strong>{" "}
-            {station.tarification}
-          </p>
-        )}
-        {station.horaires && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Horaires:</strong>{" "}
-            {station.horaires}
-          </p>
-        )}
-        {station.accessibilite_pmr !== null && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Accès PMR:</strong>{" "}
-            {station.accessibilite_pmr ? "Oui" : "Non"}
-          </p>
-        )}
-        {station.nbre_pdc !== null && (
-          <p className="station-info__text">
-            <strong className="station-info__label">
-              Nombre de points de charge:
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title="Confirmer la réservation"
+      >
+        {selectedGroup ? (
+          <p>
+            Vous êtes sur le point de réserver une borne de type{" "}
+            <strong>
+              {selectedGroup.plugs.map((p) => p.name).join(" / ")}
             </strong>{" "}
-            {station.nbre_pdc}
+            ({selectedGroup.power} kW). Confirmez-vous ?
           </p>
-        )}
-        {station.puissance_max !== null && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Puissance maximale:</strong>{" "}
-            {station.puissance_max} kW
-          </p>
-        )}
-        {station.observations && (
-          <p className="station-info__text">
-            <strong className="station-info__label">Observations:</strong>{" "}
-            {station.observations}
-          </p>
-        )}
+        ) : null}
+        <div className="modal-actions">
+          <button
+            type="button"
+            className="btn btn-secondary"
+            onClick={() => setIsModalOpen(false)}
+          >
+            Annuler
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={handleConfirmReservation}
+            disabled={reservationMutation.isPending || !selectedGroup}
+          >
+            {reservationMutation.isPending ? "Confirmation..." : "Confirmer"}
+          </button>
+        </div>
+      </Modal>
+
+      <h2>{station.nom_station}</h2>
+      <p className="station-info__text">{station.adresse_station}</p>
+      <div className="station-info-details">{/* ...détails... */}</div>
+      <h3 className="station-list-title">Choisir ma borne</h3>
+      <div className="terminal-groups-grid">
+        {terminalGroups.map((group) => (
+          <button
+            key={group.key}
+            type="button"
+            className={`terminal-group-card ${
+              group.availableCount > 0 ? "available" : "unavailable"
+            } ${group.key === selectedGroupKey ? "selected" : ""}`}
+            onClick={() => setSelectedGroupKey(group.key)}
+            disabled={group.availableCount === 0}
+          >
+            <div className="group-plugs">
+              {group.plugs.map((plug: Plug) => (
+                <PlugIcon
+                  key={plug.id}
+                  plugName={plug.name}
+                  className="plug-icon"
+                />
+              ))}
+            </div>
+            <div className="group-power">{group.power} kW</div>
+            <div className="group-availability">
+              {group.availableCount}/{group.count}
+            </div>
+          </button>
+        ))}
       </div>
-
-      {terminalGroups.length > 0 && (
-        <>
-          <h3 className="station-list-title terminal-groups-grid__title">
-            Choisir ma borne
-          </h3>
-          <div className="terminal-groups-grid">
-            {terminalGroups.map((group) => {
-              const cardClasses = [
-                "terminal-group-card",
-                group.availableCount > 0 ? "available" : "unavailable",
-                group.key === selectedGroupKey ? "selected" : "",
-              ]
-                .filter(Boolean)
-                .join(" ");
-
-              return (
-                <button
-                  key={group.key}
-                  type="button"
-                  className={cardClasses}
-                  onClick={() => handleCardInteraction(group.key)}
-                  disabled={group.availableCount === 0}
-                >
-                  <div className="group-plugs">
-                    {group.plugs.map((plug: Plug) => (
-                      <PlugIcon
-                        key={plug.id}
-                        plugName={plug.name}
-                        className="plug-icon"
-                      />
-                    ))}
-                  </div>
-                  <div className="group-power">{group.power} kW</div>
-                  <div className="group-availability">
-                    {group.availableCount}/{group.count}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="action-buttons-container">
-            <button
-              type="button"
-              className="action-button reserve-button"
-              onClick={handleReserve}
-              disabled={!selectedGroupKey || !isAuthenticated || isReserving}
-            >
-              {isReserving ? "Réservation..." : "Réserver"}
-            </button>
-            <button
-              type="button"
-              className="action-button cancel-button"
-              onClick={handleCancel}
-              disabled={!selectedGroupKey}
-            >
-              Annuler
-            </button>
-          </div>
-          {reservationError && (
-            <p className="reservation-error-message">{reservationError}</p>
-          )}
-        </>
-      )}
+      <div className="action-buttons-container">
+        <button
+          type="button"
+          className="action-button reserve-button"
+          onClick={handleReserveClick}
+          disabled={!selectedGroupKey || !isAuthenticated}
+        >
+          Réserver
+        </button>
+        <button
+          type="button"
+          className="action-button cancel-button"
+          onClick={handleCancelClick}
+        >
+          {selectedGroupKey ? "Annuler" : "Retour à la carte"}
+        </button>
+      </div>
     </div>
   );
 }
