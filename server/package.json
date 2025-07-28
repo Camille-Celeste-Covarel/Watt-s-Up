@@ -10,8 +10,6 @@
     "test": "cross-env NODE_ENV=test jest --verbose"
   },
   "dependencies": {
-    "@sentry/node": "^9.38.0",
-    "@sentry/profiling-node": "^9.38.0",
     "@types/node-cron": "^3.0.11",
     "@types/pg": "^8.15.4",
     "@types/sequelize": "^4.28.20",

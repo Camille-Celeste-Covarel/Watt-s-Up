@@ -1,20 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
-
-export interface AuthRequest extends Request {
-  user?: {
-    id: string;
-    isAdmin: boolean;
-  };
-}
-
-interface TokenPayload {
-  id: string;
-  isAdmin: boolean;
-}
+import type {
+  AuthenticatedRequest,
+  TokenPayload,
+} from "../types/auth/auth_type";
 
 const authenticateToken = (
-  req: AuthRequest,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction,
 ): void => {

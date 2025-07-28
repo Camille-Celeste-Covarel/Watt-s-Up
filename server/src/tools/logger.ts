@@ -314,7 +314,7 @@ export function logWithProgress(
   level: LogLevel,
   ...optionalParams: unknown[]
 ) {
-  log(message, level, ...optionalParams); // Continue le logging normal
+  log(message, level, ...optionalParams);
   if (level >= LogLevel.ERROR && typeof message === "string") {
     notifyError(message);
   }

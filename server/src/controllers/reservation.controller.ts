@@ -1,12 +1,12 @@
 import type { Response } from "express";
 import { Op } from "sequelize";
 import sequelize from "../config/database";
-import type { AuthRequest } from "../middleware/isConnected";
 import { Plug } from "../models/_index";
 import { Book, ReservationStatus } from "../models/book.model";
 import { Station } from "../models/station.model";
 import { Terminal } from "../models/terminal.model";
 import { LogLevel, log } from "../tools/logger";
+import type { AuthenticatedRequest } from "../types/auth/auth_type";
 
 const ReservationMin = 30;
 
@@ -35,7 +35,7 @@ interface CreateReservationBody {
 }
 
 export const createReservation = async (
-  req: AuthRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
@@ -126,7 +126,7 @@ export const createReservation = async (
 };
 
 export const cancelReservation = async (
-  req: AuthRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
@@ -195,7 +195,7 @@ export const cancelReservation = async (
 };
 
 export const startCharge = async (
-  req: AuthRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
@@ -291,7 +291,7 @@ export const startCharge = async (
 };
 
 export const stopCharge = async (
-  req: AuthRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;
@@ -354,7 +354,7 @@ export const stopCharge = async (
 };
 
 export const browseByUser = async (
-  req: AuthRequest,
+  req: AuthenticatedRequest,
   res: Response,
 ): Promise<void> => {
   const userId = req.user?.id;

@@ -1,5 +1,4 @@
 import type { RequestHandler } from "express";
-// import { request } from "../models/_index";
 
 // L'opération BREAD : Browse (Read All)
 // Récupère toutes les ressources (par exemple, toutes les réservations).

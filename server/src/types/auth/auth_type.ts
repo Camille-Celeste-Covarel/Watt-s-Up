@@ -6,3 +6,8 @@ export interface AuthenticatedRequest extends Request {
     isAdmin: boolean;
   };
 }
+
+export interface TokenPayload {
+  id: string;
+  isAdmin: boolean;
+}
