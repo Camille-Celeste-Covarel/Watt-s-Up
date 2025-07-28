@@ -1,44 +1,28 @@
+import fs from "node:fs";
 import path from "node:path";
-import type { Request } from "express";
 import multer from "multer";
 
-const profilUpload = multer.diskStorage({
+const avatarStorage = multer.diskStorage({
   destination: (req, file, cb) => {
+    let dest = "";
     if (file.fieldname === "avatar") {
-      cb(null, "uploads/avatars/");
+      dest = path.join(__dirname, "..", "..", "public/uploads/avatars");
     } else if (file.fieldname === "vehicle_photo") {
-      cb(null, "uploads/vehicle_photos/");
-    } else {
-      cb(null, "uploads/");
+      dest = path.join(__dirname, "..", "..", "public/uploads/vehicules");
     }
+    // Crée le dossier si besoin
+    fs.mkdirSync(dest, { recursive: true });
+    cb(null, dest);
   },
-  filename: (req: Request, file: Express.Multer.File, cb) => {
+  filename: (req, file, cb) => {
     const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
-    const extension = path.extname(file.originalname);
-    cb(null, `${file.fieldname}-${uniqueSuffix}${extension}`);
+    cb(
+      null,
+      `${file.fieldname}-${uniqueSuffix}${path.extname(file.originalname)}`,
+    );
   },
 });
-const upload = multer({ storage: profilUpload });
-const multiUpload = multer({ storage: profilUpload });
 
-const imageFileFilter = (
-  req: Request,
-  file: Express.Multer.File,
-  cb: multer.FileFilterCallback,
-) => {
-  if (file.mimetype.startsWith("image/")) {
-    cb(null, true);
-  } else {
-    cb(new Error("Le fichier n'est pas une image !"));
-  }
-};
-
-const uploadAvatar = multer({
-  storage: profilUpload,
-  fileFilter: imageFileFilter,
-  limits: {
-    fileSize: 1024 * 1024 * 5,
-  },
-});
+const uploadAvatar = multer({ storage: avatarStorage });
 
 export default uploadAvatar;

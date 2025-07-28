@@ -8,7 +8,6 @@ import { Op } from "sequelize";
 import type { AuthRequest } from "../middleware/isConnected";
 import { Plug, User, Vehicule } from "../models/_index";
 
-// Ajoute ceci :
 interface MulterFiles {
   avatar?: Express.Multer.File[];
   vehicle_photo?: Express.Multer.File[];
@@ -87,7 +86,6 @@ const destroy: RequestHandler = async (req, res, next) => {
 
 const register: RequestHandler = async (req, res, next) => {
   try {
-    // Les champs texte sont dans req.body, le fichier dans req.file
     const {
       email,
       password,
@@ -100,34 +98,29 @@ const register: RequestHandler = async (req, res, next) => {
       postcode,
       country,
       gender,
+      vehicle_name,
+      license_plate,
+      id_plug,
     } = req.body;
 
-    const avatarFileName = req.file ? req.file.filename : null;
+    const files = req.files as MulterFiles;
+    const avatarFile = files?.avatar?.[0];
+    const vehiclePhotoFile = files?.vehicle_photo?.[0];
+
+    const avatar_url = avatarFile ? avatarFile.filename : undefined;
+    const vehicle_photo_url = vehiclePhotoFile
+      ? vehiclePhotoFile.filename
+      : undefined;
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      res.status(400).json({
-        error: "Un utilisateur avec cet email existe déjà",
-      });
+      res
+        .status(400)
+        .json({ error: "Un utilisateur avec cet email existe déjà" });
       return;
     }
 
-    // Hash du mot de passe
     const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Si un fichier a été uploadé, construit l'URL d'accès
-    let avatar_url: string | undefined = undefined;
-    let vehicle_photo_url: string | undefined = undefined;
-
-    // Multer fields mode : req.files est un objet { avatar: [file], vehicle_photo: [file] }
-    const files = req.files as MulterFiles;
-
-    if (files.avatar?.[0]) {
-      avatar_url = `/uploads/avatars/${files.avatar[0].filename}`;
-    }
-    if (files.vehicle_photo?.[0]) {
-      vehicle_photo_url = `/uploads/vehicle_photos/${files.vehicle_photo[0].filename}`;
-    }
 
     const user = await User.create({
       email,
@@ -141,16 +134,15 @@ const register: RequestHandler = async (req, res, next) => {
       postcode,
       country,
       gender,
-      avatar_url: avatarFileName ?? undefined,
+      avatar_url,
       is_admin: false,
     });
 
-    // Création du véhicule si les infos sont présentes
-    if (req.body.vehicle_name && req.body.license_plate && req.body.id_plug) {
+    if (vehicle_name && license_plate && id_plug) {
       await Vehicule.create({
-        name: req.body.vehicle_name,
-        license_plate: req.body.license_plate,
-        id_plug: req.body.id_plug,
+        name: vehicle_name,
+        license_plate,
+        id_plug,
         id_user: user.id,
         photo_url: vehicle_photo_url,
       });
@@ -331,7 +323,6 @@ const resetPassword: RequestHandler = async (req, res, next) => {
   try {
     const { token, password } = req.body;
 
-    // Vérification de la longueur du mot de passe
     if (!password || password.length < 6) {
       res
         .status(400)
@@ -364,7 +355,6 @@ const resetPassword: RequestHandler = async (req, res, next) => {
 
 const getMe = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    console.log("ID utilisateur reçu dans getMe :", req.user?.id);
     const user = await User.findByPk(req.user?.id, {
       attributes: {
         exclude: ["password", "reset_token", "reset_token_expiry"],
@@ -387,10 +377,37 @@ const getMe = async (req: AuthRequest, res: Response, next: NextFunction) => {
       res.status(404).json({ message: "Utilisateur non trouvé" });
       return;
     }
-    res.json(user);
+
+    const userJson = user.toJSON() as unknown as UserWithVehicles;
+
+    if (userJson.avatar_url) {
+      userJson.avatar_url = `/api/uploads/avatars/${userJson.avatar_url}`;
+    }
+    if (userJson.vehicles) {
+      userJson.vehicles = userJson.vehicles.map((v) => ({
+        ...v,
+        photo_url: v.photo_url
+          ? `/api/uploads/vehicules/${v.photo_url}`
+          : undefined,
+      }));
+    }
+
+    res.json(userJson);
   } catch (err) {
     next(err);
   }
+};
+
+type VehiculeWithPlug = {
+  [key: string]: unknown;
+  photo_url?: string;
+  plug?: { name: string };
+};
+
+type UserWithVehicles = {
+  [key: string]: unknown;
+  avatar_url?: string;
+  vehicles?: VehiculeWithPlug[];
 };
 
 export default {

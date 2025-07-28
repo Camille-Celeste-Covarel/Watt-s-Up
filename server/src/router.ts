@@ -25,7 +25,10 @@ router.use(express.static(path.join(__dirname, "..", "public")));
 router.post("/auth/login", userActions.login);
 router.post(
   "/auth/register",
-  uploadAvatar.single("avatar"),
+  uploadAvatar.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "vehicle_photo", maxCount: 1 },
+  ]),
   userActions.register,
 );
 
@@ -52,6 +55,8 @@ router.use(authenticateToken);
 // 🔒 Routes PROTÉGÉES (utilisateur connecté requis)
 /* ************************************************************************* */
 
+router.get("/users/me", userActions.getMe);
+
 // Réservations
 router.use("/books", bookRoutes);
 
@@ -71,7 +76,6 @@ router.use(isAdmin);
 /* ************************************************************************* */
 
 // Routes utilisateurs
-router.get("/users/me", userActions.getMe);
 router.get("/users/:id", userActions.read);
 router.get("/users", userActions.browse);
 router.post("/users", userActions.add);
