@@ -58,3 +58,18 @@
     opacity: 1;
   }
 }
+
+.toast.exiting {
+  animation: fadeOut 0.4s ease-out forwards;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
