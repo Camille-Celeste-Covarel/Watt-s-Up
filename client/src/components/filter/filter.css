@@ -35,8 +35,19 @@
   background-color: white;
 }
 
-.confirm-filter button {
-  margin-right: 30px;
+.filter-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+  width: 100%;
+}
+
+.filter-actions .button-classic {
+  flex: 1;
+  min-width: 150px;
 }
 
 .vehicle-list {
@@ -116,7 +127,7 @@ input:checked + .slider:before {
 }
 
 input:focus + .slider {
-  box-shadow: 0 0 1px var(--quint-color);
+  box-shadow: 0 0 1px var(--quinte-color);
 }
 
 .power-list {
@@ -146,7 +157,7 @@ input:focus + .slider {
 }
 
 .power-info span {
-  color: var(--quint-color);
+  color: var(--quinte-color);
   font-weight: 600;
 }
 
@@ -176,10 +187,20 @@ input:focus + .slider {
 }
 
 .plug-info span {
-  color: var(--quint-color);
+  color: var(--quinte-color);
   font-weight: 600;
 }
 
-.confirm-filter button {
-  margin-top: 20px;
+.mobile-back-button {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .filter-panel-content {
+    padding-bottom: 40px;
+  }
+
+  .mobile-back-button {
+    display: block;
+  }
 }

@@ -355,6 +355,20 @@ export function ReservationPage() {
               <p style={{ marginTop: "1rem" }}>
                 Temps de charge : <strong>{remainingTime}</strong>
               </p>
+              {activeReservation.session_ends_at && (
+                <p
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "grey",
+                    fontStyle: "italic",
+                  }}
+                >
+                  [DEV] Fin de session prévue à :{" "}
+                  {new Date(
+                    activeReservation.session_ends_at,
+                  ).toLocaleTimeString("fr-FR")}
+                </p>
+              )}
               <div className="reservation-actions">
                 <button
                   type="button"
