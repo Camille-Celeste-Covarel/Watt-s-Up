@@ -252,7 +252,6 @@ export const startCharge = async (
     const energyToChargeKwh = BATTERY_CAPACITY_KWH * percentageToCharge;
 
     if (!reservation.terminal) {
-      // Sécurité : ne devrait jamais arriver grâce à l'include, mais c'est une bonne pratique
       await transaction.rollback();
       log("Terminal details not found for reservation.", LogLevel.ERROR, {
         reservationId,
@@ -369,8 +368,6 @@ export const browseByUser = async (
   try {
     const reservations = await Book.findAll({
       where: { id_user: userId },
-      // On inclut les modèles associés pour enrichir la réponse
-      // avec tous les détails nécessaires pour la page "Mes Réservations".
       include: [
         {
           model: Terminal,

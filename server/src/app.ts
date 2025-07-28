@@ -69,8 +69,10 @@ async function startServer() {
 
   // --- CRÉATION AUTOMATIQUE DES DOSSIERS D'UPLOAD ---
   try {
-    // On cible le dossier 'uploads/avatars' à la racine du dossier 'server'
-    const avatarsDir = path.join(__dirname, "..", "uploads", "avatars");
+    // On cible les dossiers à la racine du dossier 'server'
+    const serverRoot = path.join(__dirname, "..");
+    const avatarsDir = path.join(serverRoot, "uploads", "avatars");
+    const csvCacheDir = path.join(serverRoot, "CSVCache");
 
     // fs.mkdirSync avec { recursive: true } crée les dossiers parents si besoin
     // et ne renvoie pas d'erreur s'ils existent déjà.
@@ -79,6 +81,9 @@ async function startServer() {
       "✅ Le dossier pour les uploads d'avatars est prêt.",
       LogLevel.INFO,
     );
+
+    fs.mkdirSync(csvCacheDir, { recursive: true });
+    console.log("✅ Le dossier pour le cache CSV est prêt.", LogLevel.INFO);
   } catch (error) {
     console.error(
       "❌ Erreur lors de la création du dossier d'uploads :",
