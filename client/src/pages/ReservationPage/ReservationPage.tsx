@@ -301,7 +301,7 @@ export function ReservationPage() {
             {activeReservation.status === "ACTIVE" && (
               <>
                 <p>
-                  La réservation expire dans : <strong>{remainingTime}</strong>
+                  La réservation expire dans <strong>{remainingTime}</strong>
                 </p>
                 <div className="reservation-actions">
                   <button
@@ -347,7 +347,6 @@ export function ReservationPage() {
                 <div className="reservation-actions">
                   <button
                     type="button"
-                    className="btn btn-danger"
                     onClick={() => openStopModal(activeReservation.id)}
                     disabled={isActionPending}
                   >
@@ -371,36 +370,44 @@ export function ReservationPage() {
         )}
       </div>
 
-      {pastReservations.length > 0 && (
-        <section className="reservation">
-          <h2>Historique</h2>
-          {pastReservations.slice(0, 5).map((reservation) => (
-            <details key={reservation.id} className="history-item">
-              <summary className="history-summary">
-                <span>
-                  {reservation.terminal.station.nom_station} -{" "}
-                  {new Date(reservation.createdAt).toLocaleDateString("fr-FR")}
-                </span>
-                <span className={`status status-${reservation.status}`}>
-                  {statusLabels[reservation.status]}
-                </span>
-              </summary>
-              <ReservationCard reservation={reservation} />
-            </details>
-          ))}
-        </section>
-      )}
+      <div className="history">
+        {pastReservations.length > 0 && (
+          <section className="reservation">
+            <h2>Historique</h2>
+            {pastReservations.slice(0, 5).map((reservation) => (
+              <details key={reservation.id} className="history-item">
+                <summary className="history-summary">
+                  <span>
+                    {new Date(reservation.createdAt).toLocaleDateString(
+                      "fr-FR",
+                      {
+                        year: "numeric",
+                        month: "long",
+                        day: "numeric",
+                      },
+                    )}
+                  </span>
+                  <span className={`status status-${reservation.status}`}>
+                    {statusLabels[reservation.status]}
+                  </span>
+                </summary>
+                <ReservationCard reservation={reservation} />
+              </details>
+            ))}
+          </section>
+        )}
 
-      <section className="reservation">
-        <h2>Un problème ?</h2>
-        <p>
-          Si vous rencontrez un souci avec une réservation, n'hésitez pas à nous
-          le signaler.
-        </p>
-        <Link to="/contact" className="btn">
-          Contactez-nous
-        </Link>
-      </section>
+        <section className="reservation">
+          <h2>Un problème ?</h2>
+          <p>
+            Si vous rencontrez un souci avec une réservation, n'hésitez pas à
+            nous le signaler.
+          </p>
+          <Link to="/contact" className="btn">
+            Contactez-nous
+          </Link>
+        </section>
+      </div>
     </div>
   );
 }
