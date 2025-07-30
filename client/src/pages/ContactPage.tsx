@@ -5,10 +5,21 @@ function ContactPage() {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Sujet:", subject);
-    console.log("Message:", message);
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/contact`, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ subject, message }),
+    });
+    if (res.ok) {
+      alert("Votre message a bien été envoyé !");
+      setSubject("");
+      setMessage("");
+    } else {
+      alert("Erreur lors de l'envoi du message.");
+    }
   };
 
   return (

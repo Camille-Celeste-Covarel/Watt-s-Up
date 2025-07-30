@@ -449,6 +449,43 @@ const updateAvatar = async (
   }
 };
 
+const contact = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const { subject, message } = req.body;
+    const user = await User.findByPk(req.user?.id);
+
+    if (!user) {
+      return res.status(404).json({ error: "Utilisateur non trouvé" });
+    }
+
+    const transporter = nodemailer.createTransport({
+      host: process.env.EMAIL_HOST,
+      port: Number(process.env.EMAIL_PORT),
+      secure: false,
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: `"${user.first_name} ${user.last_name}" <${process.env.EMAIL_USER}>`,
+      to: process.env.CONTACT_RECEIVER,
+      subject,
+      text: message,
+      replyTo: user.email, // pour répondre directement à l'utilisateur
+    });
+
+    res.json({ message: "Votre message a bien été envoyé !" });
+  } catch (err) {
+    next(err);
+  }
+};
+
 export default {
   browse,
   read,
@@ -464,4 +501,5 @@ export default {
   getMe,
   updateMe,
   updateAvatar,
+  contact,
 };
