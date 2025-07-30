@@ -13,6 +13,12 @@
   margin-right: auto;
 }
 
+.profil-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .profil-avatar-block {
   display: flex;
   align-items: center;
@@ -61,7 +67,7 @@
 .vehicle-photo-container {
   width: 100%;
   justify-content: center;
-  max-height: 180px;
+  max-height: 220px;
   display: flex;
   overflow: hidden;
 }
@@ -69,5 +75,10 @@
 .vehicle-photo {
   max-width: 100%;
   max-height: 100%;
-  object-fit: contain;
+  object-fit: cover;
+}
+
+.edit-icon {
+  margin-left: 8;
+  cursor: pointer;
 }

@@ -11,6 +11,8 @@ import Filter from "./components/filter/Filter.tsx";
 import { ImportProvider } from "./contexts/ImportContext.tsx";
 import AdminDashboard from "./pages/AdminDashboard.tsx";
 import ContactPage from "./pages/ContactPage";
+import EditProfilPage from "./pages/EditProfilPage.tsx";
+import EditVehiclePage from "./pages/EditVehiclePage.tsx";
 import ForgotPassword from "./pages/ForgotPassword.tsx";
 import InfoPage from "./pages/InfoPage";
 import LandingPage from "./pages/LandingPage.tsx";
@@ -89,6 +91,24 @@ const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <StationDetails />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/profil/edit",
+        element: (
+          <ProtectedRoute>
+            <EditProfilPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/vehicle/edit",
+        element: (
+          <ProtectedRoute>
+            <EditVehiclePage />
           </ProtectedRoute>
         ),
         handle: { isOverlay: true },
