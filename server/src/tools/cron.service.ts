@@ -78,7 +78,7 @@ const completeChargeSessions = async (): Promise<void> => {
       where: {
         status: ReservationStatus.IN_USE,
         session_ends_at: {
-          [Op.ne]: null, // On s'assure que la date de fin n'est pas nulle
+          [Op.ne]: null,
           [Op.lt]: new Date(),
         },
       },

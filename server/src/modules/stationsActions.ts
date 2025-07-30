@@ -206,9 +206,6 @@ const browseVisible: RequestHandler = async (req, res, next) => {
       return;
     }
 
-    // --- NOUVELLE LOGIQUE CONDITIONNELLE BASÉE SUR LE ZOOM ---
-    // Si nous sommes en vue cluster, nous n'avons besoin que de la géométrie.
-    // C'est beaucoup plus rapide car on évite la requête sur les terminaux.
     if (currentZoom <= CLUSTER_ZOOM_THRESHOLD) {
       const stationsGeom = await Station.findAll({
         attributes: [

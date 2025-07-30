@@ -4,5 +4,7 @@ coverage
 *.local
 .env.
 logs
+log
 dist
 public/uploads/
+uploads

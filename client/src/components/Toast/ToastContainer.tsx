@@ -15,11 +15,9 @@ function Toast({
   useEffect(() => {
     const timer = setTimeout(() => {
       setIsExiting(true);
-      // Laisse le temps à l'animation de se terminer avant de supprimer du store
       setTimeout(() => onRemove(toast.id), 400);
     }, 5000);
 
-    // Nettoie le timer si le composant est démonté avant (ex: clic sur la croix)
     return () => {
       clearTimeout(timer);
     };

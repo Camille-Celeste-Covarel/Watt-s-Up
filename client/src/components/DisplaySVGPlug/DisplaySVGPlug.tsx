@@ -1,5 +1,5 @@
 import type React from "react";
-import type { PlugIconProps } from "../../types/stationDetailsTypes.ts";
+import type { PlugIconProps } from "../../types/components/componentsTypes.ts";
 
 import ChademoIcon from "../../assets/images/plug/Chademo_type4.svg?react";
 import ComboCCSIcon from "../../assets/images/plug/Combo-ccs.svg?react";

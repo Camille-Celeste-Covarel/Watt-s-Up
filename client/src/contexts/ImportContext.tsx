@@ -7,30 +7,10 @@ import {
   useRef,
   useState,
 } from "react";
-
-interface ImportStats {
-  total: number;
-  success: number;
-  errors: number;
-}
-
-interface ImportState {
-  isImporting: boolean;
-  isWsConnected: boolean;
-  importId: string | null;
-  progressPercentage: number;
-  logLines: string[];
-  errorMessages: string[];
-  elapsedTime: number;
-  stats: ImportStats;
-  fileName: string | null;
-}
-
-interface ImportContextType extends ImportState {
-  startUpload: (file: File) => Promise<void>;
-  cancelImport: () => void;
-  clearImportState: () => void;
-}
+import type {
+  ImportContextType,
+  ImportState,
+} from "../types/contexts/contextsTypes";
 
 const ImportContext = createContext<ImportContextType | undefined>(undefined);
 

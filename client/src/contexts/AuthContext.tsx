@@ -7,22 +7,7 @@ import {
   useMemo,
   useState,
 } from "react";
-
-interface User {
-  firstName: string;
-  isAdmin: boolean;
-  avatarUrl: string | null;
-}
-
-interface AuthContextType {
-  user: User | null;
-  isAuthenticated: boolean;
-  isAdmin: boolean;
-  isLoading: boolean;
-  login: (userData: User) => void;
-  logout: () => void;
-  checkAuth: () => Promise<void>;
-}
+import type { AuthContextType, User } from "../types/contexts/contextsTypes";
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 

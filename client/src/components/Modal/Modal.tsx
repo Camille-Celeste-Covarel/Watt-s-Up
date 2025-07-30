@@ -1,13 +1,7 @@
-import { type MouseEvent, type ReactNode, useEffect, useRef } from "react";
+import { type MouseEvent, useEffect, useRef } from "react";
 import { FaTimes } from "react-icons/fa";
 import "./Modal.css";
-
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: ReactNode;
-}
+import type { ModalProps } from "../../types/components/componentsTypes";
 
 function Modal({ isOpen, onClose, title, children }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);

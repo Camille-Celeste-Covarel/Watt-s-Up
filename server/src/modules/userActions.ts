@@ -5,25 +5,14 @@ import type { NextFunction, Response } from "express";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import { Op } from "sequelize";
-import type { AuthRequest } from "../middleware/isConnected";
 import { Plug, User, Vehicule } from "../models/_index";
+import type {
+  MulterFiles,
+  UserWithVehicles,
+  VehiculeWithPlug,
+} from "../types/modules/modulesTypes";
 
-interface MulterFiles {
-  avatar?: Express.Multer.File[];
-  vehicle_photo?: Express.Multer.File[];
-}
-
-type VehiculeWithPlug = {
-  [key: string]: unknown;
-  photo_url?: string;
-  plug?: { name: string };
-};
-
-type UserWithVehicles = {
-  [key: string]: unknown;
-  avatar_url?: string;
-  vehicles?: VehiculeWithPlug[];
-};
+import type { AuthenticatedRequest } from "../types/auth/auth_type";
 
 // L'opération BREAD : Browse (Read All)
 // Récupère tous les utilisateurs de la base de données.
@@ -66,7 +55,7 @@ const add: RequestHandler = async (req, res, next) => {
   res.status(501).json({ message: "Fonction non implémentée." });
 };
 
-// L'opération BREAD : Edit (Update)
+// Add (update)
 const edit: RequestHandler = async (req, res, next) => {
   try {
     const userId = req.params.id;
@@ -175,7 +164,6 @@ const register: RequestHandler = async (req, res, next) => {
         email: user.email,
         first_name: user.first_name,
         last_name: user.last_name,
-        avatar_url: user.avatar_url,
       },
     });
   } catch (err) {
@@ -260,7 +248,7 @@ const logout: RequestHandler = async (req, res, next) => {
   }
 };
 
-const check: RequestHandler = async (req: AuthRequest, res, next) => {
+const check: RequestHandler = async (req: AuthenticatedRequest, res, next) => {
   try {
     if (!req.user) {
       res.status(401).json({ error: "Utilisateur non authentifié." });
@@ -343,6 +331,7 @@ const resetPassword: RequestHandler = async (req, res, next) => {
   try {
     const { token, password } = req.body;
 
+    // Vérification de la longueur du mot de passe
     if (!password || password.length < 6) {
       res
         .status(400)
@@ -373,7 +362,11 @@ const resetPassword: RequestHandler = async (req, res, next) => {
   }
 };
 
-const getMe = async (req: AuthRequest, res: Response, next: NextFunction) => {
+const getMe = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
   try {
     const user = await User.findByPk(req.user?.id, {
       attributes: {
