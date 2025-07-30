@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router";
+import "../style/editprofilpage.css";
 
 function EditProfilPage() {
   const [form, setForm] = useState({
@@ -15,6 +16,8 @@ function EditProfilPage() {
     gender: "",
   });
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,6 +38,11 @@ function EditProfilPage() {
         country: data.country || "",
         gender: data.gender || "",
       });
+      setAvatarUrl(
+        data.avatar_url
+          ? `${import.meta.env.VITE_API_URL}${data.avatar_url}`
+          : null,
+      );
     };
     fetchUser();
   }, []);
@@ -46,6 +54,7 @@ function EditProfilPage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files?.[0]) {
       setAvatarFile(e.target.files[0]);
+      setAvatarPreview(URL.createObjectURL(e.target.files[0]));
     }
   };
 
@@ -75,75 +84,111 @@ function EditProfilPage() {
   return (
     <div className="edit-profil-page-container">
       <h2>Modifier mon profil</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          name="first_name"
-          value={form.first_name}
-          onChange={handleChange}
-          placeholder="Prénom"
-        />
-        <input
-          name="last_name"
-          value={form.last_name}
-          onChange={handleChange}
-          placeholder="Nom"
-        />
-        <input
-          name="email"
-          value={form.email}
-          onChange={handleChange}
-          placeholder="Email"
-        />
-        <input
-          name="birthdate"
-          value={form.birthdate}
-          onChange={handleChange}
-          placeholder="Date de naissance"
-          type="date"
-        />
-        <input
-          name="address"
-          value={form.address}
-          onChange={handleChange}
-          placeholder="Adresse"
-        />
-        <input
-          name="address_bis"
-          value={form.address_bis}
-          onChange={handleChange}
-          placeholder="Complément"
-        />
-        <input
-          name="city"
-          value={form.city}
-          onChange={handleChange}
-          placeholder="Ville"
-        />
-        <input
-          name="postcode"
-          value={form.postcode}
-          onChange={handleChange}
-          placeholder="Code postal"
-        />
-        <input
-          name="country"
-          value={form.country}
-          onChange={handleChange}
-          placeholder="Pays"
-        />
-        <input
-          name="gender"
-          value={form.gender}
-          onChange={handleChange}
-          placeholder="Genre"
-        />
-        <div>
+      <form className="edit-profil-form" onSubmit={handleSubmit}>
+        <div className="avatar-block">
+          <img
+            src={avatarPreview || avatarUrl || "/default-avatar.png"}
+            alt="avatar actuel"
+            className="avatar-img"
+          />
+          <input
+            id="avatar-upload"
+            type="file"
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={handleAvatarChange}
+          />
+          <button
+            type="button"
+            onClick={() => document.getElementById("avatar-upload")?.click()}
+            className="avatar-upload-btn"
+          >
+            Changer l'avatar
+          </button>
+        </div>
+        <div className="fields-block">
           <label>
-            Changer l'avatar :
-            <input type="file" accept="image/*" onChange={handleAvatarChange} />
+            Prénom
+            <input
+              name="first_name"
+              value={form.first_name}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Nom de famille
+            <input
+              name="last_name"
+              value={form.last_name}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Email
+            <input name="email" value={form.email} onChange={handleChange} />
+          </label>
+          <label>
+            Date de naissance
+            <input
+              name="birthdate"
+              value={form.birthdate}
+              onChange={handleChange}
+              type="date"
+            />
+          </label>
+          <label>
+            Adresse
+            <input
+              name="address"
+              value={form.address}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Complément d'adresse
+            <input
+              name="address_bis"
+              value={form.address_bis}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Ville
+            <input name="city" value={form.city} onChange={handleChange} />
+          </label>
+          <label>
+            Code postal
+            <input
+              name="postcode"
+              value={form.postcode}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Pays
+            <input
+              name="country"
+              value={form.country}
+              onChange={handleChange}
+            />
+          </label>
+          <label>
+            Genre
+            <input name="gender" value={form.gender} onChange={handleChange} />
           </label>
         </div>
-        <button type="submit">Enregistrer</button>
+        <div className="form-actions">
+          <button
+            type="button"
+            className="cancel-btn"
+            onClick={() => navigate("/profil")}
+          >
+            Annuler
+          </button>
+          <button type="submit" className="save-btn">
+            Enregistrer
+          </button>
+        </div>
       </form>
     </div>
   );
