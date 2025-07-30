@@ -1,3 +1,12 @@
+.filter-panel-content {
+  background-color: var(--fondamental-color);
+  padding: 20px;
+
+  h2 {
+    margin: 20px 0;
+  }
+}
+
 .filtre {
   position: fixed;
   background-color: var(--fondamental-color);
@@ -26,171 +35,119 @@
   overflow-y: auto;
   border-radius: 5px;
   box-sizing: border-box;
-}
 
-.filter-overlay select {
-  border: none;
-  width: 60vw;
-  padding: 5px 5px;
-  background-color: white;
+  select {
+    border: none;
+    width: 60vw;
+    padding: 5px 5px;
+    background-color: white;
+  }
 }
 
 .filter-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 15px;
-  margin-top: 30px;
   padding-top: 20px;
-  border-top: 1px solid #e0e0e0;
   width: 100%;
+
+  .button-classic {
+    flex: 1;
+    min-width: 150px;
+  }
 }
 
-.filter-actions .button-classic {
-  flex: 1;
-  min-width: 150px;
-}
-
-.vehicle-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.vehicle-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.vehicle-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.vehicle-info img {
-  height: 35px;
-  width: 40px;
-  filter: brightness(0) saturate(100%);
-}
-
-.vehicle-info span {
-  color: var(--quinte-color);
-  font-weight: 600;
-}
-
-.switch {
-  position: relative;
-  display: inline-block;
-  width: 60px;
-  height: 30px;
-}
-
-.switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
-}
-
-.slider {
-  position: absolute;
-  cursor: pointer;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: #ccc;
-  transition: 0.4s;
-  border-radius: 30px;
-}
-
-.slider:before {
-  position: absolute;
-  content: "";
-  height: 22px;
-  width: 22px;
-  left: 4px;
-  bottom: 4px;
-  background-color: white;
-  transition: 0.4s;
-  border-radius: 50%;
-}
-
-input:checked + .slider {
-  background-color: var(--quinte-color);
-}
-
-input:checked + .slider:before {
-  transform: translateX(30px);
-}
-
-input:focus + .slider {
-  box-shadow: 0 0 1px var(--quinte-color);
-}
-
-.power-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.power-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px;
-  border-radius: 8px;
-}
-
-.power-info {
-  display: flex;
-  align-items: center;
-  gap: 15px;
-}
-
-.power-info img {
-  height: 25px;
-  width: 25px;
-  filter: brightness(0) saturate(100%);
-}
-
-.power-info span {
-  color: var(--quinte-color);
-  font-weight: 600;
-}
-
+/* --- Styles pour les listes de filtres --- */
+.vehicle-list,
+.power-list,
 .plug-list {
   display: flex;
   flex-direction: column;
   gap: 15px;
 }
 
+/* --- Styles communs pour tous les items de filtre --- */
+.vehicle-item,
+.power-item,
 .plug-item {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
-  padding: 10px;
-  border-radius: 8px;
+  padding: 12px 15px;
+  border: 2px solid transparent;
+  background-color: white;
+  cursor: pointer;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
+
+  input {
+    display: none;
+  }
+
+  /* On groupe les états :hover et .active car ils partagent les mêmes styles visuels */
+  &:hover,
+  &.active {
+    background-color: var(--quinte-color);
+
+    /* Le texte passe en blanc */
+    .vehicle-info span,
+    .power-info span,
+    .plug-info span {
+      color: white;
+    }
+
+    /* Les icônes de véhicule et de puissance passent en blanc */
+    .vehicle-info img,
+    .power-info img,
+    .plug-info img {
+      filter: brightness(0) invert(1);
+    }
+  }
+
+  /* Style spécifique à l'état actif (la bordure) */
+  &.active {
+    border-color: var(--seconde-color);
+  }
 }
 
+/* --- Styles pour les infos à l'intérieur des items --- */
+.vehicle-info,
+.power-info,
 .plug-info {
   display: flex;
   align-items: center;
   gap: 15px;
+
+  /* Styles pour les textes */
+  span {
+    color: var(--quinte-color);
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+}
+
+/* Styles spécifiques pour les icônes */
+.vehicle-info img {
+  height: 35px;
+  width: 40px;
+  filter: brightness(0) saturate(100%);
+  transition: filter 0.3s ease;
+}
+
+.power-info img {
+  height: 25px;
+  width: 25px;
+  filter: brightness(0) saturate(100%);
+  transition: filter 0.3s ease;
 }
 
 .plug-info img {
   height: 25px;
   width: 25px;
+  filter: brightness(0) saturate(100%); /* MODIFIÉ : filtre ajouté pour la couleur par défaut */
+  transition: filter 0.3s ease;
 }
 
-.plug-info span {
-  color: var(--quinte-color);
-  font-weight: 600;
-}
-
+/* --- Styles pour le responsive --- */
 .mobile-back-button {
   display: none;
 }
