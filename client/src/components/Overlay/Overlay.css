@@ -1,4 +1,4 @@
-.station-details-overlay {
+.overlay {
   position: absolute;
   top: 0;
   right: 0;
@@ -16,11 +16,11 @@
   flex-direction: column;
 }
 
-.station-details-overlay.open {
+.overlay.open {
   transform: translateX(0);
 }
 
-.station-details-overlay .close-button {
+.close-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -37,14 +37,14 @@
   justify-content: center;
 }
 
-.station-details-overlay .station-details-content {
+.overlay .overlay-content {
   overflow-y: auto;
   height: 100%;
   width: 100%;
 }
 
 @media (min-width: 768px) {
-  .station-details-overlay {
+  .overlay {
     height: calc(100% - 35px);
   }
 }
