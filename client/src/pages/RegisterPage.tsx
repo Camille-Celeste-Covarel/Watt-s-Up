@@ -4,47 +4,7 @@ import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
 import vehicleDefaultIcon from "../assets/images/vehicleIcons/carProfile.svg";
 import "../style/registerpage.css";
-
-interface FormData {
-  // Champs User selon le modèle
-  first_name: string;
-  last_name: string;
-  email: string;
-  password: string;
-  confirmPassword: string;
-  gender: string;
-  birthdate: string;
-  address: string;
-  address_bis: string;
-  city: string;
-  postcode: string;
-  country: string;
-
-  // Champs Vehicule selon le modèle
-  vehicle_name: string;
-  license_plate: string;
-  color: string;
-  id_plug: string;
-  vehicle_photo_url: string;
-}
-
-interface FormErrors {
-  first_name?: string;
-  last_name?: string;
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  gender?: string;
-  birthdate?: string;
-  address?: string;
-  city?: string;
-  postcode?: string;
-  country?: string;
-  vehicle_name?: string;
-  license_plate?: string;
-  color?: string;
-  id_plug?: string;
-}
+import type { FormData, FormErrors } from "../types/pages/pagesTypes";
 
 function RegisterPage() {
   const navigate = useNavigate();
@@ -63,7 +23,6 @@ function RegisterPage() {
     city: "",
     postcode: "",
     country: "",
-
     // Vehicule
     vehicle_name: "",
     license_plate: "",
@@ -231,7 +190,6 @@ function RegisterPage() {
     fileInput?.click();
   };
 
-  // Cette fonction a le même problème que handleImageUpload, il faudra la corriger de la même manière.
   const handleVehicleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
