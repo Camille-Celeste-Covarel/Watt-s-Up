@@ -33,15 +33,13 @@
   font-weight: 500;
 }
 
-/* --- Styles pour le résumé de la réservation (anciennement la carte) --- */
 .reservation-summary {
-  /* On retire le fond, la bordure, l'ombre, etc. */
   margin: 2rem 0;
   text-align: left;
 }
 
 .summary-header {
-  padding: 1rem 0; /* Moins de padding vertical */
+  padding: 1rem 0;
   border-bottom: 1px solid #e0e0e0;
 }
 
@@ -58,7 +56,7 @@
 
 .summary-details {
   display: flex;
-  padding: 1.5rem 0; /* Moins de padding vertical */
+  padding: 1.5rem 0;
   gap: 2rem;
 }
 

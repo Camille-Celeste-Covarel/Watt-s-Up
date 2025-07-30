@@ -1,47 +1,12 @@
 import { useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
+import type {
+  Reservation,
+  ReservationSuccessPageLocationState,
+} from "../../types/pages/pagesTypes";
 import "./ReservationSuccessPage.css";
 
-// --- Interfaces pour typer les données reçues via location.state ---
-interface Plug {
-  id: string;
-  name: string;
-}
-
-interface Station {
-  id: string;
-  nom_station: string;
-  adresse_station: string;
-}
-
-interface SelectedGroup {
-  power: number;
-  plugs: Plug[];
-}
-
-type ReservationStatus =
-  | "ACTIVE"
-  | "IN_USE"
-  | "COMPLETED"
-  | "EXPIRED"
-  | "CANCELLED";
-
-interface ApiResponse {
-  id: string;
-  status: ReservationStatus;
-  expires_at: string;
-  createdAt: string;
-}
-
-// Interface pour l'objet `state` complet
-interface SuccessPageLocationState {
-  reservation: ApiResponse;
-  station: Station;
-  selectedGroup: SelectedGroup;
-}
-
-// --- Labels de statut, maintenant typés avec ReservationStatus ---
-const statusLabels: { [key in ReservationStatus]: string } = {
+const statusLabels: { [key in Reservation["status"]]: string } = {
   ACTIVE: "Réservée",
   IN_USE: "En charge",
   COMPLETED: "Terminée",
@@ -53,12 +18,11 @@ function ReservationSuccessPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // On type explicitement le state pour éviter les `any`
   const {
     reservation: apiResponse,
     station,
     selectedGroup,
-  } = (location.state as SuccessPageLocationState) || {};
+  } = (location.state as ReservationSuccessPageLocationState) || {};
 
   useEffect(() => {
     if (!apiResponse || !station || !selectedGroup) {
@@ -74,7 +38,6 @@ function ReservationSuccessPage() {
     );
   }
 
-  // On calcule les dates nécessaires ici
   const formattedReservationDate = new Date(
     apiResponse.createdAt,
   ).toLocaleDateString("fr-FR", {
@@ -114,7 +77,7 @@ function ReservationSuccessPage() {
             <ul>
               <li>Date: {formattedReservationDate}</li>
               <li>
-                Statut: {/* L'accès est maintenant sûr */}
+                Statut:
                 <span className={`status status-${apiResponse.status}`}>
                   {statusLabels[apiResponse.status]}
                 </span>
@@ -132,11 +95,6 @@ function ReservationSuccessPage() {
         . Pensez à valider votre réservation dans votre page{" "}
         <strong>mes réservations.</strong>
       </p>
-      {/* en attente de la fonction mail
-            <p>
-                Vous allez recevoir par e-mail toutes les informations sur votre
-                réservation.
-            </p>*/}
       <div className="success-actions">
         <Link to="/reservations" className="btn btn-primary">
           Voir toutes mes réservations

@@ -1,43 +1,45 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import avatarIcon from "../assets/images/icon/avatar.svg";
+import type { ProfilePageUser } from "../types/pages/pagesTypes";
 import "../style/profilpage.css";
 
-interface Vehicule {
-  id: number;
-  name: string;
-  license_plate: string;
-  id_plug: string;
-  photo_url?: string;
-  plug?: { name: string };
-}
-
-interface User {
-  avatar_url?: string;
-  last_name: string;
-  first_name: string;
-  email: string;
-  gender?: string;
-  birthdate?: string;
-  address?: string;
-  address_bis?: string;
-  city?: string;
-  postcode?: string;
-  country?: string;
-  vehicles?: Vehicule[];
-}
-
 function ProfilPage() {
-  const [user, setUser] = useState<User | null>(null);
+  const {
+    data: user,
+    isLoading,
+    isError,
+    error,
+  } = useQuery<ProfilePageUser, Error>({
+    queryKey: ["user", "me"],
+    queryFn: async () => {
+      const response = await fetch(
+        `${import.meta.env.VITE_API_URL}/api/users/me`,
+        {
+          credentials: "include",
+        },
+      );
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(
+          errorData.message || "Impossible de charger les données du profil.",
+        );
+      }
+      return response.json();
+    },
+    staleTime: 5 * 60 * 1000,
+  });
 
-  useEffect(() => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/users/me`, {
-      credentials: "include",
-    })
-      .then((res) => res.json())
-      .then((data) => setUser(data));
-  }, []);
+  if (isLoading) {
+    return <div>Chargement du profil...</div>;
+  }
 
-  if (!user) return <div>Chargement...</div>;
+  if (isError) {
+    return <div>Erreur lors du chargement du profil : {error.message}</div>;
+  }
+
+  if (!user) {
+    return <div>Aucune donnée utilisateur trouvée.</div>;
+  }
 
   return (
     <div className="profil-container">

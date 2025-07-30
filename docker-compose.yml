@@ -43,7 +43,7 @@ services:
     restart: unless-stopped
 
   postgres_db:
-    image: postgis/postgis:17-3.4-alpine
+    image: postgis/postgis:17-3.5-alpine
     ports:
       - "5433:5432"
     environment:

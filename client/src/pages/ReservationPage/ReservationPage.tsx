@@ -5,32 +5,7 @@ import Modal from "../../components/Modal/Modal";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToastStore } from "../../utils/useToast";
 import "./ReservationPage.css";
-
-interface Plug {
-  id: string;
-  name: string;
-}
-interface Station {
-  id: string;
-  nom_station: string;
-  adresse_station: string;
-}
-interface Terminal {
-  id: string;
-  puissance_nominale: number;
-  num_pdc: string | null;
-  station: Station;
-  plugs: Plug[];
-}
-interface Reservation {
-  id: string;
-  status: "ACTIVE" | "IN_USE" | "COMPLETED" | "EXPIRED" | "CANCELLED";
-  expires_at: string;
-  charge_started_at: string | null;
-  session_ends_at: string | null;
-  createdAt: string;
-  terminal: Terminal;
-}
+import type { Reservation } from "../../types/pages/pagesTypes.ts";
 
 const statusLabels: { [key in Reservation["status"]]: string } = {
   ACTIVE: "Réservée",
