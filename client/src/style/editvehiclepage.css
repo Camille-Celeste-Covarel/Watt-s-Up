@@ -59,7 +59,7 @@ form {
 
 .vehicle-upload-btn {
   padding: 0.5em 1em;
-  background: #1976d2;
+  background: var(--quinte-color);
   color: #fff;
   border: none;
   cursor: pointer;
@@ -83,5 +83,8 @@ form {
 }
 
 .form-actions button.cancel-btn {
-  background: #d32f2f;
+  background: transparent;
+  border: 3px solid var(--fondamental-color);
+  color: var(--fondamental-color);
+  font-weight: 600;
 }
