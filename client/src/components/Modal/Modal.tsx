@@ -3,10 +3,9 @@ import { FaTimes } from "react-icons/fa";
 import "./Modal.css";
 import type { ModalProps } from "../../types/components/componentsTypes";
 
-function Modal({ isOpen, onClose, title, children }: ModalProps) {
+function Modal({ isOpen, onClose, title, children, actions }: ModalProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
-  // Gère l'ouverture/fermeture programmatique de la modale
   useEffect(() => {
     const dialogNode = dialogRef.current;
     if (!dialogNode) return;
@@ -18,7 +17,6 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
     }
   }, [isOpen]);
 
-  // Synchronise l'état React avec la fermeture native de la modale (ex: touche Echap)
   useEffect(() => {
     const dialogNode = dialogRef.current;
     if (!dialogNode) return;
@@ -34,7 +32,6 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
     };
   }, [onClose]);
 
-  // Gère le clic sur le fond (backdrop) pour fermer la modale
   const handleBackdropClick = (event: MouseEvent<HTMLDialogElement>) => {
     if (event.target === dialogRef.current) {
       onClose();
@@ -42,7 +39,7 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
   };
 
   return (
-    // biome-ignore lint/a11y/useKeyWithClickEvents: The Escape key is the keyboard equivalent for closing the modal, which is handled natively by the <dialog> element.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: The Escape key is the keyboard equivalent for closing the modal, which is handled natively by the <dialog> element's "close" event.
     <dialog
       ref={dialogRef}
       className="modal-dialog"
@@ -60,6 +57,7 @@ function Modal({ isOpen, onClose, title, children }: ModalProps) {
         </button>
       </header>
       <main className="modal-body">{children}</main>
+      {actions && <footer className="modal-footer">{actions}</footer>}
     </dialog>
   );
 }

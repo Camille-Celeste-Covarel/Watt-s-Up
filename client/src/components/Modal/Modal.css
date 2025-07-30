@@ -1,3 +1,5 @@
+/* C:/Users/Anamnesis_Surface/Seafile/Code/P3/client/src/components/Modal/Modal.css */
+
 .modal-dialog::backdrop {
   background-color: rgba(0, 0, 0, 0.6);
   animation: fadeIn 0.2s ease-out;
@@ -7,48 +9,114 @@
   background: white;
   padding: 0;
   border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
   width: 90%;
   max-width: 500px;
   animation: slideIn 0.3s ease-out;
   border: none;
+  overflow: hidden;
 }
 
 .modal-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid #eee;
-  padding: 1.5rem 2rem 1rem;
+  padding: 1rem 1.5rem;
+  background-color: var(--fondamental-color);
+  color: white;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
 }
 
 .modal-close-button {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   cursor: pointer;
-  color: #6c757d;
-  padding: 0;
+  color: rgba(255, 255, 255, 0.7);
+  padding: 0.5rem;
+  line-height: 1;
+  border-radius: 50%;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .modal-close-button:hover {
-  color: #343a40;
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
 .modal-body {
-  padding: 1.5rem 2rem;
+  padding: 1.5rem;
+  line-height: 1.6;
+  color: #333;
 }
 
-.modal-actions {
+.modal-footer {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  padding: 0 2rem 1.5rem;
+  border-top: 1px solid #eee;
+  padding: 1.5rem;
+}
+
+/* --- Styles des boutons inspirés de stationDetails.css --- */
+
+/* Style de base commun */
+.modal-footer .btn {
+  padding: 10px;
+  font-size: 1em;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.4s ease, color 0.4s ease;
+  border-radius: 5px;
+}
+
+/* Bouton Primaire (type "Réserver") */
+.modal-footer .btn-primary {
+  background-color: var(--quinte-color);
+  border: none;
+  color: white;
+}
+
+.modal-footer .btn-primary:hover {
+  background-color: var(--seconde-color);
+}
+
+/* Bouton Danger (utilise la couleur du hover du bouton primaire) */
+.modal-footer .btn-danger {
+  background-color: var(--seconde-color);
+  border: none;
+  color: white;
+}
+
+.modal-footer .btn-danger:hover {
+  filter: brightness(1.1);
+}
+
+/* Bouton Secondaire (type "Annuler") */
+.modal-footer .btn-secondary {
+  background-color: white;
+  border: 3px solid var(--fondamental-color);
+  color: var(--fondamental-color);
+}
+
+.modal-footer .btn-secondary:hover {
+  background-color: var(--fondamental-color);
+  color: white;
+}
+
+/* État désactivé, commun à tous les boutons */
+.modal-footer .btn:disabled {
+  background-color: #555555;
+  color: white;
+  border-color: #555555;
+  cursor: not-allowed;
+  opacity: 0.5;
+  transform: none;
 }
 
 @keyframes fadeIn {

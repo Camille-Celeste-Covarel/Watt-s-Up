@@ -43,6 +43,7 @@ export interface ModalProps {
   onClose: () => void;
   title: string;
   children: ReactNode;
+  actions?: ReactNode;
 }
 
 export interface RouteHandle {

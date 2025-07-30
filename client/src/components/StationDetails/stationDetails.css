@@ -24,7 +24,6 @@
     font-weight: bold;
   }
 
-  /* --- STYLES POUR LES INFORMATIONS GÉNÉRALES --- */
   .station-info-details {
     margin-top: 20px;
     margin-bottom: 20px;
@@ -56,7 +55,6 @@
     padding-top: 20px;
   }
 
-  /* --- STYLES POUR LA GRILLE DES BORNES  --- */
   .terminal-groups-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(140px, auto));
@@ -85,7 +83,6 @@
       opacity 0.2s ease-in-out;
     border: 3px solid transparent;
 
-    /* --- États de la carte --- */
     &.available {
       border-color: var(--quarte-color);
 
@@ -131,7 +128,6 @@
     }
   }
 
-  /* --- ÉLÉMENTS INTERNES DE LA CARTE --- */
   .group-plugs {
     display: flex;
     gap: 8px;
@@ -155,7 +151,6 @@
     font-weight: 500;
   }
 
-  /* --- STYLES POUR LES BOUTONS D'ACTION --- */
   .action-buttons-container {
     display: flex;
     gap: 20px;
@@ -239,7 +234,6 @@
   }
 }
 
-/* --- Styles responsive --- */
 @media (max-width: 768px) {
   .station-details-content {
     .terminal-groups-grid {

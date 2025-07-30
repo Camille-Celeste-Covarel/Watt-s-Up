@@ -144,6 +144,25 @@ export function StationDetails() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Confirmer la réservation"
+        actions={
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleConfirmReservation}
+              disabled={reservationMutation.isPending || !selectedGroup}
+            >
+              {reservationMutation.isPending ? "Confirmation..." : "Confirmer"}
+            </button>
+          </>
+        }
       >
         {selectedGroup ? (
           <p>
@@ -154,29 +173,11 @@ export function StationDetails() {
             ({selectedGroup.power} kW). Confirmez-vous ?
           </p>
         ) : null}
-        <div className="modal-actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setIsModalOpen(false)}
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleConfirmReservation}
-            disabled={reservationMutation.isPending || !selectedGroup}
-          >
-            {reservationMutation.isPending ? "Confirmation..." : "Confirmer"}
-          </button>
-        </div>
       </Modal>
 
       <h2>{station.nom_station}</h2>
       <p className="station-info__text">{station.adresse_station}</p>
 
-      {/* --- Voici les éléments ajoutés --- */}
       <div className="station-info-details">
         {station.implantation_station && (
           <div className="info-item">
