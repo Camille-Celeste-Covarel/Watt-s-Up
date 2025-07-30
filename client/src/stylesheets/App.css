@@ -25,7 +25,6 @@ body {
   background-color: white;
   z-index: 900;
   overflow-y: auto;
-  padding: 20px;
   box-sizing: border-box;
 }
 

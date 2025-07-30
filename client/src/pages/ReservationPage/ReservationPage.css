@@ -51,9 +51,10 @@
       }
 
       p {
-        margin: 0.2rem 0 1rem;
+        line-height: 1.5;
         font-style: italic;
         color: var(--fondamental-color);
+        margin-top: 5px;
       }
     }
 
@@ -66,13 +67,14 @@
 
   .detail-block {
     h4 {
-      margin: 0;
+      margin: 10px 0;
       color: var(--quinte-color);
       font-size: 1rem;
     }
 
     li {
       color: var(--fondamental-color);
+      line-height: 1;
     }
 
     ul {
@@ -93,7 +95,6 @@
   }
 
   .reservation-actions {
-    margin-top: 1.5rem;
     display: flex;
     gap: 1rem;
 
@@ -101,22 +102,66 @@
       border: 3px solid var(--fondamental-color);
       color: var(--fondamental-color);
       background-color: white;
+      padding: 0.5rem;
+    }
+
+    .start-charge-button {
+      background-color: var(--fondamental-color);
+      color: white;
     }
   }
 
   .history-item {
-    border-bottom: 1px solid #e0e0e0;
+    border: 3px solid var(--fondamental-color);
+    margin: 20px 0;
 
     &:last-child {
       border-bottom: none;
     }
   }
 
-  .history-summary {
-    cursor: pointer;
-    padding: 1rem 0;
+  .history {
+    padding: 0;
+    margin: 0;
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    flex-direction: column;
+
+    .reservation {
+      margin: 0.2rem;
+    }
+
+    .history-summary {
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: var(--fondamental-color);
+      color: white;
+      font-weight: 600;
+
+      & .status {
+        color: white;
+      }
+
+      span {
+        padding-left: 10px;
+      }
+    }
+
+    .reservation-card {
+      padding: 10px;
+    }
+  }
+
+  a.btn {
+    display: inline-block;
+    background-color: var(--fondamental-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border: 3px solid var(--fondamental-color);
+    text-decoration: none;
+    font-weight: 600;
+    cursor: pointer;
   }
 }
