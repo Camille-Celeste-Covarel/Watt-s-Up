@@ -40,8 +40,8 @@ const ReservationCard = ({ reservation }: { reservation: Reservation }) => {
     <div className="reservation-card">
       {" "}
       <div className="reservation-card-header">
-        {" "}
-        <h3>{station.nom_station}</h3> <p>{station.adresse_station}</p>{" "}
+        <h4>Station</h4>
+        <p>{station.adresse_station}</p>{" "}
       </div>{" "}
       <div className="reservation-details">
         {" "}
@@ -287,91 +287,92 @@ export function ReservationPage() {
           </button>
         </div>
       </Modal>
+      <div className="active-reservation">
+        <h1>En cours</h1>
 
-      <h1>Mes Réservations</h1>
-
-      {activeReservation ? (
-        <section className="reservation-section">
-          <h2>
-            {activeReservation.status === "IN_USE"
-              ? "Charge en cours"
-              : "Borne réservée"}
-          </h2>
-          <ReservationCard reservation={activeReservation} />
-          {activeReservation.status === "ACTIVE" && (
-            <>
-              <p>
-                La réservation expire dans : <strong>{remainingTime}</strong>
-              </p>
-              <div className="reservation-actions">
-                <button
-                  type="button"
-                  className="btn btn-primary"
-                  onClick={() =>
-                    startChargeMutation.mutate(activeReservation.id)
-                  }
-                  disabled={isActionPending}
-                >
-                  Commencer la charge
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => openCancelModal(activeReservation.id)}
-                  disabled={isActionPending}
-                >
-                  Annuler
-                </button>
-              </div>
-            </>
-          )}
-          {activeReservation.status === "IN_USE" && (
-            <>
-              <p style={{ marginTop: "1rem" }}>
-                Temps de charge : <strong>{remainingTime}</strong>
-              </p>
-              {activeReservation.session_ends_at && (
-                <p
-                  style={{
-                    fontSize: "0.8rem",
-                    color: "grey",
-                    fontStyle: "italic",
-                  }}
-                >
-                  [DEV] Fin de session prévue à :{" "}
-                  {new Date(
-                    activeReservation.session_ends_at,
-                  ).toLocaleTimeString("fr-FR")}
+        {activeReservation ? (
+          <section className="reservation">
+            <h2>
+              {activeReservation.status === "IN_USE"
+                ? "Charge en cours"
+                : "Borne réservée"}
+            </h2>
+            <ReservationCard reservation={activeReservation} />
+            {activeReservation.status === "ACTIVE" && (
+              <>
+                <p>
+                  La réservation expire dans : <strong>{remainingTime}</strong>
                 </p>
-              )}
-              <div className="reservation-actions">
-                <button
-                  type="button"
-                  className="btn btn-danger"
-                  onClick={() => openStopModal(activeReservation.id)}
-                  disabled={isActionPending}
-                >
-                  Arrêter la charge
-                </button>
-              </div>
-            </>
-          )}
-        </section>
-      ) : (
-        <section className="reservation-section">
-          <h2>Aucune réservation active</h2>
-          <p>
-            Vous n'avez pas de réservation en cours. Trouvez une borne et
-            réservez-la dès maintenant !
-          </p>
-          <Link to="/" className="btn">
-            Trouver une borne
-          </Link>
-        </section>
-      )}
+                <div className="reservation-actions">
+                  <button
+                    type="button"
+                    className="start-charge-button"
+                    onClick={() =>
+                      startChargeMutation.mutate(activeReservation.id)
+                    }
+                    disabled={isActionPending}
+                  >
+                    Commencer la charge
+                  </button>
+                  <button
+                    type="button"
+                    className="btn btn-secondary"
+                    onClick={() => openCancelModal(activeReservation.id)}
+                    disabled={isActionPending}
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </>
+            )}
+            {activeReservation.status === "IN_USE" && (
+              <>
+                <p style={{ marginTop: "1rem" }}>
+                  Temps de charge : <strong>{remainingTime}</strong>
+                </p>
+                {activeReservation.session_ends_at && (
+                  <p
+                    style={{
+                      fontSize: "0.8rem",
+                      color: "grey",
+                      fontStyle: "italic",
+                    }}
+                  >
+                    [DEV] Fin de session prévue à :{" "}
+                    {new Date(
+                      activeReservation.session_ends_at,
+                    ).toLocaleTimeString("fr-FR")}
+                  </p>
+                )}
+                <div className="reservation-actions">
+                  <button
+                    type="button"
+                    className="btn btn-danger"
+                    onClick={() => openStopModal(activeReservation.id)}
+                    disabled={isActionPending}
+                  >
+                    Arrêter la charge
+                  </button>
+                </div>
+              </>
+            )}
+          </section>
+        ) : (
+          <section className="reservation">
+            <h2>Aucune réservation active</h2>
+            <p>
+              Vous n'avez pas de réservation en cours. Trouvez une borne et
+              réservez-la dès maintenant !
+            </p>
+            <Link to="/" className="btn">
+              Trouver une borne
+            </Link>
+          </section>
+        )}
+      </div>
 
       {pastReservations.length > 0 && (
-        <section className="reservation-section">
+        <section className="reservation">
           <h2>Historique</h2>
           {pastReservations.slice(0, 5).map((reservation) => (
             <details key={reservation.id} className="history-item">
@@ -390,7 +391,7 @@ export function ReservationPage() {
         </section>
       )}
 
-      <section className="reservation-section">
+      <section className="reservation">
         <h2>Un problème ?</h2>
         <p>
           Si vous rencontrez un souci avec une réservation, n'hésitez pas à nous

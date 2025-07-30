@@ -33,7 +33,7 @@ export function Overlay({
 
   return (
     <div
-      className={`station-details-overlay ${isAnimatingOpen ? "open" : ""}`}
+      className={`overlay ${isAnimatingOpen ? "open" : ""}`}
       aria-labelledby="overlay-title"
     >
       <button
@@ -44,7 +44,7 @@ export function Overlay({
       >
         &times;
       </button>
-      <div ref={contentRef} className="station-details-content">
+      <div ref={contentRef} className="overlay-content">
         {children}
       </div>
       <ScrollToTopButton targetRef={contentRef} />

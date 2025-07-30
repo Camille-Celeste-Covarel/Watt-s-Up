@@ -57,7 +57,7 @@ h3 {
   right: 10px;
 }
 
-.main-content:has(.station-details-overlay.open) .map-controls-container {
+.main-content:has(.overlay.open) .map-controls-container {
   right: calc(min(max(var(--overlay-width), 320px), 500px) + 10px);
 }
 
