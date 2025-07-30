@@ -137,8 +137,8 @@ function MapLibre() {
         type: "geojson",
         data: { type: "FeatureCollection", features: [] },
         cluster: true,
-        clusterMaxZoom: 14,
-        clusterRadius: 50,
+        clusterMaxZoom: 11,
+        clusterRadius: 40,
       });
 
       map.addLayer({
