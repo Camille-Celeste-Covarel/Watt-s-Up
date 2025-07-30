@@ -79,6 +79,9 @@ router.put(
   vehiculeActions.updateVehiculePhoto,
 );
 
+// Route de contact (mail)
+router.post("/contact", userActions.contact);
+
 /* ************************************************************************* */
 // 👑 Wall d'administration - Tout ce qui suit nécessite d'être Admin
 /* ************************************************************************* */
