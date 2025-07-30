@@ -399,13 +399,51 @@ const getMe = async (
     if (userJson.vehicles) {
       userJson.vehicles = userJson.vehicles.map((v) => ({
         ...v,
-        photo_url: v.photo_url
-          ? `/api/uploads/vehicules/${v.photo_url}`
-          : undefined,
+        photo_url:
+          v.photo_url && !v.photo_url.startsWith("/api/uploads/vehicules/")
+            ? `/api/uploads/vehicules/${v.photo_url}`
+            : v.photo_url,
       }));
     }
 
     res.json(userJson);
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateMe = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const user = await User.findByPk(req.user?.id);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+
+    Object.assign(user, req.body);
+    await user.save();
+
+    res.json({ message: "Profil mis à jour !" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const updateAvatar = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction,
+) => {
+  try {
+    const user = await User.findByPk(req.user?.id);
+    if (!user) return res.status(404).json({ error: "Utilisateur non trouvé" });
+
+    if (req.file) {
+      user.avatar_url = req.file.filename;
+      await user.save();
+    }
+    res.json({ message: "Avatar mis à jour !" });
   } catch (err) {
     next(err);
   }
@@ -424,4 +462,6 @@ export default {
   resetPassword,
   check,
   getMe,
+  updateMe,
+  updateAvatar,
 };

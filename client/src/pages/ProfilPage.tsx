@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
+import { FaEdit } from "react-icons/fa";
+import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
 import type { ProfilePageUser } from "../types/pages/pagesTypes";
 import "../style/profilpage.css";
 
 function ProfilPage() {
+  const navigate = useNavigate();
+
   const {
     data: user,
     isLoading,
@@ -14,9 +18,7 @@ function ProfilPage() {
     queryFn: async () => {
       const response = await fetch(
         `${import.meta.env.VITE_API_URL}/api/users/me`,
-        {
-          credentials: "include",
-        },
+        { credentials: "include" },
       );
       if (!response.ok) {
         const errorData = await response.json();
@@ -26,7 +28,7 @@ function ProfilPage() {
       }
       return response.json();
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0,
   });
 
   if (isLoading) {
@@ -44,7 +46,14 @@ function ProfilPage() {
   return (
     <div className="profil-container">
       <section className="profil-section">
-        <h2>Mon profil</h2>
+        <div className="profil-section-header">
+          <h2>Mon profil</h2>
+          <FaEdit
+            className="edit-icon"
+            onClick={() => navigate("/profil/edit")}
+            title="Modifier le profil"
+          />
+        </div>
         <div className="profil-avatar-block">
           <img
             src={
@@ -97,7 +106,15 @@ function ProfilPage() {
         </div>
       </section>
       <section className="profil-vehicle-section">
-        <h2>Mes véhicules</h2>
+        <div className="profil-section-header">
+          <h2>Mes véhicules</h2>
+          <FaEdit
+            className="edit-icon"
+            style={{ cursor: "pointer", marginLeft: 8 }}
+            onClick={() => navigate("/vehicle/edit")}
+            title="Modifier le véhicule"
+          />
+        </div>
         {user.vehicles && user.vehicles.length > 0 ? (
           user.vehicles.map((vehicule) => (
             <div className="profil-vehicle-infos" key={vehicule.id}>

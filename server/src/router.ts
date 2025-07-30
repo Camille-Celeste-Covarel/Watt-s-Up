@@ -56,6 +56,12 @@ router.use(authenticateToken);
 /* ************************************************************************* */
 
 router.get("/users/me", userActions.getMe);
+router.put("/users/me", userActions.updateMe);
+router.put(
+  "/users/me/avatar",
+  uploadAvatar.single("avatar"),
+  userActions.updateAvatar,
+);
 
 // Réservations
 router.use("/books", bookRoutes);
@@ -64,6 +70,14 @@ router.use("/books", bookRoutes);
 router.use("/reservations", reservationRoutes);
 
 // Route pour récupérer son propre profil (exemple)
+
+// Routes véhicules (modification par l'utilisateur connecté)
+router.put("/vehicules/:id", vehiculeActions.updateVehicule);
+router.put(
+  "/vehicules/:id/photo",
+  uploadAvatar.single("vehicle_photo"),
+  vehiculeActions.updateVehiculePhoto,
+);
 
 /* ************************************************************************* */
 // 👑 Wall d'administration - Tout ce qui suit nécessite d'être Admin

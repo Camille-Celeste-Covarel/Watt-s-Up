@@ -13,6 +13,12 @@
   margin-right: auto;
 }
 
+.profil-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
 .profil-avatar-block {
   display: flex;
   align-items: center;
@@ -70,4 +76,9 @@
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+}
+
+.edit-icon {
+  margin-left: 8;
+  cursor: pointer;
 }
