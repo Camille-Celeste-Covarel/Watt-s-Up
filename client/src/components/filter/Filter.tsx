@@ -49,12 +49,12 @@ function Filter() {
 
   return (
     <div className="filter-panel-content">
-      <h2>Compatibilité véhicule</h2>
+      {/*      <h2>Compatibilité véhicule</h2>
       <select>
         <option value="aucun">Aucune</option>
         <option value="premierVehicule">1er véhicule</option>
         <option value="deuxiemeVehicule">2ème véhicule</option>
-      </select>
+      </select>*/}
 
       <h2>Type de véhicules</h2>
       <label
