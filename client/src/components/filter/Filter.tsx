@@ -79,7 +79,6 @@ function Filter() {
       <h2>Puissance (kw)</h2>
       <div className="power-list">
         {powerOptions.map((option) => (
-          // MODIFICATION: La 'label' englobe maintenant tout
           <label
             key={option.id}
             className={`power-item ${
@@ -105,7 +104,6 @@ function Filter() {
       <h2>Type de prise</h2>
       <div className="plug-list">
         {plugOptions.map((option) => (
-          // MODIFICATION: La 'label' englobe maintenant tout
           <label
             key={option.id}
             className={`plug-item ${

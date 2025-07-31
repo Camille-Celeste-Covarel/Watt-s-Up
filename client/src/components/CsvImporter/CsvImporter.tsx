@@ -8,8 +8,6 @@ const CsvImporter: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // On récupère tout l'état et les fonctions depuis le contexte global.
-
   const {
     isImporting,
     isWsConnected,
@@ -30,7 +28,6 @@ const CsvImporter: React.FC = () => {
     }
   };
 
-  // L'upload est maintenant délégué au contexte.
   const handleUpload = () => {
     if (file) {
       startUpload(file);
@@ -49,7 +46,6 @@ const CsvImporter: React.FC = () => {
     return `${mins}:${secs}`;
   };
 
-  // Helper to interpolate between two RGB colors based on a factor (0 to 1).
   const interpolateRgb = (
     color1: number[],
     color2: number[],
@@ -130,7 +126,6 @@ const CsvImporter: React.FC = () => {
           )}
         </div>
 
-        {/* Affiche le nom du fichier depuis l'état du contexte (si réhydraté) ou le fichier local */}
         {(file || fileName) && (
           <span className="file-name-display">{fileName || file?.name}</span>
         )}
