@@ -32,7 +32,7 @@ function ReservationSuccessPage() {
 
   if (!apiResponse || !station || !selectedGroup) {
     return (
-      <div className="success-page-container">
+      <div className="reservation-success-page">
         <p>Chargement de la confirmation...</p>
       </div>
     );
@@ -54,51 +54,60 @@ function ReservationSuccessPage() {
   });
 
   return (
-    <div className="success-page-container">
-      <h2>Réservation confirmée !</h2>
+    <div className="reservation-success-page">
+      <div className="reservation-success-content">
+        <h2>Réservation confirmée !</h2>
+        <p className="intro-text">
+          Votre borne est prête et vous attend. Voici un résumé de votre
+          réservation.
+        </p>
 
-      <div className="reservation-summary">
-        <div className="summary-header">
-          <h3>{station.nom_station}</h3>
-          <p>{station.adresse_station}</p>
-        </div>
-        <div className="summary-details">
-          <div className="detail-block">
-            <h4>Borne</h4>
-            <ul>
-              <li>Puissance: {selectedGroup.power} kW</li>
-              <li>
-                Prises: {selectedGroup.plugs.map((p) => p.name).join(", ")}
-              </li>
-            </ul>
+        <div className="reservation-summary">
+          <div className="summary-header">
+            <h3>{station.nom_station}</h3>
+            <p>{station.adresse_station}</p>
           </div>
-          <div className="detail-block">
-            <h4>Réservation</h4>
-            <ul>
-              <li>Date: {formattedReservationDate}</li>
-              <li>
-                Statut:
-                <span className={`status status-${apiResponse.status}`}>
-                  {statusLabels[apiResponse.status]}
-                </span>
-              </li>
-            </ul>
+          <div className="summary-details">
+            <div className="detail-block">
+              <h4>Borne</h4>
+              <ul>
+                <li>Puissance: {selectedGroup.power} kW</li>
+                <li>
+                  Prises: {selectedGroup.plugs.map((p) => p.name).join(", ")}
+                </li>
+              </ul>
+            </div>
+            <div className="detail-block">
+              <h4>Réservation</h4>
+              <ul>
+                <li>Date: {formattedReservationDate}</li>
+                <li>
+                  Statut:
+                  {/* MODIFIÉ : status en minuscule pour correspondre au CSS */}
+                  <span
+                    className={`status status-${apiResponse.status.toLowerCase()}`}
+                  >
+                    {statusLabels[apiResponse.status]}
+                  </span>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
-      </div>
 
-      <p className="expires-info">
-        Votre borne de recharge est réservée jusqu'au{" "}
-        <strong>
-          {formattedExpiryDate} à {formattedExpiryTime}
-        </strong>
-        . Pensez à valider votre réservation dans votre page{" "}
-        <strong>mes réservations.</strong>
-      </p>
-      <div className="success-actions">
-        <Link to="/reservations" className="btn btn-primary">
-          Voir toutes mes réservations
-        </Link>
+        <p className="expires-info">
+          Votre borne est réservée jusqu'au{" "}
+          <strong>
+            {formattedExpiryDate} à {formattedExpiryTime}
+          </strong>
+          .
+        </p>
+        <div className="success-actions">
+          {/* MODIFIÉ : Utilisation des classes de boutons de votre DA */}
+          <Link to="/reservations" className="action-button primary-action">
+            Voir toutes mes réservations
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -57,64 +57,74 @@ function Filter() {
       </select>
 
       <h2>Type de véhicules</h2>
-      <div className="vehicle-item">
+      <label
+        className={`vehicle-item ${
+          filters.vehicles.includes("bike") ? "active" : ""
+        }`}
+        htmlFor="vehicle-bike"
+      >
         <div className="vehicle-info">
           <img src={bike} alt="" />
           <span>Compatibilité deux roues</span>
         </div>
-        <label className="switch" htmlFor="vehicle-bike">
-          <input
-            id="vehicle-bike"
-            type="checkbox"
-            checked={filters.vehicles.includes("bike")}
-            onChange={() => toggleFilter("vehicles", "bike")}
-            aria-label="Activer le filtre compatibilité deux roues"
-          />
-          <span className="slider" />
-        </label>
-      </div>
+        <input
+          id="vehicle-bike"
+          type="checkbox"
+          checked={filters.vehicles.includes("bike")}
+          onChange={() => toggleFilter("vehicles", "bike")}
+          aria-label="Activer le filtre compatibilité deux roues"
+        />
+      </label>
 
       <h2>Puissance (kw)</h2>
       <div className="power-list">
         {powerOptions.map((option) => (
-          <div className="power-item" key={option.id}>
+          // MODIFICATION: La 'label' englobe maintenant tout
+          <label
+            key={option.id}
+            className={`power-item ${
+              filters.powers.includes(option.id) ? "active" : ""
+            }`}
+            htmlFor={`power-${option.id}`}
+          >
             <div className="power-info">
               <img src={powerIcon} alt="" />
               <span>{option.label}</span>
             </div>
-            <label className="switch" htmlFor={`power-${option.id}`}>
-              <input
-                id={`power-${option.id}`}
-                type="checkbox"
-                checked={filters.powers.includes(option.id)}
-                onChange={() => toggleFilter("powers", option.id)}
-                aria-label={`Activer le filtre ${option.label}`}
-              />
-              <span className="slider" />
-            </label>
-          </div>
+            <input
+              id={`power-${option.id}`}
+              type="checkbox"
+              checked={filters.powers.includes(option.id)}
+              onChange={() => toggleFilter("powers", option.id)}
+              aria-label={`Activer le filtre ${option.label}`}
+            />
+          </label>
         ))}
       </div>
 
       <h2>Type de prise</h2>
       <div className="plug-list">
         {plugOptions.map((option) => (
-          <div className="plug-item" key={option.id}>
+          // MODIFICATION: La 'label' englobe maintenant tout
+          <label
+            key={option.id}
+            className={`plug-item ${
+              filters.plugs.includes(option.id) ? "active" : ""
+            }`}
+            htmlFor={`plug-${option.id}`}
+          >
             <div className="plug-info">
               <img src={option.icon} alt="" />
               <span>{option.label}</span>
             </div>
-            <label className="switch" htmlFor={`plug-${option.id}`}>
-              <input
-                id={`plug-${option.id}`}
-                type="checkbox"
-                checked={filters.plugs.includes(option.id)}
-                onChange={() => toggleFilter("plugs", option.id)}
-                aria-label={`Activer le filtre prise ${option.label}`}
-              />
-              <span className="slider" />
-            </label>
-          </div>
+            <input
+              id={`plug-${option.id}`}
+              type="checkbox"
+              checked={filters.plugs.includes(option.id)}
+              onChange={() => toggleFilter("plugs", option.id)}
+              aria-label={`Activer le filtre prise ${option.label}`}
+            />
+          </label>
         ))}
       </div>
 

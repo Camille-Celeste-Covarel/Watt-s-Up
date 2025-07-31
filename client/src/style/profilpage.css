@@ -30,7 +30,7 @@
   height: 120px;
   border-radius: 50%;
   object-fit: cover;
-  border: 4px solid white;
+  border: 10px solid white;
 }
 
 .profil-names {

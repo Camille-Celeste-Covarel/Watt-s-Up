@@ -267,25 +267,27 @@ export function ReservationPage() {
         isOpen={modalState.isOpen}
         onClose={() => setModalState({ ...modalState, isOpen: false })}
         title={modalState.title}
+        actions={
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setModalState({ ...modalState, isOpen: false })}
+            >
+              Non, annuler
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleConfirmAction}
+              disabled={isActionPending}
+            >
+              {isActionPending ? "Confirmation..." : "Oui, confirmer"}
+            </button>
+          </>
+        }
       >
         <p>{modalState.message}</p>
-        <div className="modal-actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setModalState({ ...modalState, isOpen: false })}
-          >
-            Non, annuler
-          </button>
-          <button
-            type="button"
-            className="btn btn-danger"
-            onClick={handleConfirmAction}
-            disabled={isActionPending}
-          >
-            {isActionPending ? "Confirmation..." : "Oui, confirmer"}
-          </button>
-        </div>
       </Modal>
       <div className="active-reservation">
         <h1>En cours</h1>

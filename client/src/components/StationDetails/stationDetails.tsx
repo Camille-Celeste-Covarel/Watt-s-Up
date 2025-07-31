@@ -36,28 +36,6 @@ export function StationDetails() {
     enabled: !!stationId,
   });
 
-  const reservationMutation = useMutation({
-    mutationFn: createReservation,
-    onSuccess: (data) => {
-      navigate(`/reservation/success/${data.id}`, {
-        state: { reservation: data, station, selectedGroup },
-      });
-
-      void queryClient.invalidateQueries({
-        queryKey: ["stationDetails", stationId],
-      });
-      void queryClient.invalidateQueries({ queryKey: ["reservations", "me"] });
-      setSelectedGroupKey(null);
-    },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error
-          ? err.message
-          : "Une erreur inconnue est survenue.";
-      showToast({ type: "error", message });
-    },
-  });
-
   const terminalGroups = useMemo(() => {
     if (!station?.terminals) return [];
     const groups = new Map<string, TerminalGroup>();
@@ -89,6 +67,28 @@ export function StationDetails() {
     () => terminalGroups.find((g) => g.key === selectedGroupKey),
     [terminalGroups, selectedGroupKey],
   );
+
+  const reservationMutation = useMutation({
+    mutationFn: createReservation,
+    onSuccess: (data) => {
+      navigate(`/reservation/success/${data.id}`, {
+        state: { reservation: data, station, selectedGroup },
+      });
+
+      void queryClient.invalidateQueries({
+        queryKey: ["stationDetails", stationId],
+      });
+      void queryClient.invalidateQueries({ queryKey: ["reservations", "me"] });
+      setSelectedGroupKey(null);
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Une erreur inconnue est survenue.";
+      showToast({ type: "error", message });
+    },
+  });
 
   const handleReserveClick = () => {
     if (!isAuthenticated || !selectedGroupKey) {
@@ -144,6 +144,25 @@ export function StationDetails() {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         title="Confirmer la réservation"
+        actions={
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleConfirmReservation}
+              disabled={reservationMutation.isPending || !selectedGroup}
+            >
+              {reservationMutation.isPending ? "Confirmation..." : "Confirmer"}
+            </button>
+          </>
+        }
       >
         {selectedGroup ? (
           <p>
@@ -154,73 +173,129 @@ export function StationDetails() {
             ({selectedGroup.power} kW). Confirmez-vous ?
           </p>
         ) : null}
-        <div className="modal-actions">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => setIsModalOpen(false)}
-          >
-            Annuler
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={handleConfirmReservation}
-            disabled={reservationMutation.isPending || !selectedGroup}
-          >
-            {reservationMutation.isPending ? "Confirmation..." : "Confirmer"}
-          </button>
-        </div>
       </Modal>
 
       <h2>{station.nom_station}</h2>
       <p className="station-info__text">{station.adresse_station}</p>
-      <div className="station-info-details">{/* ...détails... */}</div>
-      <h3 className="station-list-title">Choisir ma borne</h3>
-      <div className="terminal-groups-grid">
-        {terminalGroups.map((group) => (
-          <button
-            key={group.key}
-            type="button"
-            className={`terminal-group-card ${
-              group.availableCount > 0 ? "available" : "unavailable"
-            } ${group.key === selectedGroupKey ? "selected" : ""}`}
-            onClick={() => setSelectedGroupKey(group.key)}
-            disabled={group.availableCount === 0}
-          >
-            <div className="group-plugs">
-              {group.plugs.map((plug: Plug) => (
-                <PlugIcon
-                  key={plug.id}
-                  plugName={plug.name}
-                  className="plug-icon"
-                />
-              ))}
-            </div>
-            <div className="group-power">{group.power} kW</div>
-            <div className="group-availability">
-              {group.availableCount}/{group.count}
-            </div>
-          </button>
-        ))}
+
+      <div className="station-info-details">
+        {station.implantation_station && (
+          <div className="info-item">
+            <span className="station-info__label">Implantation:</span>
+            <span className="station-info__text">
+              {station.implantation_station}
+            </span>
+          </div>
+        )}
+        {station.horaires && (
+          <div className="info-item">
+            <span className="station-info__label">Horaires:</span>
+            <span className="station-info__text">{station.horaires}</span>
+          </div>
+        )}
+        {station.accessibilite_pmr !== null && (
+          <div className="info-item">
+            <span className="station-info__label">Accès PMR:</span>
+            <span className="station-info__text">
+              {station.accessibilite_pmr ? "Oui" : "Non"}
+            </span>
+          </div>
+        )}
+        {station.nbre_pdc !== null && (
+          <div className="info-item">
+            <span className="station-info__label">Points de charge:</span>
+            <span className="station-info__text">{station.nbre_pdc}</span>
+          </div>
+        )}
+        {station.puissance_max !== null && (
+          <div className="info-item">
+            <span className="station-info__label">Puissance max:</span>
+            <span className="station-info__text">
+              {station.puissance_max} kW
+            </span>
+          </div>
+        )}
+        {station.paiement_cb !== null && (
+          <div className="info-item">
+            <span className="station-info__label">Paiement par CB:</span>
+            <span className="station-info__text">
+              {station.paiement_cb ? "Oui" : "Non"}
+            </span>
+          </div>
+        )}
+        {station.paiement_autre && (
+          <div className="info-item">
+            <span className="station-info__label">Autre paiement:</span>
+            <span className="station-info__text">{station.paiement_autre}</span>
+          </div>
+        )}
+        {station.tarification && (
+          <div className="info-item">
+            <span className="station-info__label">Tarification:</span>
+            <span className="station-info__text">{station.tarification}</span>
+          </div>
+        )}
+        {station.observations && (
+          <div className="info-item">
+            <span className="station-info__label">Observations:</span>
+            <span className="station-info__text">{station.observations}</span>
+          </div>
+        )}
       </div>
-      <div className="action-buttons-container">
-        <button
-          type="button"
-          className="action-button reserve-button"
-          onClick={handleReserveClick}
-          disabled={!selectedGroupKey || !isAuthenticated}
-        >
-          Réserver
-        </button>
-        <button
-          type="button"
-          className="action-button cancel-button"
-          onClick={handleCancelClick}
-        >
-          {selectedGroupKey ? "Annuler" : "Retour à la carte"}
-        </button>
-      </div>
+
+      {terminalGroups.length > 0 && (
+        <>
+          <h3 className="station-list-title">Choisir ma borne</h3>
+          <div className="terminal-groups-grid">
+            {terminalGroups.map((group) => (
+              <button
+                key={group.key}
+                type="button"
+                className={`terminal-group-card ${
+                  group.availableCount > 0 ? "available" : "unavailable"
+                } ${group.key === selectedGroupKey ? "selected" : ""}`}
+                onClick={() => setSelectedGroupKey(group.key)}
+                disabled={group.availableCount === 0}
+              >
+                <div className="group-plugs">
+                  {group.plugs.map((plug: Plug) => (
+                    <PlugIcon
+                      key={plug.id}
+                      plugName={plug.name}
+                      className="plug-icon"
+                    />
+                  ))}
+                </div>
+                <div className="group-power">{group.power} kW</div>
+                <div className="group-availability">
+                  {group.availableCount}/{group.count}
+                </div>
+              </button>
+            ))}
+          </div>
+          <div className="action-buttons-container">
+            <button
+              type="button"
+              className="action-button reserve-button"
+              onClick={handleReserveClick}
+              disabled={
+                !selectedGroupKey ||
+                !isAuthenticated ||
+                reservationMutation.isPending
+              }
+            >
+              {reservationMutation.isPending ? "Réservation..." : "Réserver"}
+            </button>
+            <button
+              type="button"
+              className="action-button cancel-button"
+              onClick={handleCancelClick}
+            >
+              {selectedGroupKey ? "Annuler" : "Retour à la carte"}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
