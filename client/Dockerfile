@@ -33,6 +33,9 @@ FROM nginx:alpine AS runner
 # Copie les fichiers buildés de l'étape 'builder' vers le répertoire de service de Nginx
 COPY --from=builder /app/client/dist /usr/share/nginx/html
 
+# Copie votre configuration Nginx personnalisée pour gérer les routes de la SPA
+COPY client/default.conf /etc/nginx/conf.d/default.conf
+
 # Expose le port par défaut de Nginx (80)
 EXPOSE 80
 

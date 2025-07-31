@@ -317,16 +317,6 @@ function RegisterPage() {
               <button
                 type="button"
                 onClick={() => setShowConfirmPassword((v) => !v)}
-                style={{
-                  position: "absolute",
-                  right: 10,
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  background: "none",
-                  border: "none",
-                  cursor: "pointer",
-                  padding: 0,
-                }}
                 tabIndex={-1}
                 aria-label={
                   showConfirmPassword
