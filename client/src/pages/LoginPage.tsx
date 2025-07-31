@@ -80,23 +80,21 @@ function LoginPage() {
           </div>
         </div>
 
-        {error && <div className="error-message">{error}</div>}
+        <div className="login_button">
+          {error && <div className="error-message">{error}</div>}
 
-        <button type="submit" className="button-classic">
-          Se connecter
-        </button>
+          <button type="submit" className="button-classic">
+            Se connecter
+          </button>
 
-        <div className="separator">
-          <h2>Toujours pas de compte ?</h2>
+          <button
+            type="button"
+            className="button-classic"
+            onClick={() => navigate("/register")}
+          >
+            S'inscrire
+          </button>
         </div>
-
-        <button
-          type="button"
-          className="button-classic"
-          onClick={() => navigate("/register")}
-        >
-          S'inscrire !
-        </button>
       </form>
     </div>
   );
