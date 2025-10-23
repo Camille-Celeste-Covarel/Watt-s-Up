@@ -96,6 +96,7 @@ export class Book
     Book.belongsTo(sequelize.models.Terminal, {
       foreignKey: "id_terminal",
       as: "terminal",
+      onDelete: 'CASCADE',
     });
   }
 }

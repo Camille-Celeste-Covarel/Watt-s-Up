@@ -58,3 +58,56 @@ export async function fetchStationDetails(
 
   return response.json();
 }
+
+/**
+ * Supprime une station par son ID.
+ * @param stationId - L'identifiant de la station à supprimer.
+ * @returns Une promesse qui se résout si la suppression est réussie.
+ */
+export async function deleteStation(stationId: string): Promise<void> {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      credentials: 'include',
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: "Une erreur de communication avec le serveur est survenue.",
+    }));
+    throw new Error(
+      errorData.message || `Failed to delete station with ID ${stationId}`,
+    );
+  }
+}
+
+export async function createReservation(
+  reservationData: any,
+): Promise<any> {
+  const response = await fetch(
+    `${import.meta.env.VITE_API_URL}/api/reservations`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reservationData),
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({
+      message: "Une erreur de communication avec le serveur est survenue.",
+    }));
+    throw new Error(
+      errorData.message || "Failed to create reservation.",
+    );
+  }
+
+  return response.json();
+}

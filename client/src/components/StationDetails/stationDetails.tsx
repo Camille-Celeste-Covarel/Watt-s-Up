@@ -8,7 +8,7 @@ import type {
   Plug,
   TerminalGroup,
 } from "../../types/components/componentsTypes.ts";
-import { createReservation } from "../../utils/reservationApi.ts";
+import { createReservation, deleteStation } from "../../utils/stationApi.ts";
 import { fetchStationDetails } from "../../utils/stationApi.ts";
 import { useToastStore } from "../../utils/useToast.ts";
 import { PlugIcon } from "../DisplaySVGPlug/DisplaySVGPlug";
@@ -18,7 +18,8 @@ export function StationDetails() {
   const { id: stationId } = useParams<{ id: string }>();
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const { isAuthenticated } = useAuth();
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const { isAuthenticated, user } = useAuth();
   const queryClient = useQueryClient();
   const { showToast } = useToastStore();
   const navigate = useNavigate();
@@ -90,6 +91,22 @@ export function StationDetails() {
     },
   });
 
+  const deleteStationMutation = useMutation({
+    mutationFn: (id: string) => deleteStation(id),
+    onSuccess: () => {
+      showToast({ type: "success", message: "Station supprimée avec succès." });
+      void queryClient.invalidateQueries({ queryKey: ["stations"] });
+      navigate("/");
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error
+          ? err.message
+          : "Une erreur est survenue lors de la suppression de la station.";
+      showToast({ type: "error", message });
+    },
+  });
+
   const handleReserveClick = () => {
     if (!isAuthenticated || !selectedGroupKey) {
       showToast({
@@ -109,6 +126,16 @@ export function StationDetails() {
       power: selectedGroup.power,
       plugIds: selectedGroup.plugs.map((p) => p.id),
     });
+  };
+
+  const handleDeleteClick = () => {
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!stationId) return;
+    setIsDeleteModalOpen(false);
+    deleteStationMutation.mutate(stationId);
   };
 
   const handleCancelClick = () => {
@@ -173,6 +200,36 @@ export function StationDetails() {
             ({selectedGroup.power} kW). Confirmez-vous ?
           </p>
         ) : null}
+      </Modal>
+
+      <Modal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        title="Confirmer la suppression"
+        actions={
+          <>
+            <button
+              type="button"
+              className="btn btn-secondary"
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Annuler
+            </button>
+            <button
+              type="button"
+              className="btn btn-danger"
+              onClick={handleConfirmDelete}
+              disabled={deleteStationMutation.isPending}
+            >
+              {deleteStationMutation.isPending ? "Suppression..." : "Supprimer"}
+            </button>
+          </>
+        }
+      >
+        <p>
+          Êtes-vous sûr de vouloir supprimer la station{" "}
+          <strong>{station.nom_station}</strong> ? Cette action est irréversible.
+        </p>
       </Modal>
 
       <h2>{station.nom_station}</h2>
@@ -293,6 +350,16 @@ export function StationDetails() {
             >
               {selectedGroupKey ? "Annuler" : "Retour à la carte"}
             </button>
+            {user?.isAdmin && (
+              <button
+                type="button"
+                className="action-button delete-button"
+                onClick={handleDeleteClick}
+                disabled={deleteStationMutation.isPending}
+              >
+                Supprimer la station
+              </button>
+            )}
           </div>
         </>
       )}

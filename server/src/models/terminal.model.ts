@@ -51,6 +51,7 @@ export class Terminal
             model: Station,
             key: "id",
           },
+          onDelete: 'CASCADE',
         },
         id_power: {
           type: DataTypes.UUID,

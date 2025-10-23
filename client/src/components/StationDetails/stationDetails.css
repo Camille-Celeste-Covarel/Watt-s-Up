@@ -204,6 +204,28 @@
     }
   }
 
+  .delete-button {
+    background-color: #dc3545;
+    border: none;
+    color: white;
+    font-size: 1em;
+    padding: 10px 20px;
+    width: auto;
+
+    &:hover {
+      background-color: #c82333;
+      transition-duration: 0.4s;
+      color: white;
+    }
+
+    &:disabled {
+      background-color: #555555;
+      color: white;
+      cursor: default;
+      opacity: 0.3;
+    }
+  }
+
   .reservation-error-message {
     color: #d9534f;
     font-weight: bold;
@@ -236,6 +258,8 @@
 
 @media (max-width: 768px) {
   .station-details-content {
+    padding: 20px 20px 40px;
+
     .terminal-groups-grid {
       grid-template-columns: repeat(2, 1fr);
       gap: 20px;

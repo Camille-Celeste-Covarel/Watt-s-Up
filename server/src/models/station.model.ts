@@ -352,6 +352,6 @@ export class Station
       foreignKey: "id_compagny",
       as: "compagny",
     });
-    Station.hasMany(Terminal, { foreignKey: "id_station", as: "terminals" });
+    Station.hasMany(Terminal, { foreignKey: "id_station", as: "terminals", onDelete: 'CASCADE' });
   }
 }

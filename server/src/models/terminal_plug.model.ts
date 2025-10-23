@@ -43,6 +43,7 @@ export class TerminalPlug
             key: "id",
           },
           field: "id_terminal",
+          onDelete: 'CASCADE',
         },
       },
       {
