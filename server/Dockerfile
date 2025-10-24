@@ -49,7 +49,8 @@ COPY --from=builder /app ./
 # D'après votre .env, c'est le port 3310.
 EXPOSE 3310
 
-COPY --from=builder /app/entrypoint.sh .
+# Corrige le chemin pour copier le script depuis le sous-dossier 'server'
+COPY --from=builder /app/server/entrypoint.sh .
 RUN chmod +x ./entrypoint.sh
 
 # Définit le point d'entrée et la commande par défaut
