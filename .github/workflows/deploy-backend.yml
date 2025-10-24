@@ -120,8 +120,26 @@ jobs:
             set -euxo pipefail
             echo "--- Jumping to SnailBackend using pre-configured SSH alias 'snailback' ---"
 
-            ssh snailback "GH_OWNER='${{ github.repository_owner }}' IMAGE_NAME='${{ env.IMAGE_NAME }}' IMAGE_DIGEST='${{ needs.build.outputs.image-digest }}' GH_TOKEN='${{ secrets.WATTSUP_DEPLOY }}' GH_ACTOR='${{ github.actor }}' APP_DIR='${{ env.APP_DIR_SNAILBACKEND }}' DB_HOST_PROD='${{ secrets.DB_HOST_PROD }}' DB_USER_PROD='${{ secrets.DB_USER_PROD }}' DB_PASSWORD_PROD='${{ secrets.DB_PASSWORD_PROD }}' DB_NAME_PROD='${{ secrets.DB_NAME_PROD }}' DB_PORT_PROD='${{ secrets.DB_PORT_PROD }}' ADMIN_EMAIL_PROD='${{ secrets.ADMIN_EMAIL_PROD }}' ADMIN_PASSWORD_PROD='${{ secrets.ADMIN_PASSWORD_PROD }}' bash -s" <<-'EOF'
+            # Use a heredoc to pass the entire script to the remote host's stdin
+            ssh snailback 'bash -s' <<-'EOF'
+              # This whole block runs on SnailBackend
               set -euxo pipefail
+
+              # Export all variables needed by the script
+              export GH_OWNER='${{ github.repository_owner }}'
+              export IMAGE_NAME='${{ env.IMAGE_NAME }}'
+              export IMAGE_DIGEST='${{ needs.build.outputs.image-digest }}'
+              export GH_TOKEN='${{ secrets.WATTSUP_DEPLOY }}'
+              export GH_ACTOR='${{ github.actor }}'
+              export APP_DIR='${{ env.APP_DIR_SNAILBACKEND }}'
+              export DB_HOST_PROD='${{ secrets.DB_HOST_PROD }}'
+              export DB_USER_PROD='${{ secrets.DB_USER_PROD }}'
+              export DB_PASSWORD_PROD='${{ secrets.DB_PASSWORD_PROD }}'
+              export DB_NAME_PROD='${{ secrets.DB_NAME_PROD }}'
+              export DB_PORT_PROD='${{ secrets.DB_PORT_PROD }}'
+              export ADMIN_EMAIL_PROD='${{ secrets.ADMIN_EMAIL_PROD }}'
+              export ADMIN_PASSWORD_PROD='${{ secrets.ADMIN_PASSWORD_PROD }}'
+
               echo "--- Starting deployment on SnailBackend ---"
 
               # --- Variable Setup ---
