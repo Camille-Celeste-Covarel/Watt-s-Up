@@ -120,21 +120,7 @@ jobs:
             set -euxo pipefail
             echo "--- Jumping to SnailBackend using pre-configured SSH alias 'snailback' ---"
 
-            ssh snailback \
-                "GH_OWNER='${{ github.repository_owner }}' \
-                 IMAGE_NAME='${{ env.IMAGE_NAME }}' \
-                 IMAGE_DIGEST='${{ needs.build.outputs.image-digest }}' \
-                 GH_TOKEN='${{ secrets.WATTSUP_DEPLOY }}' \
-                 GH_ACTOR='${{ github.actor }}' \
-                 APP_DIR='${{ env.APP_DIR_SNAILBACKEND }}' \
-                 DB_HOST_PROD='${{ secrets.DB_HOST_PROD }}' \
-                 DB_USER_PROD='${{ secrets.DB_USER_PROD }}' \
-                 DB_PASSWORD_PROD='${{ secrets.DB_PASSWORD_PROD }}' \
-                 DB_NAME_PROD='${{ secrets.DB_NAME_PROD }}' \
-                 DB_PORT_PROD='${{ secrets.DB_PORT_PROD }}' \
-                 ADMIN_EMAIL_PROD='${{ secrets.ADMIN_EMAIL_PROD }}' \
-                 ADMIN_PASSWORD_PROD='${{ secrets.ADMIN_PASSWORD_PROD }}' \
-                 bash -s" <<-'EOF'
+            ssh snailback "GH_OWNER='${{ github.repository_owner }}' IMAGE_NAME='${{ env.IMAGE_NAME }}' IMAGE_DIGEST='${{ needs.build.outputs.image-digest }}' GH_TOKEN='${{ secrets.WATTSUP_DEPLOY }}' GH_ACTOR='${{ github.actor }}' APP_DIR='${{ env.APP_DIR_SNAILBACKEND }}' DB_HOST_PROD='${{ secrets.DB_HOST_PROD }}' DB_USER_PROD='${{ secrets.DB_USER_PROD }}' DB_PASSWORD_PROD='${{ secrets.DB_PASSWORD_PROD }}' DB_NAME_PROD='${{ secrets.DB_NAME_PROD }}' DB_PORT_PROD='${{ secrets.DB_PORT_PROD }}' ADMIN_EMAIL_PROD='${{ secrets.ADMIN_EMAIL_PROD }}' ADMIN_PASSWORD_PROD='${{ secrets.ADMIN_PASSWORD_PROD }}' bash -s" <<-'EOF'
               set -euxo pipefail
               echo "--- Starting deployment on SnailBackend ---"
 
