@@ -1,0 +1,106 @@
+/*
+Thanks Temani Afif for css hover effect :)
+*/
+
+.topbar-container {
+  background-color: var(--fondamental-color);
+  padding: 0 20px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: relative;
+  z-index: 950;
+}
+
+.logo-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.logo {
+  height: 30px;
+}
+
+.login-button,
+.logout-button {
+  background-color: var(--quinte-color);
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.logout-button {
+  background-color: var(--seconde-color);
+}
+
+.desktop-nav-container {
+  display: flex;
+  align-items: center;
+  gap: 30px;
+}
+
+.desktop-nav-links {
+  display: flex;
+  align-items: center;
+  gap: 25px;
+}
+
+.desktop-nav-links a {
+  text-decoration: none;
+  color: white;
+  font-weight: 600;
+  font-size: 1.15rem;
+
+  --c: linear-gradient(white, white);
+
+  padding-bottom: 0.35em;
+
+  background: var(--c), var(--c);
+  background-size: 0.4em 4px;
+  background-position: 50% 100%;
+  background-repeat: no-repeat;
+
+  transition: color 0.3s, background-position 0.3s, background-size 0.3s 0.2s;
+}
+
+.desktop-nav-links a:hover {
+  color: var(--quinte-color);
+
+  background-size: 40% 2px;
+  background-position: 10% 100%, 90% 100%;
+}
+
+.user-menu {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-avatar-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar {
+  height: 40px;
+  width: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  transition: transform 0.2s ease-in-out;
+}
+
+.user-avatar-button:hover .user-avatar {
+  transform: scale(1.1);
+}

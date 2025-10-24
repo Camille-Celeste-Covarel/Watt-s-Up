@@ -1,5 +1,8 @@
+CSVCache
 .yarn
 node_modules
 .DS_Store
 .idea
 .vscode
+logs
+docs

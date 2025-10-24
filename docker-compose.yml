@@ -1,45 +1,79 @@
-version: "3.4"
-
 services:
-  web:
-    build: .
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules
+  # Service Backend (Express.js)
+  backend:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     ports:
       - "3310:3310"
-      - "3000:3000"
     environment:
-      APP_PORT: 3310
-      APP_SECRET: 123456789
-      DB_HOST: database
-      DB_PORT: 3306
-      DB_USER: user
-      DB_PASSWORD: password
-      DB_NAME: js_template_fullstack
-      VITE_API_URL: "http://localhost:3310"
-    command: sh -c "npm run dev"
-    depends_on:
-      database:
-        condition: service_healthy
-
-  database:
-    image: mysql/mysql-server:8.0
-    healthcheck:
-      test: [ "CMD", "mysqladmin" ,"ping", "-h", "localhost", "-uuser", "-ppassword" ] # Command to check health.
-      interval: 5s # Interval between health checks.
-      timeout: 5s # Timeout for each health checking.
-      retries: 20 # Hou many times retries.
-      start_period: 10s
+      - PORT=3310
+      - DB_PORT=5432
+      - LOG_DIR=/app/log
+      - LOG_LEVEL=INFO
     volumes:
-      - ./database-setup.sh:/docker-entrypoint-initdb.d/setup.sh
-    #      - db-data:/var/lib/mysql
-    environment:
-      MYSQL_USER: user
-      MYSQL_PASSWORD: password
-      # Password for root access
-      MYSQL_ROOT_PASSWORD: rootpassword
+      - ./server:/app
+      - ./server/logs:/app/logs
+      - /app/node_modules
+      - csv_cache_volume:/app/CSVCache
+    env_file:
+      - ./server/.env.staging.local
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      redis_cache:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # Service Frontend (React/Vite)
+  frontend:
+    build:
+      context: .
+      dockerfile: ./client/Dockerfile
     ports:
-      - target: 3306
-        published: 3306
-        protocol: tcp
+      - "3000:80"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      VITE_API_URL: http://backend:3000
+      VITE_PUBLIC_API_URL: http://localhost:3310
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+  postgres_db:
+    image: postgis/postgis:17-3.5-alpine
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: dev
+      POSTGRES_USER: dev
+      POSTGRES_PASSWORD: dev
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis_cache:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+volumes:
+  postgres_data:
+  redis_data:
+  csv_cache_volume:
+    driver: local

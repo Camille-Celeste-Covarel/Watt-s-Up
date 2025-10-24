@@ -1,3 +1,10 @@
+CSVCache
 node_modules
 coverage
-.env
+*.local
+.env.
+logs
+log
+dist
+public/uploads/
+uploads

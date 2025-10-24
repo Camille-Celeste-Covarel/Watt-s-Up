@@ -1,0 +1,84 @@
+.profil-container {
+  min-height: 100vh;
+  box-sizing: border-box;
+  line-height: 1.5;
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+.profil-section {
+  background-color: var(--fondamental-color, #f2c641);
+  padding: 2rem 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.profil-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.profil-avatar-block {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+
+.profil-avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 10px solid white;
+}
+
+.profil-names {
+  display: flex;
+  flex-direction: column;
+  min-width: 150px;
+}
+
+.profil-names p {
+  margin: 0;
+}
+
+.profil-infos {
+  margin-top: 1.5rem;
+}
+
+.profil-infos p {
+  margin: 0.1rem 0;
+}
+
+.profil-vehicle-section {
+  background-color: #fff;
+  padding: 1.5rem;
+  border-radius: 10px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.profil-vehicle-infos p {
+  margin: 0.3rem 0;
+}
+
+.vehicle-photo-container {
+  width: 100%;
+  justify-content: center;
+  max-height: 220px;
+  display: flex;
+  overflow: hidden;
+}
+
+.vehicle-photo {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: cover;
+}
+
+.edit-icon {
+  margin-left: 8;
+  cursor: pointer;
+}

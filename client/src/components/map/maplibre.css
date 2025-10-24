@@ -1,0 +1,99 @@
+.map-wrap {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - 70px - 60px);
+  cursor: default;
+}
+
+.map {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+
+h3 {
+  margin-top: 0;
+}
+
+.input-container input {
+  background-color: white;
+  color: var(--quinte-color);
+  border: solid 2px var(--fondamental-color);
+  font-weight: 600;
+  border-radius: 0;
+}
+
+.input-container input:focus {
+  border: solid 3px var(--fondamental-color);
+  outline: none;
+}
+
+.search-attribution {
+  display: none;
+}
+
+.map-container {
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+}
+
+.map-controls-container {
+  position: absolute;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: right 0.3s ease-in-out;
+}
+
+.map-controls-container.top-right {
+  top: 10px;
+  right: 10px;
+}
+
+.map-controls-container.bottom-right {
+  bottom: 10px;
+  right: 10px;
+}
+
+.main-content:has(.overlay.open) .map-controls-container {
+  right: calc(min(max(var(--overlay-width), 320px), 500px) + 10px);
+}
+
+.filter-map-button {
+  background-color: var(--fondamental-color);
+  border: none;
+  padding: 5px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  color: #333;
+}
+
+.filter-map-button:hover {
+  background-color: var(--quinte-color);
+  transform-style: preserve-3d;
+}
+
+.filter-map-button img {
+  width: 24px;
+  height: 24px;
+}
+
+.filter-map-button.active-filters {
+  background-color: #a62100;
+  border-color: #a62100;
+  color: white;
+}
+
+@media (min-width: 768px) {
+  .map-wrap {
+    position: relative;
+    width: 100%;
+    height: calc(100vh - 35px - 60px);
+    cursor: default;
+  }
+}

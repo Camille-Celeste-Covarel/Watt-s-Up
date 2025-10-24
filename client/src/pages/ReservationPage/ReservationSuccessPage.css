@@ -1,0 +1,132 @@
+.reservation-success-page {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.reservation-success-content {
+  max-width: 700px;
+  width: 100%;
+  text-align: left;
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.reservation-success-content h2 {
+  color: var(--quinte-color);
+  margin-bottom: 0.5rem;
+  font-size: 2.2rem;
+  font-weight: 700;
+}
+
+.reservation-success-content .intro-text {
+  font-size: 1.1rem;
+  color: #555;
+  margin-bottom: 2.5rem;
+}
+
+.reservation-summary {
+  text-align: left;
+  margin: 2.5rem 0;
+  padding: 2rem 0;
+  border-top: 1px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.summary-header {
+  padding: 0 0 1.5rem 0;
+  background-color: transparent;
+  border-bottom: none;
+}
+
+.summary-header h3 {
+  margin: 0 0 0.25rem 0;
+  color: var(--fondamental-color);
+  font-size: 1.2rem;
+  text-align: left;
+}
+
+.summary-header p {
+  margin: 0;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.summary-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  padding: 0;
+}
+
+.detail-block {
+  flex: 1;
+}
+
+.detail-block h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  color: #333;
+  font-size: 1rem;
+  font-weight: 600;
+  border-bottom: 2px solid var(--quinte-color);
+  padding-bottom: 0.5rem;
+  display: inline-block;
+}
+
+.detail-block ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  color: #555;
+}
+
+.detail-block li {
+  margin-bottom: 0.5rem;
+}
+
+.status {
+  padding: 0.3rem 0.6rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  font-size: 0.8rem;
+  color: var(--fondamental-color);
+}
+
+.expires-info {
+  margin-top: 2.5rem;
+  font-size: 1.1rem;
+  font-weight: 500;
+  color: #444;
+}
+
+.success-actions {
+  margin-top: 2rem;
+}
+
+.action-button.primary-action {
+  background-color: var(--quinte-color);
+  color: white;
+  padding: 12px 25px;
+  font-size: 0.99em;
+  font-weight: bold;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.action-button.primary-action:hover {
+  background-color: var(--seconde-color);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .summary-details {
+    gap: 1.5rem;
+  }
+
+  .reservation-success-content h2 {
+    font-size: 1.8rem;
+  }
+}

@@ -1,18 +1,123 @@
+import path from "node:path";
 import express from "express";
+import upload from "./config/multer";
+import { getImportHistory, importCsv } from "./controllers/importController";
+import isAdmin from "./middleware/isAdmin";
+import authenticateToken from "./middleware/isConnected";
+import uploadAvatar from "./middleware/uploadAvatar";
+import plugActions from "./modules/plugActions";
+import requestActions from "./modules/requestActions";
+import stationsActions from "./modules/stationsActions";
+import userActions from "./modules/userActions";
+import vehiculeActions from "./modules/vehiculeActions";
+import bookRoutes from "./routes/book.routes";
+import reservationRoutes from "./routes/reservation.routes";
+import { startCronJobs } from "./tools/cron.service";
 
 const router = express.Router();
+router.use(express.static(path.join(__dirname, "..", "public")));
 
 /* ************************************************************************* */
-// Define Your API Routes Here
+// 🌍 Routes PUBLIQUES (accessibles à tous)
 /* ************************************************************************* */
 
-// Define item-related routes
-import itemActions from "./modules/item/itemActions";
+// Routes d'authentification
+router.post("/auth/login", userActions.login);
+router.post(
+  "/auth/register",
+  uploadAvatar.fields([
+    { name: "avatar", maxCount: 1 },
+    { name: "vehicle_photo", maxCount: 1 },
+  ]),
+  userActions.register,
+);
 
-router.get("/api/items", itemActions.browse);
-router.get("/api/items/:id", itemActions.read);
-router.post("/api/items", itemActions.add);
+router.post("/auth/logout", userActions.logout);
+router.get("/auth/check", authenticateToken, userActions.check);
+router.post("/auth/forgot-password", userActions.forgotPassword);
+router.post("/auth/reset-password", userActions.resetPassword);
+
+// Routes pour la map/stations (landing page)
+router.get("/stations", stationsActions.browse);
+router.get("/stations/visible", stationsActions.browseVisible);
+router.get("/stations/:id", stationsActions.read);
+
+// Routes pour les plugs
+router.get("/plugs", plugActions.browse);
 
 /* ************************************************************************* */
+// 🛡️ Wall d'autorisation - Tout ce qui suit nécessite d'être connecté
+/* ************************************************************************* */
+
+router.use(authenticateToken);
+
+/* ************************************************************************* */
+// 🔒 Routes PROTÉGÉES (utilisateur connecté requis)
+/* ************************************************************************* */
+
+router.get("/users/me", userActions.getMe);
+router.put("/users/me", userActions.updateMe);
+router.put(
+  "/users/me/avatar",
+  uploadAvatar.single("avatar"),
+  userActions.updateAvatar,
+);
+
+// Réservations
+router.use("/books", bookRoutes);
+
+// Route pour la création de réservation
+router.use("/reservations", reservationRoutes);
+
+// Route pour récupérer son propre profil (exemple)
+
+// Routes véhicules (modification par l'utilisateur connecté)
+router.put("/vehicules/:id", vehiculeActions.updateVehicule);
+router.put(
+  "/vehicules/:id/photo",
+  uploadAvatar.single("vehicle_photo"),
+  vehiculeActions.updateVehiculePhoto,
+);
+
+// Route de contact (mail)
+router.post("/contact", userActions.contact);
+
+/* ************************************************************************* */
+// 👑 Wall d'administration - Tout ce qui suit nécessite d'être Admin
+/* ************************************************************************* */
+
+router.use(isAdmin);
+
+/* ************************************************************************* */
+// 🔑 Routes ADMIN (connecté ET admin requis)
+/* ************************************************************************* */
+
+// Routes utilisateurs
+router.get("/users/:id", userActions.read);
+router.get("/users", userActions.browse);
+router.post("/users", userActions.add);
+router.put("/users/:id", userActions.edit);
+router.delete("/users/:id", userActions.destroy);
+
+// Routes demandes
+router.get("/requests", requestActions.browse);
+router.get("/requests/:id", requestActions.read);
+router.post("/requests", requestActions.add);
+router.delete("/requests/:id", requestActions.destroy);
+
+// Routes véhicules
+router.get("/vehicules", vehiculeActions.browse);
+
+// Routes stations protégées
+router.post("/stations", stationsActions.add);
+router.put("/stations/:id", stationsActions.edit);
+router.delete("/stations/:id", stationsActions.destroy);
+
+// Route pour import des données CSV
+router.post("/import/csv", upload.single("csvfile"), importCsv);
+router.get("/import/history", getImportHistory);
+
+// Démarrage des tâches de fond (cron jobs)
+startCronJobs();
 
 export default router;

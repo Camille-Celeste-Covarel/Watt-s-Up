@@ -1,67 +1,159 @@
-// Import necessary modules from React and React Router
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+// @ts-ignore
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { RouterProvider, createBrowserRouter } from "react-router";
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 
-/* ************************************************************************* */
-
-// Import the main app component
 import App from "./App";
+import { StationDetails } from "./components/StationDetails/stationDetails.tsx";
+import Filter from "./components/filter/Filter.tsx";
+import { ImportProvider } from "./contexts/ImportContext.tsx";
+import AdminDashboard from "./pages/AdminDashboard.tsx";
+import ContactPage from "./pages/ContactPage";
+import EditProfilPage from "./pages/EditProfilPage.tsx";
+import EditVehiclePage from "./pages/EditVehiclePage.tsx";
+import ForgotPassword from "./pages/ForgotPassword.tsx";
+import InfoPage from "./pages/InfoPage";
+import LandingPage from "./pages/LandingPage.tsx";
+import LoginPage from "./pages/LoginPage";
+import ProfilPage from "./pages/ProfilPage";
+import RegisterPage from "./pages/RegisterPage";
+import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
+import ReservationSuccessPage from "./pages/ReservationPage/ReservationSuccessPage.tsx"; // --- CONSERVÉ ---
+import ResetPassword from "./pages/ResetPassword.tsx";
+import AdminRoute from "./utils/AdminRoute.tsx";
+import ProtectedRoute from "./utils/ProtectedRoute";
 
-// Import additional components for new routes
-// Try creating these components in the "pages" folder
-
-// import About from "./pages/About";
-// import Contact from "./pages/Contact";
-
-/* ************************************************************************* */
-
-// Create router configuration with routes
-// You can add more routes as you build out your app!
 const router = createBrowserRouter([
   {
-    path: "/", // The root path
-    element: <App />, // Renders the App component for the home page
+    element: <App />,
+    children: [
+      {
+        index: true,
+        element: <LandingPage />,
+        /*element: null, a voir dans le temps si <LandingPage />, ne pose pas souci*/
+      },
+      {
+        path: "/login",
+        element: <LoginPage />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/register",
+        element: <RegisterPage />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/forgot-password",
+        element: <ForgotPassword />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/reset-password",
+        element: <ResetPassword />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/informations",
+        element: <InfoPage />,
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/reservations",
+        element: (
+          <ProtectedRoute>
+            <ReservationPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/reservation/success/:reservationId",
+        element: (
+          <ProtectedRoute>
+            <ReservationSuccessPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/admin/dashboard",
+        element: (
+          <AdminRoute>
+            <AdminDashboard />
+          </AdminRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/station/:id",
+        element: (
+          <ProtectedRoute>
+            <StationDetails />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/profil/edit",
+        element: (
+          <ProtectedRoute>
+            <EditProfilPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/vehicle/edit",
+        element: (
+          <ProtectedRoute>
+            <EditVehiclePage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/profil",
+        element: (
+          <ProtectedRoute>
+            <ProfilPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/contact",
+        element: (
+          <ProtectedRoute>
+            <ContactPage />
+          </ProtectedRoute>
+        ),
+        handle: { isOverlay: true },
+      },
+      {
+        path: "/filtres",
+        element: <Filter />,
+        handle: { isOverlay: true },
+      },
+    ],
   },
-  // Try adding a new route! For example, "/about" with an About component
 ]);
 
-/* ************************************************************************* */
-
-// Find the root element in the HTML document
 const rootElement = document.getElementById("root");
 if (rootElement == null) {
   throw new Error(`Your HTML Document should contain a <div id="root"></div>`);
 }
 
-// Render the app inside the root element
+const queryClient = new QueryClient();
+
 createRoot(rootElement).render(
   <StrictMode>
-    <RouterProvider router={router} />
+    <QueryClientProvider client={queryClient}>
+      <ImportProvider>
+        <RouterProvider router={router} />
+      </ImportProvider>
+      {/* <ReactQueryDevtools initialIsOpen={false} /> */}
+    </QueryClientProvider>
   </StrictMode>,
 );
-
-/**
- * Helpful Notes:
- *
- * 1. Adding More Routes:
- *    To add more pages to your app, first create a new component (e.g., About.tsx).
- *    Then, import that component above like this:
- *
- *    import About from "./pages/About";
- *
- *    Add a new route to the router:
- *
- *      {
- *        path: "/about",
- *        element: <About />,  // Renders the About component
- *      }
- *
- * 2. Try Nested Routes:
- *    For more complex applications, you can nest routes. This lets you have sub-pages within a main page.
- *    Documentation: https://reactrouter.com/en/main/start/tutorial#nested-routes
- *
- * 3. Experiment with Dynamic Routes:
- *    You can create routes that take parameters (e.g., /users/:id).
- *    Documentation: https://reactrouter.com/en/main/start/tutorial#url-params-in-loaders
- */
