@@ -1,0 +1,41 @@
+# Nom du workflow qui apparaîtra dans l'onglet "Actions" de GitHub
+name: Security Audit
+
+# Déclenche ce workflow à chaque 'push' ou 'pull_request' sur la branche 'main'
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+# Définit les tâches à exécuter
+jobs:
+  audit:
+    # Le nom de la tâche
+    name: NPM Audit Workspaces
+    # Le type de machine virtuelle sur laquelle exécuter la tâche
+    runs-on: ubuntu-latest
+
+    # Les étapes de la tâche
+    steps:
+      # 1. Récupère le code de votre dépôt
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Met en place Node.js pour pouvoir utiliser npm
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20' # Utilisez la version de Node.js de votre projet
+
+      # 3. Installe les dépendances pour TOUS les workspaces (client et server)
+      # On lance la commande depuis la racine du projet.
+      - name: Install all dependencies
+        run: npm install
+
+      # 4. Lance l'audit de sécurité sur TOUS les workspaces
+      # L'option '--workspaces' demande à npm d'auditer les dossiers client et server.
+      # L'option '--audit-level=high' fait échouer le check uniquement
+      # pour les vulnérabilités de niveau "élevé" ou "critique".
+      - name: Run NPM Audit on all workspaces
+        run: npm audit --workspaces --audit-level=high
