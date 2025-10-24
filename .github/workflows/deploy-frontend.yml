@@ -125,7 +125,7 @@ jobs:
 
             OWNER_LOWERCASE=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             export IMAGE_TO_DEPLOY="${{ env.REGISTRY }}/${OWNER_LOWERCASE}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.image-digest }}"
-            export CONTAINER_NAME="wattsup-frontend"
+            export CONTAINER_NAME="wattsup-frontend-service"
             export HOST_PORT="${{ env.HOST_PORT }}"
 
             echo "Deployment details:"
@@ -152,7 +152,7 @@ jobs:
             echo "Creating docker-compose.prod.yml..."
             cat <<- 'EOF' > docker-compose.prod.yml
             services:
-              frontend:
+              wattsup-frontend-service:
                 image: ${IMAGE_TO_DEPLOY}
                 container_name: ${CONTAINER_NAME}
                 restart: unless-stopped
