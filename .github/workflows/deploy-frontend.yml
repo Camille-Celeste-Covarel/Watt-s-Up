@@ -19,7 +19,7 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: wattsup-frontend
   APP_DIR_SNAILFRONT: /home/deployer-front/wattsup
-  HOST_PORT: 81
+  HOST_PORT: 83
 
 jobs:
   test:
