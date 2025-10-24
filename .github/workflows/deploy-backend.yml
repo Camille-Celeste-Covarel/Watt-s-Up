@@ -40,7 +40,7 @@ jobs:
         run: npm ci
 
       - name: Run all checks (lint, types, etc.)
-        run: npm run check:all
+        run: npm run check
 
       - name: 🛡️ Security Audit
         run: npm audit --audit-level=moderate
