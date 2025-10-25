@@ -121,10 +121,8 @@ jobs:
             echo "--- Jumping to SnailBackend using pre-configured SSH alias 'snailback' ---"
 
             ssh snailback 'bash -s' <<-'EOF'
-              # This whole block runs on SnailBackend
               set -euxo pipefail
 
-              # Export all variables needed by the script
               export GH_OWNER='${{ github.repository_owner }}'
               export IMAGE_NAME='${{ env.IMAGE_NAME }}'
               export IMAGE_DIGEST='${{ needs.build.outputs.image-digest }}'
@@ -152,7 +150,6 @@ jobs:
               mkdir -p "$APP_DIR"
               cd "$APP_DIR"
 
-              # --- Create docker-compose-backend.yml using echo commands ---
               echo "Creating docker-compose-backend.yml..."
               echo "services:" > docker-compose-backend.yml
               echo "  backend:" >> docker-compose-backend.yml
@@ -177,7 +174,6 @@ jobs:
               echo "  csv_cache_volume:" >> docker-compose-backend.yml
               echo "    driver: local" >> docker-compose-backend.yml
 
-              # --- Create .env file for production ---
               echo "Creating .env file..."
               echo "PORT=3310" > .env
               echo "LOG_DIR=/app/log" >> .env
@@ -190,7 +186,6 @@ jobs:
               echo "ADMIN_EMAIL=${ADMIN_EMAIL_PROD}" >> .env
               echo "ADMIN_PASSWORD=${ADMIN_PASSWORD_PROD}" >> .env
 
-              # --- Deploy with Docker Compose ---
               echo "Pulling the new image..."
               docker compose -f docker-compose-backend.yml pull
 
