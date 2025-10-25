@@ -93,7 +93,7 @@ async function startServer() {
   }
 
   // On sert le dossier 'uploads' comme un dossier statique, accessible via /api/uploads
-  app.use("/api/uploads", express.static(path.join(__dirname, "..", "uploads")));
+  app.use("/api/uploads", express.static(path.join(__dirname, "..", "public", "uploads")));
 
   // --- 2. ROUTEUR DE L'API ---
   // Toutes les requêtes commençant par /api sont gérées par notre routeur.
