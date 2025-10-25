@@ -66,7 +66,6 @@ async function startServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
-  app.use("/uploads", express.static("uploads"));
 
   // --- CRÉATION AUTOMATIQUE DES DOSSIERS D'UPLOAD ---
   try {
@@ -93,8 +92,8 @@ async function startServer() {
     );
   }
 
-  // On sert le dossier 'uploads' comme un dossier statique
-  app.use("/uploads", express.static(path.join(__dirname, "..", "uploads")));
+  // On sert le dossier 'uploads' comme un dossier statique, accessible via /api/uploads
+  app.use("/api/uploads", express.static(path.join(__dirname, "..", "uploads")));
 
   // --- 2. ROUTEUR DE L'API ---
   // Toutes les requêtes commençant par /api sont gérées par notre routeur.
