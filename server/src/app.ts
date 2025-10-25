@@ -27,14 +27,12 @@ import {
   redirectConsoleOutput,
 } from "./tools/logger";
 
-// On garde uniquement l'initialisation des logs au niveau global
 initializeConsoleLogStream();
 redirectConsoleOutput();
 
 async function startServer() {
   const app = express();
 
-  // --- 1. MIDDLEWARES DE BASE ET CONFIGURATION CORS ---
   const allowedOrigins = [process.env.CLIENT_URL].filter(Boolean) as string[];
 
   console.log("[CORS] Origines autorisées:", allowedOrigins, LogLevel.DEBUG);
@@ -44,7 +42,6 @@ async function startServer() {
       origin: string | undefined,
       callback: (err: Error | null, allow?: boolean) => void,
     ) => {
-      // Log à l'intérieur de la fonction CORS ---
       console.log(`[CORS] Origine de la requête: ${origin}`, LogLevel.DEBUG);
 
       if (!origin || allowedOrigins.includes(origin)) {
@@ -67,15 +64,12 @@ async function startServer() {
   app.use(express.urlencoded({ extended: true }));
   app.use(cookieParser());
 
-  // --- CRÉATION AUTOMATIQUE DES DOSSIERS D'UPLOAD ---
   try {
-    // On cible les dossiers à la racine du dossier 'server'
     const serverRoot = path.join(__dirname, "..");
-    const avatarsDir = path.join(serverRoot, "uploads", "avatars");
+    const publicUploadsDir = path.join(serverRoot, "public", "uploads");
+    const avatarsDir = path.join(publicUploadsDir, "avatars");
     const csvCacheDir = path.join(serverRoot, "CSVCache");
 
-    // fs.mkdirSync avec { recursive: true } crée les dossiers parents si besoin
-    // et ne renvoie pas d'erreur s'ils existent déjà.
     fs.mkdirSync(avatarsDir, { recursive: true });
     console.log(
       "✅ Le dossier pour les uploads d'avatars est prêt.",
@@ -92,25 +86,18 @@ async function startServer() {
     );
   }
 
-  // On sert le dossier 'uploads' comme un dossier statique, accessible via /api/uploads
   app.use("/api/uploads", express.static(path.join(__dirname, "..", "public", "uploads")));
 
-  // --- 2. ROUTEUR DE L'API ---
-  // Toutes les requêtes commençant par /api sont gérées par notre routeur.
   app.use("/api", router);
 
-  // --- 3. GESTION DES FICHIERS STATIQUES (CLIENT) ---
-  // Ce code ne s'exécute que si la requête n'a pas été interceptée par le routeur API.
   const clientBuildPath = path.join(__dirname, "../../client/dist");
   if (fs.existsSync(clientBuildPath)) {
     app.use(express.static(clientBuildPath));
-    // Le "catch-all" qui renvoie l'app React pour la navigation côté client
     app.get("*", (_req, res) => {
       res.sendFile("index.html", { root: clientBuildPath });
     });
   }
 
-  // --- 4. GESTIONNAIRES D'ERREURS (TOUJOURS À LA FIN) ---
   const logErrors: ErrorRequestHandler = (err, req, _res, next) => {
     console.error(err, LogLevel.ERROR);
     console.error("on req:", req.method, req.path, LogLevel.ERROR);
@@ -118,7 +105,6 @@ async function startServer() {
   };
 
   const apiErrorHandler: ErrorRequestHandler = (err, req, res, next) => {
-    // On ne gère que les erreurs sur les routes API
     if (req.originalUrl.startsWith("/api")) {
       console.error("API Error:", err);
       res.status(500).json({
@@ -133,10 +119,6 @@ async function startServer() {
   app.use(logErrors);
   app.use(apiErrorHandler);
 
-  /**
-   * Nettoie les importations qui étaient "IN_PROGRESS" lorsque le serveur s'est arrêté.
-   * Cela évite les "importations fantômes" au redémarrage.
-   */
   async function cleanupStaleImports() {
     try {
       const [count] = await ImportLog.update(
@@ -175,7 +157,6 @@ async function startServer() {
   }
 
   try {
-    // --- 5. CONNEXION BDD ET INITIALISATION ---
     await sequelize.authenticate();
     console.log(
       "🎉 Connexion à la base de données PostgreSQL établie avec succès !",
@@ -192,9 +173,6 @@ async function startServer() {
       LogLevel.INFO,
     );
 
-    // --- INITIALISATION DES MODÈLES ---
-
-    // NIVEAU 0 : Modèles sans dépendances ou avec des dépendances simples
     User.initialize(sequelize);
     Access.initialize(sequelize);
     Compagny.initialize(sequelize);
@@ -204,20 +182,16 @@ async function startServer() {
     Provider.initialize(sequelize);
     ImportLog.initialize(sequelize);
 
-    // NIVEAU 1 : Modèles dépendant du niveau 0
     Station.initialize(sequelize);
     Vehicule.initialize(sequelize);
 
-    // NIVEAU 2 : Modèles dépendant du niveau 1
     Terminal.initialize(sequelize);
     Observation.initialize(sequelize);
 
-    // NIVEAU 3 : Modèles dépendant du niveau 2
     Book.initialize(sequelize);
     request.initialize(sequelize);
     TerminalPlug.initialize(sequelize);
 
-    // --- DÉFINITION DES ASSOCIATIONS ---
     User.associate(sequelize);
     Access.associate(sequelize);
     Compagny.associate(sequelize);
@@ -236,7 +210,6 @@ async function startServer() {
 
     console.log("sequelize.sync est géré par les migrations.", LogLevel.INFO);
 
-    // On nettoie les anciens imports maintenant que les modèles sont initialisés.
     await cleanupStaleImports();
 
     return app;
