@@ -189,6 +189,7 @@ jobs:
               echo "DB_PASSWORD=${DB_PASSWORD_PROD}" >> .env
               echo "DB_NAME=${DB_NAME_PROD}" >> .env
               echo "DB_PORT=${DB_PORT_PROD}" >> .env
+              echo "DB_DIALECT=postgres" >> .env
               echo "ADMIN_EMAIL=${ADMIN_EMAIL_PROD}" >> .env
               echo "ADMIN_PASSWORD=${ADMIN_PASSWORD_PROD}" >> .env
 
