@@ -68,11 +68,18 @@ async function startServer() {
     const serverRoot = path.join(__dirname, "..");
     const publicUploadsDir = path.join(serverRoot, "public", "uploads");
     const avatarsDir = path.join(publicUploadsDir, "avatars");
+    const vehiculesDir = path.join(publicUploadsDir, "vehicules");
     const csvCacheDir = path.join(serverRoot, "CSVCache");
 
     fs.mkdirSync(avatarsDir, { recursive: true });
     console.log(
       "✅ Le dossier pour les uploads d'avatars est prêt.",
+      LogLevel.INFO,
+    );
+
+    fs.mkdirSync(vehiculesDir, { recursive: true });
+    console.log(
+      "✅ Le dossier pour les photos de véhicules est prêt.",
       LogLevel.INFO,
     );
 
