@@ -1,5 +1,9 @@
+import * as dotenv from 'dotenv';
 import { type Dialect, Sequelize } from "sequelize";
 import type { DbConfig, ValidDbConfig } from "../types/database_types";
+
+// Charger les variables d'environnement depuis le fichier .env
+dotenv.config();
 
 /**
  * Valide et transforme la configuration de la base de données.
