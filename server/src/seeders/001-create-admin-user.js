@@ -1,12 +1,11 @@
 const { v4: uuidv4 } = require('uuid');
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcrypt'); // Changed back to "bcrypt"
 
 module.exports = {
   up: async (queryInterface, Sequelize) => {
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@wattsup.com';
     const adminPassword = process.env.ADMIN_PASSWORD || 'WattsupAdmin123!';
 
-    // Vérifie si l'utilisateur admin existe déjà
     const user = await queryInterface.rawSelect(
       'user',
       {
