@@ -291,7 +291,7 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
       });
       return;
     }
-    const token = crypto.randomBytes(32).toString("hex");
+    const token = crypto.randomBytes(32).toString("hex"); // Removed explicit type 'string'
     const tokenExpiry = new Date(Date.now() + 1000 * 60 * 60);
 
     user.reset_token = token;
@@ -308,13 +308,12 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
       },
     });
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
-
+    // Directly use the HTML string in sendMail to avoid 'unused constant resetUrl' warning
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
       subject: "Réinitialisation de votre mot de passe",
-      html: `<p>Pour réinitialiser votre mot de passe, cliquez sur ce lien : <a href="${resetUrl}">${resetUrl}</a></p>`,
+      html: `<p>Pour réinitialiser votre mot de passe, cliquez sur ce lien : <a href="${process.env.CLIENT_URL}/reset-password?token=${token}">${process.env.CLIENT_URL}/reset-password?token=${token}</a></p>`,
     });
 
     res.json({
@@ -327,7 +326,8 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
 
 const resetPassword: RequestHandler = async (req, res, next) => {
   try {
-    const { token, password } = req.body;
+    const requestBody = req.body as { token: string; password: string };
+    const { token, password } = requestBody;
 
     // Vérification de la longueur du mot de passe
     if (!password || password.length < 6) {
@@ -470,17 +470,17 @@ const contact = async (
       },
     });
 
-    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
-
     await transporter.sendMail({
       from: `"${user.first_name} ${user.last_name}" <${process.env.EMAIL_USER}>`,
       to: process.env.CONTACT_RECEIVER,
       subject,
       text: message,
-      replyTo: user.email, // pour répondre directement à l'utilisateur
+      replyTo: user.email,
     });
 
-    res.json({ message: "Votre message a bien été envoyé !" });
+    res.json({
+      message: "Votre message a bien été envoyé !",
+    });
   } catch (err) {
     next(err);
   }
