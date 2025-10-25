@@ -8,7 +8,6 @@ services:
       - "3310:3310"
     environment:
       - PORT=3310
-      - DB_HOST=postgres_db
       - DB_PORT=5432
       - LOG_DIR=/app/log
       - LOG_LEVEL=INFO
