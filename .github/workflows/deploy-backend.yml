@@ -163,6 +163,8 @@ jobs:
               echo "    volumes:" >> docker-compose-backend.yml
               echo "      - ./logs:/app/logs" >> docker-compose-backend.yml
               echo "      - csv_cache_volume:/app/CSVCache" >> docker-compose-backend.yml
+              echo "    networks:" >> docker-compose-backend.yml
+              echo "      - wattsup-network" >> docker-compose-backend.yml
               echo "    healthcheck:" >> docker-compose-backend.yml
               echo "      test: [\"CMD-SHELL\", \"wget --quiet --tries=1 --spider http://localhost:3310/api/v1/health || exit 1\"]" >> docker-compose-backend.yml
               echo "      interval: 30s" >> docker-compose-backend.yml
@@ -173,6 +175,10 @@ jobs:
               echo "volumes:" >> docker-compose-backend.yml
               echo "  csv_cache_volume:" >> docker-compose-backend.yml
               echo "    driver: local" >> docker-compose-backend.yml
+              echo "" >> docker-compose-backend.yml
+              echo "networks:" >> docker-compose-backend.yml
+              echo "  wattsup-network:" >> docker-compose-backend.yml
+              echo "    external: true" >> docker-compose-backend.yml
 
               echo "Creating .env file..."
               echo "PORT=3310" > .env
