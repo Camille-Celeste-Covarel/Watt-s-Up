@@ -2,14 +2,15 @@
 
 set -e
 
+# Change le répertoire de travail vers le dossier du serveur
 cd /app/server
 
 echo "Running database migrations..."
-npm run migrate:prod
+npx sequelize-cli db:migrate
 echo "Migrations finished."
 
 echo "Running database seeders..."
-npm run db:seed:prod
+npx sequelize-cli db:seed:all
 echo "Seeders finished."
 
 echo "Starting the application..."
