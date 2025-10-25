@@ -202,9 +202,8 @@ const login: RequestHandler = async (req, res, next) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || "24h" } as jwt.SignOptions,
     );
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
     const avatarUrl = user.avatar_url
-      ? `${baseUrl}/api/uploads/avatars/${user.avatar_url}`
+      ? `/uploads/avatars/${user.avatar_url}`
       : null;
 
     const userResponse = {
@@ -264,9 +263,8 @@ const check: RequestHandler = async (req: AuthenticatedRequest, res, next) => {
       return;
     }
 
-    const baseUrl = `${req.protocol}://${req.get("host")}`;
     const avatarUrl = userFromDb.avatar_url
-      ? `${baseUrl}/api/uploads/avatars/${userFromDb.avatar_url}`
+      ? `/uploads/avatars/${userFromDb.avatar_url}`
       : null;
 
     res.json({
@@ -394,14 +392,14 @@ const getMe = async (
     const userJson = user.toJSON() as unknown as UserWithVehicles;
 
     if (userJson.avatar_url) {
-      userJson.avatar_url = `/api/uploads/avatars/${userJson.avatar_url}`;
+      userJson.avatar_url = `/uploads/avatars/${userJson.avatar_url}`;
     }
     if (userJson.vehicles) {
       userJson.vehicles = userJson.vehicles.map((v) => ({
         ...v,
         photo_url:
-          v.photo_url && !v.photo_url.startsWith("/api/uploads/vehicules/")
-            ? `/api/uploads/vehicules/${v.photo_url}`
+          v.photo_url && !v.photo_url.startsWith("/uploads/vehicules/")
+            ? `/uploads/vehicules/${v.photo_url}`
             : v.photo_url,
       }));
     }
@@ -471,6 +469,8 @@ const contact = async (
         pass: process.env.EMAIL_PASS,
       },
     });
+
+    const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${token}`;
 
     await transporter.sendMail({
       from: `"${user.first_name} ${user.last_name}" <${process.env.EMAIL_USER}>`,
