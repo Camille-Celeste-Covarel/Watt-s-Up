@@ -1,10 +1,8 @@
-// Types pour les fichiers uploadés via Multer
 export interface MulterFiles {
     avatar?: Express.Multer.File[];
     vehicle_photo?: Express.Multer.File[];
 }
 
-// Type pour un véhicule avec sa prise
 export interface VehiculeWithPlug {
     id?: number;
     name: string;
@@ -20,7 +18,6 @@ export interface VehiculeWithPlug {
     [key: string]: unknown;
 }
 
-// Type pour un utilisateur avec ses véhicules
 export interface UserWithVehicles {
     id: number;
     email: string;

@@ -201,9 +201,7 @@ const login: RequestHandler = async (req, res, next) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || "24h" } as jwt.SignOptions,
     );
 
-    const avatarUrl = user.avatar_url
-      ? `/uploads/avatars/${user.avatar_url}`
-      : null;
+    const avatarUrl = user.avatar_url || null;
 
     const userResponse = {
       id: user.id,
@@ -262,9 +260,7 @@ const check: RequestHandler = async (req: AuthenticatedRequest, res, next) => {
       return;
     }
 
-    const avatarUrl = userFromDb.avatar_url
-      ? `/uploads/avatars/${userFromDb.avatar_url}`
-      : null;
+    const avatarUrl = userFromDb.avatar_url || null;
 
     res.json({
       authenticated: true,
@@ -622,6 +618,7 @@ const contact = async (
       from: `"${(user as unknown as UserWithVehicles).first_name} ${(user as unknown as UserWithVehicles).last_name}" <${process.env.EMAIL_USER}>`,
       to: process.env.CONTACT_RECEIVER,
       subject,
+      text: message,
       html: emailHtml,
       replyTo: (user as unknown as UserWithVehicles).email,
     });
