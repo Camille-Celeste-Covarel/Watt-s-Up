@@ -16,7 +16,7 @@ import type { AuthenticatedRequest } from "../types/auth/auth_type";
 
 // L'opération BREAD : Browse (Read All)
 // Récupère tous les utilisateurs de la base de données.
-const browse: RequestHandler = async (req, res, next) => {
+const browse: RequestHandler = async (_req, res, _next) => {
   try {
     const users = await User.findAll({
       attributes: {
@@ -25,7 +25,7 @@ const browse: RequestHandler = async (req, res, next) => {
     });
     res.json(users);
   } catch (err) {
-    next(err);
+    _next(err);
   }
 };
 
@@ -51,11 +51,10 @@ const read: RequestHandler = async (req, res, next) => {
 
 // L'opération BREAD : Add (Create)
 // Ajoute un nouvel utilisateur à la base de données.
-const add: RequestHandler = async (req, res, next) => {
+const add: RequestHandler = async (_req, res, _next) => {
   res.status(501).json({ message: "Fonction non implémentée." });
 };
 
-// Add (update)
 const edit: RequestHandler = async (req, res, next) => {
   try {
     const userId = req.params.id;
@@ -231,7 +230,7 @@ const login: RequestHandler = async (req, res, next) => {
   }
 };
 
-const logout: RequestHandler = async (req, res, next) => {
+const logout: RequestHandler = async (_req, res, _next) => {
   try {
     res.clearCookie("authToken", {
       httpOnly: true,
@@ -243,7 +242,7 @@ const logout: RequestHandler = async (req, res, next) => {
       message: "Déconnexion réussie",
     });
   } catch (err) {
-    next(err);
+    _next(err);
   }
 };
 
@@ -291,7 +290,7 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
       });
       return;
     }
-    const token = crypto.randomBytes(32).toString("hex"); // Removed explicit type 'string'
+    const token = crypto.randomBytes(32).toString("hex");
     const tokenExpiry = new Date(Date.now() + 1000 * 60 * 60);
 
     user.reset_token = token;
@@ -308,7 +307,6 @@ const forgotPassword: RequestHandler = async (req, res, next) => {
       },
     });
 
-    // Directly use the HTML string in sendMail to avoid 'unused constant resetUrl' warning
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
@@ -329,7 +327,6 @@ const resetPassword: RequestHandler = async (req, res, next) => {
     const requestBody = req.body as { token: string; password: string };
     const { token, password } = requestBody;
 
-    // Vérification de la longueur du mot de passe
     if (!password || password.length < 6) {
       res
         .status(400)
@@ -395,7 +392,7 @@ const getMe = async (
       userJson.avatar_url = `/uploads/avatars/${userJson.avatar_url}`;
     }
     if (userJson.vehicles) {
-      userJson.vehicles = userJson.vehicles.map((v) => ({
+      userJson.vehicles = userJson.vehicles.map((v: VehiculeWithPlug) => ({
         ...v,
         photo_url:
           v.photo_url && !v.photo_url.startsWith("/uploads/vehicules/")
@@ -454,11 +451,162 @@ const contact = async (
 ) => {
   try {
     const { subject, message } = req.body;
-    const user = await User.findByPk(req.user?.id);
+    const user = await User.findByPk(req.user?.id, {
+      include: [
+        {
+          model: Vehicule,
+          as: "vehicles",
+          include: [
+            {
+              model: Plug,
+              as: "plug",
+              attributes: ["name"],
+            },
+          ],
+        },
+      ],
+    });
 
     if (!user) {
       return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
+
+    const userVehicles = (user as unknown as UserWithVehicles).vehicles
+      ?.map(
+        (v: VehiculeWithPlug) =>
+          `<li style="margin-bottom: 5px;"><strong>${v.name}</strong> (Immatriculation: ${v.license_plate}, Prise: ${v.plug?.name || "N/A"})</li>`,
+      )
+      .join("") || "<li>Aucun véhicule enregistré.</li>";
+
+    const quinteColor = "#40352c";
+    const fondamentalColor = "rgb(242, 198, 65)";
+    const textColor = "#333333";
+    const lightBgColor = "#f2f2f2";
+    const borderColor = "#e0e0e0";
+
+    const emailHtml = `
+      <!DOCTYPE html>
+      <html lang="fr">
+      <head>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Watts-Up</title>
+          <style>
+              body {
+                  font-family: "Montserrat", sans-serif;
+                  margin: 0;
+                  padding: 0;
+                  background-color: ${lightBgColor};
+                  color: ${textColor};
+                  -webkit-text-size-adjust: 100%;
+                  -ms-text-size-adjust: 100%;
+              }
+              .container {
+                  max-width: 600px;
+                  margin: 20px auto;
+                  background-color: #ffffff;
+                  border-radius: 8px;
+                  overflow: hidden;
+                  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+              }
+              .header {
+                  background-color: ${fondamentalColor};
+                  color: #ffffff;
+                  padding: 20px;
+                  text-align: center;
+              }
+              .header h1 {
+                  margin: 0;
+                  font-size: 24px;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  gap: 10px;
+              }
+              .content {
+                  padding: 20px 30px;
+              }
+              h2 {
+                  color: ${fondamentalColor};
+                  font-size: 20px;
+                  margin-top: 20px;
+                  margin-bottom: 10px;
+                  border-bottom: 2px solid ${fondamentalColor};
+                  padding-bottom: 5px;
+                  display: inline-block;
+              }
+              p {
+                  margin-bottom: 10px;
+                  line-height: 1.6;
+              }
+              strong {
+                  color: ${quinteColor};
+              }
+              ul {
+                  list-style: none;
+                  padding: 0;
+                  margin: 0;
+              }
+              li {
+                  margin-bottom: 5px;
+              }
+              .summary-section {
+                  border-top-width: 1px; border-top-style: solid; border-top-color: ${borderColor};
+                  border-bottom-width: 1px; border-bottom-style: solid; border-bottom-color: ${borderColor};
+                  padding: 20px 0;
+                  margin: 20px 0;
+              }
+              .footer {
+                  background-color: ${lightBgColor};
+                  color: ${textColor};
+                  text-align: center;
+                  padding: 15px;
+                  font-size: 12px;
+              }
+              hr {
+                  border: none;
+                  border-top-width: 1px; border-top-style: solid; border-top-color: ${borderColor};
+                  margin: 20px 0;
+              }
+          </style>
+      </head>
+      <body>
+          <div class="container">
+              <div class="header">
+                  <h1>
+                      <span style="color: #ffffff;">Watts-Up</span>
+                  </h1>
+              </div>
+              <div class="content">
+                  <p style="font-size: 1.1rem; color: ${textColor}; margin-bottom: 25px;">
+                      Un client a besoin de votre aide.
+                  </p>
+
+                  <div class="summary-section">
+                      <h2 style="color: ${fondamentalColor}; font-size: 18px; margin-top: 0; margin-bottom: 10px; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: ${fondamentalColor}; padding-bottom: 5px; display: inline-block;">Informations de l'utilisateur</h2>
+                      <p><strong>Nom:</strong> ${(user as unknown as UserWithVehicles).first_name} ${(user as unknown as UserWithVehicles).last_name}</p>
+                      <p><strong>Email:</strong> ${(user as unknown as UserWithVehicles).email}</p>
+                      <p><strong>Véhicule(s):</strong></p>
+                      <ul style="list-style: none; padding: 0; margin: 0;">
+                          ${userVehicles}
+                      </ul>
+                  </div>
+
+                  <p style="font-size: 1.1rem; color: ${quinteColor}; font-weight: bold; margin-top: 25px;">Sujet de la demande: ${subject}</p>
+                  <p style="font-size: 0.9rem; color: ${textColor};">Date d'envoi: ${new Date().toLocaleString("fr-FR")}</p>
+                  
+                  <hr style="border: none; border-top-width: 1px; border-top-style: solid; border-top-color: ${borderColor}; margin: 20px 0;">
+
+                  <h2 style="color: ${fondamentalColor}; font-size: 18px; margin-top: 0; margin-bottom: 10px; border-bottom-width: 2px; border-bottom-style: solid; border-bottom-color: ${fondamentalColor}; padding-bottom: 5px; display: inline-block;">Message du client</h2>
+                  <p style="margin-bottom: 0;">${message.replace(/\n/g, "<br>")}</p>
+              </div>
+              <div class="footer">
+                  <p>&copy; ${new Date().getFullYear()} Wattsup. Tous droits réservés.</p>
+              </div>
+          </div>
+      </body>
+      </html>
+    `;
 
     const transporter = nodemailer.createTransport({
       host: process.env.EMAIL_HOST,
@@ -471,11 +619,11 @@ const contact = async (
     });
 
     await transporter.sendMail({
-      from: `"${user.first_name} ${user.last_name}" <${process.env.EMAIL_USER}>`,
+      from: `"${(user as unknown as UserWithVehicles).first_name} ${(user as unknown as UserWithVehicles).last_name}" <${process.env.EMAIL_USER}>`,
       to: process.env.CONTACT_RECEIVER,
       subject,
-      text: message,
-      replyTo: user.email,
+      html: emailHtml,
+      replyTo: (user as unknown as UserWithVehicles).email,
     });
 
     res.json({
