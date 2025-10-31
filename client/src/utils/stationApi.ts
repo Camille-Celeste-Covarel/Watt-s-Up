@@ -96,6 +96,7 @@ export async function createReservation(
       headers: {
         "Content-Type": "application/json",
       },
+      credentials: 'include',
       body: JSON.stringify(reservationData),
     },
   );
