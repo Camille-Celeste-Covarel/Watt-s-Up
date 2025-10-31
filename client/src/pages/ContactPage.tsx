@@ -1,5 +1,5 @@
 import { useState } from "react";
-import "../style/contactpage.css";
+import "../stylesheets/contactpage.css";
 
 function ContactPage() {
   const [subject, setSubject] = useState("");

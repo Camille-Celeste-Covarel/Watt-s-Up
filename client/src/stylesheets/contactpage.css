@@ -13,7 +13,7 @@
 }
 
 .contact-form textarea {
-  margin-bottom: 1rem;
+  max-width: 98%;
   border: 2px solid var(--fondamental-color);
 }
 

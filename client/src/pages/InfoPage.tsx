@@ -1,4 +1,4 @@
-import "../style/infopage.css";
+import "../stylesheets/infopage.css";
 
 function InfoPage() {
   return (

@@ -3,7 +3,7 @@ import { FaEdit } from "react-icons/fa";
 import { useNavigate } from "react-router";
 import avatarIcon from "../assets/images/icon/avatar.svg";
 import type { ProfilePageUser } from "../types/pages/pagesTypes";
-import "../style/profilpage.css";
+import "../stylesheets/profilpage.css";
 
 function ProfilPage() {
   const navigate = useNavigate();

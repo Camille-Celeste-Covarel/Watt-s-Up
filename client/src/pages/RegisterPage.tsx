@@ -1,9 +1,12 @@
+/* globals fetch, console, URL, FormData, document */
 import { useEffect, useState } from "react";
+import type React from "react";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { useNavigate } from "react-router";
+import Modal from "../components/Modal/Modal";
 import avatarIcon from "../assets/images/icon/avatar.svg";
 import vehicleDefaultIcon from "../assets/images/vehicleIcons/carProfile.svg";
-import "../style/registerpage.css";
+import "../stylesheets/registerpage.css";
 import type { FormData, FormErrors } from "../types/pages/pagesTypes";
 
 function RegisterPage() {
@@ -40,6 +43,13 @@ function RegisterPage() {
   const [vehiclePhotoFile, setVehiclePhotoFile] = useState<File | null>(null);
   const [plugs, setPlugs] = useState<{ id: string; name: string }[]>([]);
 
+  const [modalState, setModalState] = useState({
+    isOpen: false,
+    title: "",
+    message: "",
+    isSuccess: false,
+  });
+
   useEffect(() => {
     fetch(`${import.meta.env.VITE_API_URL}/api/plugs`)
       .then((res) => res.json())
@@ -48,6 +58,8 @@ function RegisterPage() {
 
   const validateForm = () => {
     const newErrors: FormErrors = {};
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{12,}$/;
 
     if (!formData.first_name.trim()) {
       newErrors.first_name = "Le prénom est requis";
@@ -62,9 +74,9 @@ function RegisterPage() {
     }
     if (!formData.password) {
       newErrors.password = "Le mot de passe est requis";
-    } else if (formData.password.length < 6) {
+    } else if (!passwordRegex.test(formData.password)) {
       newErrors.password =
-        "Le mot de passe doit contenir au moins 6 caractères";
+        "Il faut une majuscule, une minuscule, un chiffre, un caractère spécial et au moins 12 caractères.";
     }
     if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Veuillez confirmer votre mot de passe";
@@ -137,8 +149,6 @@ function RegisterPage() {
         formDataToSend.append("postcode", formData.postcode);
         formDataToSend.append("country", formData.country);
         formDataToSend.append("gender", formData.gender);
-
-        // AJOUTE ICI :
         formDataToSend.append("vehicle_name", formData.vehicle_name);
         formDataToSend.append("license_plate", formData.license_plate);
         formDataToSend.append("id_plug", formData.id_plug);
@@ -162,14 +172,28 @@ function RegisterPage() {
         const data = await response.json();
 
         if (response.ok) {
-          alert("Compte créé avec succès !");
-          navigate("/login");
+          setModalState({
+            isOpen: true,
+            title: "Compte créé avec succès !",
+            message: "Vous allez être redirigé vers la page de connexion.",
+            isSuccess: true,
+          });
         } else {
-          alert(data.error || "Erreur lors de la création du compte");
+          setModalState({
+            isOpen: true,
+            title: "Erreur",
+            message: data.error || "Erreur lors de la création du compte",
+            isSuccess: false,
+          });
         }
       } catch (err) {
         console.error(err);
-        alert("Erreur réseau");
+        setModalState({
+          isOpen: true,
+          title: "Erreur réseau",
+          message: "Impossible de contacter le serveur.",
+          isSuccess: false,
+        });
       }
     }
   };
@@ -177,6 +201,16 @@ function RegisterPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 1 * 1024 * 1024) {
+        // 1MB
+        setModalState({
+          isOpen: true,
+          title: "Fichier trop volumineux",
+          message: "La taille maximale de l'image est de 1Mo.",
+          isSuccess: false,
+        });
+        return;
+      }
       setAvatarFile(file);
       const imageUrl = URL.createObjectURL(file);
       setAvatar(imageUrl);
@@ -193,6 +227,16 @@ function RegisterPage() {
   const handleVehicleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 1 * 1024 * 1024) {
+        // 1MB
+        setModalState({
+          isOpen: true,
+          title: "Fichier trop volumineux",
+          message: "La taille maximale de l'image est de 1Mo.",
+          isSuccess: false,
+        });
+        return;
+      }
       setVehiclePhotoFile(file);
       const imageUrl = URL.createObjectURL(file);
       setFormData((prev) => ({
@@ -202,333 +246,432 @@ function RegisterPage() {
     }
   };
 
+  const handleModalClose = () => {
+    if (modalState.isSuccess) {
+      navigate("/login");
+    }
+    setModalState({ isOpen: false, title: "", message: "", isSuccess: false });
+  };
+
   return (
-    <form onSubmit={handleSubmit} className="register-form">
-      <div className="register-container">
-        <section className="register-profil-section">
-          <h2>Mon profil</h2>
-          <div className="profil-picture-container">
-            <img
-              src={avatar}
-              className="profil-avatar"
-              alt="avatar du compte"
-            />
-            <button
-              type="button"
-              className="button-classic"
-              onClick={triggerFileInput}
-            >
-              Télécharger une photo
-            </button>
-            <input
-              id="profile-image-input"
-              type="file"
-              accept="image/*"
-              onChange={handleImageUpload}
-              style={{ display: "none" }}
-            />
-          </div>
-          <div className="form-group">
-            <h3>Prénom</h3>
-            <input
-              type="text"
-              name="first_name"
-              value={formData.first_name}
-              onChange={handleChange}
-              className={errors.first_name ? "error" : ""}
-              placeholder="Entrez votre prénom"
-            />
-            {errors.first_name && (
-              <span className="error-message">{errors.first_name}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Nom</h3>
-            <input
-              type="text"
-              name="last_name"
-              value={formData.last_name}
-              onChange={handleChange}
-              className={errors.last_name ? "error" : ""}
-              placeholder="Entrez votre nom"
-            />
-            {errors.last_name && (
-              <span className="error-message">{errors.last_name}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Email</h3>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={errors.email ? "error" : ""}
-              placeholder="Entrez votre email"
-            />
-            {errors.email && (
-              <span className="error-message">{errors.email}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Mot de passe</h3>
-            <div className="password-input-container">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className={errors.password ? "error" : ""}
-                placeholder="Entrez votre mot de passe"
+    <>
+      <Modal
+        isOpen={modalState.isOpen}
+        onClose={handleModalClose}
+        title={modalState.title}
+      >
+        <p>{modalState.message}</p>
+      </Modal>
+      <form onSubmit={handleSubmit} className="register-form">
+        <div className="register-container">
+          <section className="register-profil-section">
+            <h2>Mon profil</h2>
+            <div className="profil-picture-container">
+              <img
+                src={avatar}
+                className="profil-avatar"
+                alt="Aperçu de l'avatar du compte"
               />
-              <button
-                type="button"
-                className="password-toggle-btn"
-                onClick={() => setShowPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={
-                  showPassword
-                    ? "Masquer le mot de passe"
-                    : "Afficher le mot de passe"
-                }
-              >
-                {showPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
-            </div>
-            {errors.password && (
-              <span className="error-message">{errors.password}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Confirmer le mot de passe</h3>
-            <div className="password-input-container">
+              <div className="upload-container">
+                <button
+                  type="button"
+                  className="button-classic"
+                  onClick={triggerFileInput}
+                >
+                  Télécharger une photo
+                </button>
+                <p className="info-text">Taille max : 1Mo</p>
+              </div>
               <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className={errors.confirmPassword ? "error" : ""}
-                placeholder="Confirmez votre mot de passe"
+                id="profile-image-input"
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                style={{ display: "none" }}
               />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword((v) => !v)}
-                tabIndex={-1}
-                aria-label={
-                  showConfirmPassword
-                    ? "Masquer le mot de passe"
-                    : "Afficher le mot de passe"
-                }
-              >
-                {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
-              </button>
             </div>
-            {errors.confirmPassword && (
-              <span className="error-message">{errors.confirmPassword}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Genre</h3>
-            <select
-              name="gender"
-              value={formData.gender}
-              onChange={handleChange}
-              className={errors.gender ? "error" : ""}
-            >
-              <option value="">Sélectionnez votre genre</option>
-              <option value="Femme">Femme</option>
-              <option value="Homme">Homme</option>
-              <option value="Autre">Autre</option>
-            </select>
-            {errors.gender && (
-              <span className="error-message">{errors.gender}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Date de naissance</h3>
-            <input
-              type="date"
-              name="birthdate"
-              value={formData.birthdate}
-              onChange={handleChange}
-              className={errors.birthdate ? "error" : ""}
-            />
-            {errors.birthdate && (
-              <span className="error-message">{errors.birthdate}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Adresse</h3>
-            <input
-              type="text"
-              name="address"
-              value={formData.address}
-              onChange={handleChange}
-              className={errors.address ? "error" : ""}
-              placeholder="Entrez votre adresse"
-            />
-            {errors.address && (
-              <span className="error-message">{errors.address}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Complément d'adresse</h3>
-            <input
-              type="text"
-              name="address_bis"
-              value={formData.address_bis}
-              onChange={handleChange}
-              placeholder="Appartement, étage, etc. (optionnel)"
-            />
-          </div>
-
-          <div className="form-group">
-            <h3>Ville</h3>
-            <input
-              type="text"
-              name="city"
-              value={formData.city}
-              onChange={handleChange}
-              className={errors.city ? "error" : ""}
-              placeholder="Entrez votre ville"
-            />
-            {errors.city && (
-              <span className="error-message">{errors.city}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Code postal</h3>
-            <input
-              type="text"
-              name="postcode"
-              value={formData.postcode}
-              onChange={handleChange}
-              className={errors.postcode ? "error" : ""}
-              placeholder="Entrez votre code postal"
-            />
-            {errors.postcode && (
-              <span className="error-message">{errors.postcode}</span>
-            )}
-          </div>
-
-          <div className="form-group">
-            <h3>Pays</h3>
-            <input
-              type="text"
-              name="country"
-              value={formData.country}
-              onChange={handleChange}
-              className={errors.country ? "error" : ""}
-              placeholder="Entrez votre pays"
-            />
-            {errors.country && (
-              <span className="error-message">{errors.country}</span>
-            )}
-          </div>
-        </section>
-
-        <section className="register-vehicle-section">
-          <div className="form-group">
-            <h3>Photo du véhicule</h3>
-            <div className="vehicle-photo-box">
-              {formData.vehicle_photo_url ? (
-                <img
-                  src={formData.vehicle_photo_url}
-                  alt="Aperçu véhicule"
-                  className="vehicle-photo-preview"
-                />
-              ) : (
-                <img
-                  src={vehicleDefaultIcon}
-                  alt="Aperçu véhicule"
-                  className="vehicle-photo-preview vehicle-photo-default"
-                />
+            <div className="form-group">
+              <label htmlFor="first_name">Prénom</label>
+              <input
+                id="first_name"
+                type="text"
+                name="first_name"
+                value={formData.first_name}
+                onChange={handleChange}
+                className={errors.first_name ? "error" : ""}
+                placeholder="Entrez votre prénom"
+                aria-describedby={
+                  errors.first_name ? "first_name-error" : undefined
+                }
+              />
+              {errors.first_name && (
+                <span id="first_name-error" className="error-message">
+                  {errors.first_name}
+                </span>
               )}
             </div>
-            <button
-              type="button"
-              className="button-classic"
-              onClick={() => {
-                const fileInput = document.getElementById(
-                  "vehicle-photo-input",
-                ) as HTMLInputElement;
-                fileInput?.click();
-              }}
-            >
-              Télécharger une photo
+
+            <div className="form-group">
+              <label htmlFor="last_name">Nom</label>
+              <input
+                id="last_name"
+                type="text"
+                name="last_name"
+                value={formData.last_name}
+                onChange={handleChange}
+                className={errors.last_name ? "error" : ""}
+                placeholder="Entrez votre nom"
+                aria-describedby={
+                  errors.last_name ? "last_name-error" : undefined
+                }
+              />
+              {errors.last_name && (
+                <span id="last_name-error" className="error-message">
+                  {errors.last_name}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={errors.email ? "error" : ""}
+                placeholder="Entrez votre email"
+                aria-describedby={errors.email ? "email-error" : undefined}
+              />
+              {errors.email && (
+                <span id="email-error" className="error-message">
+                  {errors.email}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="password">Mot de passe</label>
+              <div className="password-input-container">
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className={errors.password ? "error" : ""}
+                  placeholder="Entrez votre mot de passe"
+                  aria-describedby={
+                    errors.password ? "password-error" : "password-info"
+                  }
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowPassword((v) => !v)}
+                  tabIndex={-1}
+                  aria-label={
+                    showPassword
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
+                >
+                  {showPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+              <p id="password-info" className="info-text">
+                Il faut une majuscule, une minuscule, un chiffre, un caractère
+                spécial et au moins 12 caractères.
+              </p>
+              {errors.password && (
+                <span id="password-error" className="error-message">
+                  {errors.password}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="confirmPassword">Confirmer le mot de passe</label>
+              <div className="password-input-container">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={handleChange}
+                  className={errors.confirmPassword ? "error" : ""}
+                  placeholder="Confirmez votre mot de passe"
+                  aria-describedby={
+                    errors.confirmPassword
+                      ? "confirmPassword-error"
+                      : undefined
+                  }
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  tabIndex={-1}
+                  aria-label={
+                    showConfirmPassword
+                      ? "Masquer le mot de passe"
+                      : "Afficher le mot de passe"
+                  }
+                >
+                  {showConfirmPassword ? <FaEyeSlash /> : <FaEye />}
+                </button>
+              </div>
+              {errors.confirmPassword && (
+                <span id="confirmPassword-error" className="error-message">
+                  {errors.confirmPassword}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="gender">Genre</label>
+              <select
+                id="gender"
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className={errors.gender ? "error" : ""}
+                aria-describedby={errors.gender ? "gender-error" : undefined}
+              >
+                <option value="">Sélectionnez votre genre</option>
+                <option value="Femme">Femme</option>
+                <option value="Homme">Homme</option>
+                <option value="Autre">Autre</option>
+              </select>
+              {errors.gender && (
+                <span id="gender-error" className="error-message">
+                  {errors.gender}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="birthdate">Date de naissance</label>
+              <input
+                id="birthdate"
+                type="date"
+                name="birthdate"
+                value={formData.birthdate}
+                onChange={handleChange}
+                className={errors.birthdate ? "error" : ""}
+                aria-describedby={
+                  errors.birthdate ? "birthdate-error" : undefined
+                }
+              />
+              {errors.birthdate && (
+                <span id="birthdate-error" className="error-message">
+                  {errors.birthdate}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address">Adresse</label>
+              <input
+                id="address"
+                type="text"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                className={errors.address ? "error" : ""}
+                placeholder="Entrez votre adresse"
+                aria-describedby={errors.address ? "address-error" : undefined}
+              />
+              {errors.address && (
+                <span id="address-error" className="error-message">
+                  {errors.address}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="address_bis">Complément d'adresse</label>
+              <input
+                id="address_bis"
+                type="text"
+                name="address_bis"
+                value={formData.address_bis}
+                onChange={handleChange}
+                placeholder="Appartement, étage, etc. (optionnel)"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="city">Ville</label>
+              <input
+                id="city"
+                type="text"
+                name="city"
+                value={formData.city}
+                onChange={handleChange}
+                className={errors.city ? "error" : ""}
+                placeholder="Entrez votre ville"
+                aria-describedby={errors.city ? "city-error" : undefined}
+              />
+              {errors.city && (
+                <span id="city-error" className="error-message">
+                  {errors.city}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="postcode">Code postal</label>
+              <input
+                id="postcode"
+                type="text"
+                name="postcode"
+                value={formData.postcode}
+                onChange={handleChange}
+                className={errors.postcode ? "error" : ""}
+                placeholder="Entrez votre code postal"
+                aria-describedby={
+                  errors.postcode ? "postcode-error" : undefined
+                }
+              />
+              {errors.postcode && (
+                <span id="postcode-error" className="error-message">
+                  {errors.postcode}
+                </span>
+              )}
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="country">Pays</label>
+              <input
+                id="country"
+                type="text"
+                name="country"
+                value={formData.country}
+                onChange={handleChange}
+                className={errors.country ? "error" : ""}
+                placeholder="Entrez votre pays"
+                aria-describedby={errors.country ? "country-error" : undefined}
+              />
+              {errors.country && (
+                <span id="country-error" className="error-message">
+                  {errors.country}
+                </span>
+              )}
+            </div>
+          </section>
+
+          <section className="register-vehicle-section">
+            <h2>Mon véhicule</h2>
+            <div className="form-group">
+              <label htmlFor="vehicle-photo-input">Photo du véhicule</label>
+              <div className="vehicle-photo-box">
+                {formData.vehicle_photo_url ? (
+                  <img
+                    src={formData.vehicle_photo_url}
+                    alt="Aperçu véhicule"
+                    className="vehicle-photo-preview"
+                  />
+                ) : (
+                  <img
+                    src={vehicleDefaultIcon}
+                    alt="Aperçu véhicule"
+                    className="vehicle-photo-preview vehicle-photo-default"
+                  />
+                )}
+              </div>
+              <button
+                type="button"
+                className="button-classic"
+                onClick={() => {
+                  const fileInput = document.getElementById(
+                    "vehicle-photo-input",
+                  ) as HTMLInputElement;
+                  fileInput?.click();
+                }}
+              >
+                Télécharger une photo
+              </button>
+              <p className="info-text">Taille max : 1Mo</p>
+              <input
+                id="vehicle-photo-input"
+                type="file"
+                accept="image/*"
+                onChange={handleVehicleImageUpload}
+                style={{ display: "none" }}
+              />
+            </div>
+            <div className="form-group">
+              <label htmlFor="vehicle_name">Nom du véhicule</label>
+              <input
+                id="vehicle_name"
+                type="text"
+                name="vehicle_name"
+                value={formData.vehicle_name}
+                onChange={handleChange}
+                className={errors.vehicle_name ? "error" : ""}
+                placeholder="Tapez le nom"
+                aria-describedby={
+                  errors.vehicle_name ? "vehicle_name-error" : undefined
+                }
+              />
+              {errors.vehicle_name && (
+                <span id="vehicle_name-error" className="error-message">
+                  {errors.vehicle_name}
+                </span>
+              )}
+            </div>
+            <div className="form-group">
+              <label htmlFor="license_plate">Plaque d'immatriculation</label>
+              <input
+                id="license_plate"
+                type="text"
+                name="license_plate"
+                value={formData.license_plate}
+                onChange={handleChange}
+                className={errors.license_plate ? "error" : ""}
+                placeholder="Format : AA-123-AA"
+                aria-describedby={
+                  errors.license_plate ? "license_plate-error" : undefined
+                }
+              />
+              {errors.license_plate && (
+                <span id="license_plate-error" className="error-message">
+                  {errors.license_plate}
+                </span>
+              )}
+            </div>
+            <div className="form-group">
+              <label htmlFor="id_plug">Type de prise</label>
+              <select
+                id="id_plug"
+                name="id_plug"
+                value={formData.id_plug}
+                onChange={handleChange}
+                className={errors.id_plug ? "error" : ""}
+                aria-describedby={errors.id_plug ? "id_plug-error" : undefined}
+              >
+                <option value="">Sélectionnez votre prise</option>                {Array.isArray(plugs) &&
+                  plugs.map((plug) => (
+                    <option key={plug.id} value={plug.id}>
+                      {plug.name}
+                    </option>
+                  ))}
+              </select>
+              {errors.id_plug && (
+                <span id="id_plug-error" className="error-message">
+                  {errors.id_plug}
+                </span>
+              )}
+            </div>
+            <button type="submit" className="button-classic">
+              Valider mes informations
             </button>
-            <input
-              id="vehicle-photo-input"
-              type="file"
-              accept="image/*"
-              onChange={handleVehicleImageUpload}
-              style={{ display: "none" }}
-            />
-          </div>
-          <h2>Mon véhicule</h2>
-          <div className="form-group">
-            <h3>Nom du véhicule</h3>
-            <input
-              type="text"
-              name="vehicle_name"
-              value={formData.vehicle_name}
-              onChange={handleChange}
-              className={errors.vehicle_name ? "error" : ""}
-              placeholder="Tapez le nom"
-            />
-            {errors.vehicle_name && (
-              <span className="error-message">{errors.vehicle_name}</span>
-            )}
-          </div>
-          <div className="form-group">
-            <h3>Plaque d'immatriculation</h3>
-            <input
-              type="text"
-              name="license_plate"
-              value={formData.license_plate}
-              onChange={handleChange}
-              className={errors.license_plate ? "error" : ""}
-              placeholder="Format : AA-123-AA"
-            />
-            {errors.license_plate && (
-              <span className="error-message">{errors.license_plate}</span>
-            )}
-          </div>
-          <div className="form-group">
-            <h3>Type de prise</h3>
-            <select
-              name="id_plug"
-              value={formData.id_plug}
-              onChange={handleChange}
-              className={errors.id_plug ? "error" : ""}
-            >
-              <option value="">Sélectionnez votre prise</option>
-              {Array.isArray(plugs) &&
-                plugs.map((plug) => (
-                  <option key={plug.id} value={plug.id}>
-                    {plug.name}
-                  </option>
-                ))}
-            </select>
-            {errors.id_plug && (
-              <span className="error-message">{errors.id_plug}</span>
-            )}
-          </div>
-          <button type="submit" className="button-classic">
-            Valider mes informations
-          </button>
-        </section>
-      </div>
-    </form>
+          </section>
+        </div>
+      </form>
+    </>
   );
 }
 

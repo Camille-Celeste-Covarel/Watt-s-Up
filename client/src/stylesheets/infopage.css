@@ -1,0 +1,45 @@
+.information-page {
+  padding: 2rem;
+  color: white;
+  min-height: calc(100vh - 70px - 60px);
+  line-height: 1.6;
+}
+
+.information-page h1, .information-page h2 {
+  color: var(--quinte-color);
+  margin-bottom: 1rem;
+}
+
+.information-page h1 {
+  font-size: 2rem;
+  margin-bottom: 2rem;
+}
+
+.information-page h2 {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+}
+
+.information-page section {
+  margin-bottom: 2rem;
+}
+
+.information-page p {
+  font-weight: 500;
+  color: var(--fondamental-color);
+}
+
+.information-page ul {
+  list-style-position: inside;
+  padding-left: 0;
+}
+
+.information-page li {
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: var(--fondamental-color);
+}
+
+.information-page strong {
+  color: var(--quinte-color);
+}

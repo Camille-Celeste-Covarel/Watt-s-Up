@@ -1,0 +1,110 @@
+.edit-profil-page-container {
+  padding: 2rem;
+  background-color: var(--fondamental-color);
+  color: white;
+  min-height: calc(100vh - 70px - 60px);
+}
+
+.edit-profil-page-container h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: var(--quinte-color);
+}
+
+.edit-profil-form {
+  max-width: 800px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-areas:
+    "avatar fields"
+    "actions actions";
+  grid-template-columns: 1fr 2fr;
+  gap: 2rem;
+}
+
+.avatar-block {
+  grid-area: avatar;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.avatar-img {
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 4px solid white;
+}
+
+.avatar-upload-btn {
+  background-color: var(--quinte-color);
+  color: white;
+  padding: 0.5rem 1rem;
+  border: none;
+  cursor: pointer;
+}
+
+.fields-block {
+  grid-area: fields;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.fields-block label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: var(--quinte-color);
+}
+
+.fields-block input {
+  padding: 0.75rem;
+  border: none;
+  background-color: white;
+  color: var(--fondamental-color);
+}
+
+.form-actions {
+  grid-area: actions;
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.cancel-btn,
+.save-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.cancel-btn {
+  background-color: #ccc;
+  color: #333;
+}
+
+.save-btn {
+  background-color: var(--seconde-color);
+  color: white;
+}
+
+.info-text {
+  font-size: 0.85em;
+  color: #ccc;
+  margin-top: 5px;
+}
+
+@media (max-width: 768px) {
+  .edit-profil-form {
+    grid-template-areas:
+      "avatar"
+      "fields"
+      "actions";
+    grid-template-columns: 1fr;
+  }
+}

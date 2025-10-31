@@ -1,0 +1,99 @@
+.login-page-container {
+  display: flex;
+  height: calc(100vh - 70px - 60px);
+}
+
+.login-form {
+  background-color: white;
+  padding: 2rem;
+  width: 100%;
+}
+
+.form-group {
+  margin-bottom: 5px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  color: var(--quinte-color);
+  font-weight: bold;
+}
+
+.email-input input,
+.password-input input {
+  width: 100%;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  border: none;
+  background-color: var(--fondamental-color);
+  color: var(--quinte-color);
+}
+
+.password-input-container {
+  position: relative;
+}
+
+.password-input-container input {
+  width: 100%;
+  padding: 0.75rem;
+  box-sizing: border-box;
+  border: none;
+  background-color: var(--fondamental-color);
+  color: var(--quinte-color);
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: #888;
+  display: flex;
+}
+
+.login-forgot-password {
+  display: block;
+  text-align: right;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--quinte-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.login_button {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+}
+
+.button-classic {
+  width: 100%;
+  padding: 0.75rem;
+  border: none;
+  background-color: var(--quinte-color);
+  color: white;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.button-classic:hover {
+  background-color: var(--seconde-color);
+}
+
+.error-message {
+  color: #e74c3c;
+  background-color: #fdeded;
+  border: 1px solid #e74c3c;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}

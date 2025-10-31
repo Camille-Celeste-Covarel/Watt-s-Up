@@ -110,7 +110,6 @@
   font-size: 0.99em;
   font-weight: bold;
   border: none;
-  border-radius: 5px;
   cursor: pointer;
   text-decoration: none;
   transition: background-color 0.3s ease, transform 0.2s ease;
