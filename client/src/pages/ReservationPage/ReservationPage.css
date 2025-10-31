@@ -114,10 +114,6 @@
   .history-item {
     border: 3px solid var(--fondamental-color);
     margin: 20px 0;
-
-    &:last-child {
-      border-bottom: none;
-    }
   }
 
   .history {

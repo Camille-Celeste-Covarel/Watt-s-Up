@@ -38,39 +38,31 @@ const ReservationCard = ({ reservation }: { reservation: Reservation }) => {
   );
   return (
     <div className="reservation-card">
-      {" "}
       <div className="reservation-card-header">
         <h4>Station</h4>
-        <p>{station.adresse_station}</p>{" "}
-      </div>{" "}
+        <p>{station.adresse_station}</p>
+      </div>
       <div className="reservation-details">
-        {" "}
         <div className="detail-block">
-          {" "}
-          <h4>Borne</h4>{" "}
+          <h4>Borne</h4>
           <ul>
-            {" "}
-            <li>Puissance: {terminal.puissance_nominale} kW</li>{" "}
-            <li>Prises: {plugs.map((p) => p.name).join(", ")}</li>{" "}
-          </ul>{" "}
-        </div>{" "}
+            <li>Puissance: {terminal.puissance_nominale} kW</li>
+            <li>Prises: {plugs.map((p) => p.name).join(", ")}</li>
+          </ul>
+        </div>
         <div className="detail-block">
-          {" "}
-          <h4>Réservation</h4>{" "}
+          <h4>Réservation</h4>
           <ul>
-            {" "}
-            <li>Date: {formattedDate}</li>{" "}
+            <li>Date: {formattedDate}</li>
             <li>
-              {" "}
-              Statut:{" "}
+              Statut:
               <span className={`status status-${reservation.status}`}>
-                {" "}
-                {statusLabels[reservation.status]}{" "}
-              </span>{" "}
-            </li>{" "}
-          </ul>{" "}
-        </div>{" "}
-      </div>{" "}
+                {statusLabels[reservation.status]}
+              </span>
+            </li>
+          </ul>
+        </div>
+      </div>
     </div>
   );
 };
@@ -97,6 +89,7 @@ export function ReservationPage() {
     message: "",
   });
   const [remainingTime, setRemainingTime] = useState("");
+  const [openHistoryItemId, setOpenHistoryItemId] = useState<string | null>(null);
 
   const {
     data: reservations = [],
@@ -139,7 +132,6 @@ export function ReservationPage() {
     showToast({ type: "error", message });
   };
 
-  // --- Mutations distinctes pour chaque action (plus clair) ---
   const startChargeMutation = useMutation({
     mutationFn: (reservationId: string) =>
       apiAction(
@@ -203,7 +195,6 @@ export function ReservationPage() {
     cancelReservationMutation.isPending ||
     stopChargeMutation.isPending;
 
-  // --- Fonctions de gestion des événements ---
   useEffect(() => {
     if (!activeReservation) return;
     const interval = setInterval(() => {
@@ -246,6 +237,10 @@ export function ReservationPage() {
     } else if (modalState.action === "stop") {
       stopChargeMutation.mutate(modalState.reservationId);
     }
+  };
+
+  const handleHistoryItemClick = (id: string) => {
+    setOpenHistoryItemId(prevId => (prevId === id ? null : id));
   };
 
   if (isReservationsLoading || isAuthLoading)
@@ -377,8 +372,25 @@ export function ReservationPage() {
           <section className="reservation">
             <h2>Historique</h2>
             {pastReservations.slice(0, 5).map((reservation) => (
-              <details key={reservation.id} className="history-item">
-                <summary className="history-summary">
+              <details
+                key={reservation.id}
+                className="history-item"
+                open={reservation.id === openHistoryItemId}
+              >
+                <summary
+                  className="history-summary"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleHistoryItemClick(reservation.id);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleHistoryItemClick(reservation.id);
+                    }
+                  }}
+                  tabIndex={0}
+                >
                   <span>
                     {new Date(reservation.createdAt).toLocaleDateString(
                       "fr-FR",
