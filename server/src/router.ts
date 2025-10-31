@@ -1,5 +1,6 @@
 import path from "node:path";
 import express from "express";
+import rateLimit from 'express-rate-limit';
 import upload from "./config/multer";
 import { getImportHistory, importCsv } from "./controllers/importController";
 import isAdmin from "./middleware/isAdmin";
@@ -16,6 +17,14 @@ import { startCronJobs } from "./tools/cron.service";
 
 const router = express.Router();
 router.use(express.static(path.join(__dirname, "..", "public")));
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: 'Trop de requêtes envoyées depuis cette IP, veuillez réessayer après 15 minutes.',
+});
 
 /* ************************************************************************* */
 // 🌍 Routes PUBLIQUES (accessibles à tous)
@@ -80,7 +89,7 @@ router.put(
 );
 
 // Route de contact (mail)
-router.post("/contact", userActions.contact);
+router.post("/contact", apiLimiter, userActions.contact);
 
 /* ************************************************************************* */
 // 👑 Wall d'administration - Tout ce qui suit nécessite d'être Admin

@@ -137,6 +137,11 @@ jobs:
               export ADMIN_EMAIL_PROD='${{ secrets.ADMIN_EMAIL_PROD }}'
               export ADMIN_PASSWORD_PROD='${{ secrets.ADMIN_PASSWORD_PROD }}'
               export JWT_SECRET_PROD='${{ secrets.JWT_SECRET }}'
+              export EMAIL_HOST_PROD='${{ secrets.EMAIL_HOST_PROD }}'
+              export EMAIL_PORT_PROD='${{ secrets.EMAIL_PORT_PROD }}'
+              export EMAIL_USER_PROD='${{ secrets.EMAIL_USER_PROD }}'
+              export EMAIL_PASS_PROD='${{ secrets.EMAIL_PASS_PROD }}'
+              export CONTACT_RECEIVER_PROD='${{ secrets.CONTACT_RECEIVER_PROD }}'
 
               echo "--- Starting deployment on SnailBackend ---"
 
@@ -197,6 +202,11 @@ jobs:
               echo "ADMIN_EMAIL=${ADMIN_EMAIL_PROD}" >> .env
               echo "ADMIN_PASSWORD=${ADMIN_PASSWORD_PROD}" >> .env
               echo "JWT_SECRET=${JWT_SECRET_PROD}" >> .env
+              echo "EMAIL_HOST=${EMAIL_HOST_PROD}" >> .env
+              echo "EMAIL_PORT=${EMAIL_PORT_PROD}" >> .env
+              echo "EMAIL_USER=${EMAIL_USER_PROD}" >> .env
+              echo "EMAIL_PASS=${EMAIL_PASS_PROD}" >> .env
+              echo "CONTACT_RECEIVER=${CONTACT_RECEIVER_PROD}" >> .env
 
               echo "Pulling the new image..."
               docker compose -f docker-compose-backend.yml pull
