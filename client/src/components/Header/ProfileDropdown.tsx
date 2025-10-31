@@ -44,8 +44,10 @@ export function ProfileDropdown() {
     );
   }
 
-  const avatarSrc =
-    isAuthenticated && user?.avatarUrl ? `${import.meta.env.VITE_API_URL}${user.avatarUrl}` : defaultAvatar;
+    const avatarSrc =
+        isAuthenticated && user?.avatarUrl
+            ? `${import.meta.env.VITE_API_URL}${user.avatarUrl.startsWith('/') ? user.avatarUrl : `/${user.avatarUrl}`}`
+            : defaultAvatar;
 
   return (
     <div className="profile-dropdown-container" ref={dropdownRef}>
