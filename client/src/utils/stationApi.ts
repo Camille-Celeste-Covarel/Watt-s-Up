@@ -1,4 +1,4 @@
-import type { EnrichedStationAttributes } from "../types/components/componentsTypes.ts";
+import type { EnrichedStationAttributes, CreateReservationData, ReservationResponse } from "../types/components/componentsTypes.ts";
 import type { StationMapAttributes } from "../types/types_maplibre";
 
 export async function fetchVisibleStations(
@@ -33,11 +33,6 @@ export async function fetchVisibleStations(
   return response.json();
 }
 
-/**
- * Récupère les détails complets d'une seule station par son ID.
- * @param stationId - L'identifiant de la station à récupérer.
- * @returns Une promesse qui se résout avec les données de la station.
- */
 export async function fetchStationDetails(
   stationId: string,
 ): Promise<EnrichedStationAttributes> {
@@ -46,7 +41,6 @@ export async function fetchStationDetails(
   );
 
   if (!response.ok) {
-    // Essaye de récupérer un message d'erreur plus précis depuis l'API
     const errorData = await response.json().catch(() => ({
       message: "Une erreur de communication avec le serveur est survenue.",
     }));
@@ -59,11 +53,6 @@ export async function fetchStationDetails(
   return response.json();
 }
 
-/**
- * Supprime une station par son ID.
- * @param stationId - L'identifiant de la station à supprimer.
- * @returns Une promesse qui se résout si la suppression est réussie.
- */
 export async function deleteStation(stationId: string): Promise<void> {
   const response = await fetch(
     `${import.meta.env.VITE_API_URL}/api/stations/${stationId}`,
@@ -87,8 +76,8 @@ export async function deleteStation(stationId: string): Promise<void> {
 }
 
 export async function createReservation(
-  reservationData: any,
-): Promise<any> {
+  reservationData: CreateReservationData,
+): Promise<ReservationResponse> {
   const response = await fetch(
     `${import.meta.env.VITE_API_URL}/api/reservations`,
     {

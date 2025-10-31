@@ -83,7 +83,6 @@ function ReservationSuccessPage() {
                 <li>Date: {formattedReservationDate}</li>
                 <li>
                   Statut:
-                  {/* MODIFIÉ : status en minuscule pour correspondre au CSS */}
                   <span
                     className={`status status-${apiResponse.status.toLowerCase()}`}
                   >
@@ -103,7 +102,6 @@ function ReservationSuccessPage() {
           .
         </p>
         <div className="success-actions">
-          {/* MODIFIÉ : Utilisation des classes de boutons de votre DA */}
           <Link to="/reservations" className="action-button primary-action">
             Voir toutes mes réservations
           </Link>

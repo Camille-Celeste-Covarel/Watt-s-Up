@@ -53,3 +53,13 @@ export interface RouteHandle {
 export interface ScrollToTopButtonProps {
   targetRef?: RefObject<HTMLElement | null>;
 }
+
+export interface CreateReservationData {
+  stationId: string;
+  power: number;
+  plugIds: string[];
+}
+
+export interface ReservationResponse {
+  id: string;
+}
