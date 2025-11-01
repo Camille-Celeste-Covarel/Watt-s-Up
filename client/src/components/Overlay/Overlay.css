@@ -1,8 +1,8 @@
 .overlay {
-  position: absolute;
-  top: 0;
+  position: fixed;
   right: 0;
-  height: calc(100% - 70px);
+  min-height: calc(100vh - 35px - 60px);
+  max-height: calc(100vh - 35px - 60px);
   box-sizing: border-box;
   width: var(--overlay-width);
   max-width: 500px;
@@ -14,6 +14,11 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
+  border: none;
+  outline: none;
+  margin: 0;
+  left: auto;
+  padding: 0;
 }
 
 .overlay.open {
@@ -28,7 +33,7 @@
   border: none;
   font-size: 30px;
   cursor: pointer;
-  z-index: 1001;
+  z-index: 10000;
   color: var(--quinte-color);
   width: 40px;
   height: 40px;
@@ -39,12 +44,6 @@
 
 .overlay .overlay-content {
   overflow-y: auto;
-  height: 100%;
+  flex-grow: 1;
   width: 100%;
-}
-
-@media (min-width: 768px) {
-  .overlay {
-    height: calc(100% - 35px);
-  }
 }
