@@ -20,7 +20,7 @@ import LoginPage from "./pages/LoginPage";
 import ProfilPage from "./pages/ProfilPage";
 import RegisterPage from "./pages/RegisterPage";
 import { ReservationPage } from "./pages/ReservationPage/ReservationPage";
-import ReservationSuccessPage from "./pages/ReservationPage/ReservationSuccessPage.tsx"; // --- CONSERVÉ ---
+import ReservationSuccessPage from "./pages/ReservationPage/ReservationSuccessPage.tsx";
 import ResetPassword from "./pages/ResetPassword.tsx";
 import AdminRoute from "./utils/AdminRoute.tsx";
 import ProtectedRoute from "./utils/ProtectedRoute";
@@ -32,7 +32,6 @@ const router = createBrowserRouter([
       {
         index: true,
         element: <LandingPage />,
-        /*element: null, a voir dans le temps si <LandingPage />, ne pose pas souci*/
       },
       {
         path: "/login",

@@ -1,4 +1,5 @@
 import { type ReactNode, useEffect, useRef, useState } from "react";
+import { isMobile } from "react-device-detect";
 import { useOverlay } from "../../contexts/OverlayContext/OverlayContext.tsx";
 import ScrollToTopButton from "../ScrollToTopButton/ScrollToTopButton.tsx";
 
@@ -16,6 +17,10 @@ export function Overlay({
   const previouslyFocusedElement = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+
     previouslyFocusedElement.current = document.activeElement as HTMLElement;
 
     const timer = setTimeout(() => {
@@ -89,7 +94,7 @@ export function Overlay({
     }, 300);
   };
 
-  if (!children) {
+  if (!children || isMobile) {
     return null;
   }
 
