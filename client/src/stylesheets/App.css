@@ -21,7 +21,7 @@ body {
   top: 60px;
   left: 0;
   width: 100%;
-  height: calc(100vh - 60px - var(--footer-height));
+  height: calc(100dvh - 60px - var(--footer-height));
   background-color: white;
   z-index: 900;
   overflow-y: auto;
@@ -70,7 +70,7 @@ form input:focus {
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  height: 100dvh;
   overflow: hidden;
 }
 

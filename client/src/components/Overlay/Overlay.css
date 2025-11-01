@@ -1,8 +1,8 @@
 .overlay {
   position: fixed;
   right: 0;
-  min-height: calc(100vh - var(--footer-height) - 60px);
-  max-height: calc(100vh - var(--footer-height) - 60px);
+  min-height: calc(100dvh - var(--footer-height) - 60px);
+  max-height: calc(100dvh - var(--footer-height) - 60px);
   box-sizing: border-box;
   width: var(--overlay-width);
   max-width: 500px;

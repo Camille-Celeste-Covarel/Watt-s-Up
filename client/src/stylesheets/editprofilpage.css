@@ -2,7 +2,7 @@
   padding: 2rem;
   background-color: var(--fondamental-color);
   color: white;
-  min-height: calc(100vh - 70px - 60px);
+  min-height: calc(100dvh - 70px - 60px);
 }
 
 .edit-profil-page-container h2 {
