@@ -143,12 +143,20 @@
     font-size: 20pt;
     font-weight: bold;
     color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
   .group-availability {
     font-size: 16pt;
     color: #555;
     font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
   .action-buttons-container {

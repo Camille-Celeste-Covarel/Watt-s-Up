@@ -8,8 +8,7 @@ function ContactPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalMessage, setModalMessage] = useState("");
-  const [modalType, setModalType] = useState<'success' | 'error' | ''>(''); // Pour personnaliser le bouton de la modale
-
+  const [modalType, setModalType] = useState<'success' | 'error' | ''>('');
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setModalTitle("");
@@ -31,8 +30,8 @@ function ContactPage() {
         setModalTitle("Message envoyé !");
         setModalMessage("Votre message a bien été envoyé. Nous vous répondrons dans les plus brefs délais.");
         setModalType('success');
-        setSubject(""); // Réinitialise le sujet
-        setMessage(""); // Réinitialise le message
+        setSubject("");
+        setMessage("");
       } else {
         const errorData = await res.json().catch(() => ({
           message: "Erreur inconnue.",
@@ -59,8 +58,10 @@ function ContactPage() {
   return (
     <>
       <form className="contact-form" onSubmit={handleSubmit}>
-        <h2>Objet de votre demande</h2>
+        <label htmlFor="subject">Objet de votre demande</label>
         <select
+          id="subject"
+          name="subject"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           required
@@ -72,7 +73,7 @@ function ContactPage() {
           <option value="Un problème avec une station">Un problème avec une station</option>
           <option value="Autres">Autres</option>
         </select>
-        <h2>Votre message</h2>
+        <label htmlFor="message">Votre message</label>
         <textarea
           id="message"
           name="message"

@@ -39,19 +39,19 @@ const ReservationCard = ({ reservation }: { reservation: Reservation }) => {
   return (
     <div className="reservation-card">
       <div className="reservation-card-header">
-        <h4>Station</h4>
+        <h3>Station</h3>
         <p>{station.adresse_station}</p>
       </div>
       <div className="reservation-details">
         <div className="detail-block">
-          <h4>Borne</h4>
+          <h3>Borne</h3>
           <ul>
             <li>Puissance: {terminal.puissance_nominale} kW</li>
             <li>Prises: {plugs.map((p) => p.name).join(", ")}</li>
           </ul>
         </div>
         <div className="detail-block">
-          <h4>Réservation</h4>
+          <h3>Réservation</h3>
           <ul>
             <li>Date: {formattedDate}</li>
             <li>
@@ -71,7 +71,7 @@ const apiAction = async (url: string, method: "POST" | "DELETE") => {
   const response = await fetch(url, { method, credentials: "include" });
   const data = await response.json();
   if (!response.ok) {
-    throw new Error(data.message || "L'opération a échoué.");
+    throw new Error(data.message || "L\'opération a échoué.");
   }
   return data;
 };
@@ -357,7 +357,7 @@ export function ReservationPage() {
           <section className="reservation">
             <h2>Aucune réservation active</h2>
             <p>
-              Vous n'avez pas de réservation en cours. Trouvez une borne et
+              Vous n\'avez pas de réservation en cours. Trouvez une borne et
               réservez-la dès maintenant !
             </p>
             <Link to="/" className="btn">
@@ -414,7 +414,7 @@ export function ReservationPage() {
         <section className="reservation">
           <h2>Un problème ?</h2>
           <p>
-            Si vous rencontrez un souci avec une réservation, n'hésitez pas à
+            Si vous rencontrez un souci avec une réservation, n\'hésitez pas à
             nous le signaler.
           </p>
           <Link to="/contact" className="btn">

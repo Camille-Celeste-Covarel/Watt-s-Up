@@ -18,5 +18,12 @@ const plugIconMap: {
 
 export const PlugIcon: React.FC<PlugIconProps> = ({ plugName, className }) => {
   const IconComponent = plugIconMap[plugName] || UnknownPlugIcon;
-  return <IconComponent title={plugName} className={className} />;
+  return (
+    <IconComponent
+      title={plugName}
+      className={className}
+      role="img" // Ajout de role="img" pour l'accessibilité
+      aria-label={`${plugName} plug`} // Ajout d'un aria-label pour les lecteurs d'écran
+    />
+  );
 };

@@ -41,13 +41,14 @@
 
     .reservation-card-header {
       h3 {
-        text-align: start;
-        margin: 0;
-        font-size: 1.2rem;
+        margin-top: 0;
+        margin-bottom: 0.75rem;
         color: #333;
-      }
-      h4 {
-        margin: 0;
+        font-size: 1rem;
+        font-weight: 600;
+        border-bottom: 2px solid var(--quinte-color);
+        padding-bottom: 0.5rem;
+        display: inline-block;
       }
 
       p {
@@ -66,10 +67,15 @@
   }
 
   .detail-block {
-    h4 {
-      margin: 10px 0;
-      color: var(--quinte-color);
-      font-size: 1rem;
+    h3 {
+        margin-top: 0;
+        margin-bottom: 0.75rem;
+        color: #333;
+        font-size: 1rem;
+        font-weight: 600;
+        border-bottom: 2px solid var(--quinte-color);
+        padding-bottom: 0.5rem;
+        display: inline-block;
     }
 
     li {

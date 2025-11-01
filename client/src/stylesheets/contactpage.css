@@ -1,8 +1,17 @@
 .contact-form {
   padding: 0 20px;
+  margin-top: 30px;
   display: flex;
   flex-direction: column;
   justify-content: center;
+}
+
+.contact-form label {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--quinte-color);
+  margin-top: 50px;
+  margin-bottom: 1rem;
 }
 
 .contact-form select {
