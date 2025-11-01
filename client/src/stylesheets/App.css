@@ -21,7 +21,7 @@ body {
   top: 60px;
   left: 0;
   width: 100%;
-  height: calc(100vh - 60px - 70px);
+  height: calc(100vh - 60px - var(--footer-height));
   background-color: white;
   z-index: 900;
   overflow-y: auto;
@@ -76,6 +76,7 @@ form input:focus {
 
 .main-content {
   position: relative;
+  z-index: 1;
   flex-grow: 1;
   overflow: hidden;
 }
