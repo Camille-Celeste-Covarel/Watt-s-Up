@@ -3,13 +3,13 @@ name: CI/CD for Wattsup BACKEND
 on:
   push:
     branches:
-      - staging
+      - dev
     paths:
       - 'server/**'
       - '.github/workflows/deploy-backend.yml'
   pull_request:
     branches:
-      - staging
+      - dev
     paths:
       - 'server/**'
       - '.github/workflows/deploy-backend.yml'
