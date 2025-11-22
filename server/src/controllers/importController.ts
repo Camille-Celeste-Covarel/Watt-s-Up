@@ -78,8 +78,13 @@ function getStationCompositeId(
 async function processConsolidatedStations(
   stationsToProcess: StagedStationContent[],
   importId: string,
-): Promise<{ successfulStations: number; errors: TransformError[] }> {
+): Promise<{
+  successfulStations: number;
+  successfulLines: number;
+  errors: TransformError[];
+}> {
   let successfulStations = 0;
+  let successfulLines = 0;
   const errors: TransformError[] = [];
 
   for (const stagedStation of stationsToProcess) {
@@ -444,6 +449,7 @@ async function processConsolidatedStations(
         LogLevel.DEBUG,
       );
       successfulStations++;
+      successfulLines += stagedStation.terminals.length;
       console.log(
         `Traitement de la station ${compositeId} terminé avec succès. (Ligne CSV: ${stagedStation.lastModifiedRow})`,
         LogLevel.DEBUG,
@@ -494,7 +500,7 @@ async function processConsolidatedStations(
     `processConsolidatedStations terminé. Total erreurs collectées: ${errors.length}`,
     LogLevel.DEBUG,
   );
-  return { successfulStations, errors };
+  return { successfulStations, successfulLines, errors };
 }
 
 async function processCsvInBackground(
@@ -518,6 +524,7 @@ async function processCsvInBackground(
   let importCompleted = false;
   let totalProcessedCsvLines = 0;
   let totalSuccessfulStations = 0;
+  let totalSuccessfulLines = 0;
   let totalErrorEntries = 0;
 
   if (!fs.existsSync(ERROR_LOG_DIR)) {
@@ -701,9 +708,10 @@ async function processCsvInBackground(
               `Début du flush de ${stationsToFlush.length} stations. Taille du tampon avant flush: ${stagedStationData.size + stationsToFlush.length}.`,
               LogLevel.INFO,
             );
-            const { successfulStations, errors: processErrors } =
+            const { successfulStations, successfulLines, errors: processErrors } =
               await processConsolidatedStations(stationsToFlush, importUuid);
             totalSuccessfulStations += successfulStations;
+            totalSuccessfulLines += successfulLines;
             totalErrorEntries += processErrors.length;
             console.log(
               `processConsolidatedStations a retourné ${processErrors.length} erreurs pour ce flush. Écriture dans le log d'erreur.`,
@@ -740,9 +748,10 @@ async function processCsvInBackground(
         `Début du flush final de ${stationsToFlush.length} stations.`,
         LogLevel.DEBUG,
       );
-      const { successfulStations, errors: processErrors } =
+      const { successfulStations, successfulLines, errors: processErrors } =
         await processConsolidatedStations(stationsToFlush, importUuid);
       totalSuccessfulStations += successfulStations;
+      totalSuccessfulLines += successfulLines;
       totalErrorEntries += processErrors.length;
       console.log(
         `processConsolidatedStations a retourné ${processErrors.length} erreurs pour le flush final. Écriture dans le log d'erreur.`,
@@ -783,7 +792,7 @@ async function processCsvInBackground(
       importUuid,
     )
       ? "CANCELLED"
-      : totalSuccessfulStations === 0
+      : totalSuccessfulLines === 0 && totalProcessedCsvLines > 0
         ? "FAILED"
         : totalErrorEntries === 0
           ? "COMPLETED"
@@ -802,7 +811,7 @@ async function processCsvInBackground(
       file_name: originalFileName,
       total_lines_in_file: totalLinesFromMetadata,
       total_lines_processed: totalProcessedCsvLines,
-      successful_lines: totalSuccessfulStations,
+      successful_lines: totalSuccessfulLines,
       error_summary: finalErrorSummary,
       error_log_file_path: currentErrorLogFile,
       status: finalStatus,
@@ -810,7 +819,7 @@ async function processCsvInBackground(
       duration_ms: duration_ms,
     };
 
-    let finalDataForNotification: ImportLogAttributes | null = null;
+    let finalDataForNotification: ImportLogAttributes | null;
 
     if (initialImportLogEntry) {
       const entry = await Models.ImportLog.findByPk(initialImportLogEntry.id);
@@ -887,7 +896,7 @@ async function processCsvInBackground(
         file_name: originalFileName || "N/A (Stream Error)",
         total_lines_in_file: totalLinesFromMetadata,
         total_lines_processed: totalProcessedCsvLines,
-        successful_lines: 0,
+        successful_lines: totalSuccessfulLines,
         error_summary: {
           message: `Erreur lors de la lecture du stream CSV: ${errorMessage}`,
         },
@@ -979,8 +988,12 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   const filePath = (req.file as CustomFile).path;
   const originalFileName = (req.file as CustomFile).originalname;
 
-  const totalLinesFromMetadata = await countLinesInFile(filePath); 
-  console.log(`Nombre total de lignes CSV détectées: ${totalLinesFromMetadata}`, LogLevel.INFO);
+  const rawLineCount = await countLinesInFile(filePath);
+  const totalLinesFromMetadata = rawLineCount > 0 ? rawLineCount - 1 : 0;
+  console.log(
+    `Nombre de lignes de données CSV détectées: ${totalLinesFromMetadata} (total lignes brutes: ${rawLineCount})`,
+    LogLevel.INFO,
+  );
 
   res.status(202).json({
     message:
