@@ -1,5 +1,3 @@
-// Trigger CI/CD
-// Force re-trigger
 import fs from "node:fs";
 import path from "node:path";
 import type { Request, Response } from "express";
