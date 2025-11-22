@@ -1,5 +1,3 @@
-// Trigger CI/CD
-// Force re-trigger
 import { useQuery } from "@tanstack/react-query";
 import type React from "react";
 import "./ImportHistory.css";
