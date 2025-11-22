@@ -201,8 +201,7 @@ function RegisterPage() {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1 * 1024 * 1024) {
-        // 1MB
+      if (file.size > 1024 * 1024) {
         setModalState({
           isOpen: true,
           title: "Fichier trop volumineux",
@@ -227,8 +226,7 @@ function RegisterPage() {
   const handleVehicleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.size > 1 * 1024 * 1024) {
-        // 1MB
+      if (file.size > 1024 * 1024) {
         setModalState({
           isOpen: true,
           title: "Fichier trop volumineux",
