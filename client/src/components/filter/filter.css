@@ -154,6 +154,6 @@
 
 @media (min-width: 769px) {
     .filter-panel-content {
-        height: 100%;
+        height: 100dvh;
     }
 }

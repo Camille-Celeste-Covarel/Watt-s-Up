@@ -44,7 +44,7 @@ jobs:
         run: npm run check
 
       - name: 🛡️ Security Audit
-        run: npm audit --audit-level=high || true
+        run: npm audit --audit-level=medium || true
 
   build:
     name: Build and Push Docker Image
