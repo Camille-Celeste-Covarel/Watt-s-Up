@@ -10,7 +10,6 @@ const avatarStorage = multer.diskStorage({
     } else if (file.fieldname === "vehicle_photo") {
       dest = path.join(__dirname, "..", "..", "public/uploads/vehicules");
     }
-    // Crée le dossier si besoin
     fs.mkdirSync(dest, { recursive: true });
     cb(null, dest);
   },

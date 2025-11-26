@@ -96,26 +96,26 @@ const CsvImporter: React.FC = () => {
               style={{ display: "none" }}
             />
 
-            <button
-              type="button"
-              onClick={handleBrowseClick}
-              disabled={isImporting}
-              className="importer-browse-button"
-            >
-              Parcourir...
-            </button>
+            {!isImporting && (
+              <button
+                type="button"
+                onClick={handleBrowseClick}
+                disabled={isImporting}
+                className="importer-browse-button"
+              >
+                Parcourir...
+              </button>
+            )}
 
-            <button
-              type="button"
-              onClick={handleUpload}
-              disabled={isImporting || !file || !isWsConnected}
-            >
-              {isImporting
-                ? "Importation..."
-                : !isWsConnected
-                  ? "Connexion..."
-                  : "Lancer l'importation"}
-            </button>
+            {!isImporting && (
+              <button
+                type="button"
+                onClick={handleUpload}
+                disabled={isImporting || !file || !isWsConnected}
+              >
+                {!isWsConnected ? "Connexion..." : "Lancer l'importation"}
+              </button>
+            )}
             {isImporting && (
               <button
                 type="button"
