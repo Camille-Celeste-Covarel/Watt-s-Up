@@ -32,10 +32,14 @@ export interface TerminalGroup {
 
 export interface HistoryEntry {
   import_id: string;
+  file_name: string;
   status: "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED" | "CANCELLED";
   import_date: string;
-  successful_lines: number;
+  total_lines_in_file: number;
   total_lines_processed: number;
+  successful_lines: number;
+  duration_ms: number;
+  error_summary: { message: string } | null;
 }
 
 export interface ModalProps {

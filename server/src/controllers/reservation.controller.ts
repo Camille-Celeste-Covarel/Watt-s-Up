@@ -7,6 +7,7 @@ import { Station } from "../models/station.model";
 import { Terminal } from "../models/terminal.model";
 import { LogLevel, log } from "../tools/logger";
 import type { AuthenticatedRequest } from "../types/auth/auth_type";
+import type { CreateReservationBody } from "../types/controllers/controllers_types";
 
 const ReservationMin = 30;
 
@@ -27,12 +28,6 @@ const NIGHT_END_HOUR = 6;
 // Fonction utilitaire pour un nombre aléatoire
 const getRandomFloat = (min: number, max: number) =>
   Math.random() * (max - min) + min;
-
-interface CreateReservationBody {
-  stationId: string;
-  power: number;
-  plugIds: string[];
-}
 
 export const createReservation = async (
   req: AuthenticatedRequest,

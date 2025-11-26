@@ -16,19 +16,27 @@ const fetchImportHistory = async (): Promise<HistoryEntry[]> => {
   return response.json();
 };
 
-const getStatusIcon = (status: HistoryEntry["status"]) => {
+const getStatusInfo = (status: HistoryEntry["status"]) => {
   switch (status) {
     case "COMPLETED":
-      return <span title="Réussi">✅</span>;
+      return { icon: "✅", text: "Réussi" };
     case "PARTIAL_SUCCESS":
-      return <span title="Partiellement réussi">⚠️</span>;
+      return { icon: "⚠️", text: "Partiellement réussi" };
     case "FAILED":
-      return <span title="Échoué">❌</span>;
+      return { icon: "❌", text: "Échoué" };
     case "CANCELLED":
-      return <span title="Annulé">🛑</span>;
+      return { icon: "🛑", text: "Annulé" };
     default:
-      return <span title="Inconnu">❓</span>;
+      return { icon: "❓", text: "Inconnu" };
   }
+};
+
+const formatDuration = (ms: number | null | undefined) => {
+  if (ms === null || ms === undefined) return "N/A";
+  const seconds = Math.floor(ms / 1000);
+  const minutes = Math.floor(seconds / 60);
+  const remainingSeconds = seconds % 60;
+  return `${minutes}m ${remainingSeconds}s`;
 };
 
 const ImportHistory: React.FC = () => {
@@ -48,26 +56,54 @@ const ImportHistory: React.FC = () => {
           <div>Aucun import dans l'historique.</div>
         )}
         {data && data.length > 0 && (
-          <ul>
-            {data.map((entry) => (
-              <li key={entry.import_id}>
-                <div className="history-item-status">
-                  {getStatusIcon(entry.status)}
-                </div>
-                <div className="history-item-date">
-                  {new Date(entry.import_date).toLocaleString("fr-FR", {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  })}
-                </div>
-                <div className="history-item-stats">
-                  {entry.successful_lines?.toLocaleString("fr-FR") ?? 0} /{" "}
-                  {entry.total_lines_processed?.toLocaleString("fr-FR") ?? 0}{" "}
-                  lignes
-                </div>
-              </li>
-            ))}
-          </ul>
+          <div className="history-list">
+            {data.map((entry) => {
+              const statusInfo = getStatusInfo(entry.status);
+              const importDate = new Date(entry.import_date);
+              return (
+                <details key={entry.import_id} className="history-item-details-accordion">
+                  <summary>
+                    <div className="history-item-summary">
+                      <span className="history-item-status-icon">{statusInfo.icon}</span>
+                      <span className="history-item-date-summary">
+                        {importDate.toLocaleDateString("fr-FR")} - {importDate.toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    </div>
+                  </summary>
+                  <div className="history-item-content">
+                    <div className="history-item-group">
+                      <div>
+                        <strong>Statut:</strong> {statusInfo.text}
+                      </div>
+                      <div>
+                        <strong>Durée:</strong> {formatDuration(entry.duration_ms)}
+                      </div>
+                    </div>
+                    <div className="history-item-group">
+                      <div>
+                        <strong>Lignes:</strong> {entry.successful_lines?.toLocaleString("fr-FR") ?? 0} / {entry.total_lines_processed?.toLocaleString("fr-FR") ?? 0}
+                      </div>
+                      <div>
+                        <strong>Total:</strong> {entry.total_lines_in_file?.toLocaleString("fr-FR") ?? 0}
+                      </div>
+                    </div>
+                    <div className="history-item-group">
+                      <div className="history-item-long-text">
+                        <strong>Fichier:</strong> <span>{entry.file_name}</span>
+                      </div>
+                    </div>
+                    {entry.error_summary && (
+                      <div className="history-item-group">
+                        <div className="history-item-errors history-item-long-text">
+                          <strong>Erreurs:</strong> <span>{entry.error_summary.message}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </details>
+              );
+            })}
+          </div>
         )}
       </div>
     </details>

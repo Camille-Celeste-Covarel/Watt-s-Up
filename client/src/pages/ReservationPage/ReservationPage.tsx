@@ -335,7 +335,7 @@ export function ReservationPage() {
                       fontStyle: "italic",
                     }}
                   >
-                    [DEV] Fin de session prévue à :{" "}
+                    Fin de charge prévue à :{" "}
                     {new Date(
                       activeReservation.session_ends_at,
                     ).toLocaleTimeString("fr-FR")}
