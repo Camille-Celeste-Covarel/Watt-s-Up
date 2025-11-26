@@ -1028,14 +1028,6 @@ export const getImportHistory = async (
     const history = await Models.ImportLog.findAll({
       limit: 5,
       order: [["import_date", "DESC"]],
-      attributes: [
-        "import_id",
-        "status",
-        "import_date",
-        "successful_lines",
-        "total_lines_processed",
-        "duration_ms",
-      ],
     });
     res.status(200).json(history);
   } catch (error) {

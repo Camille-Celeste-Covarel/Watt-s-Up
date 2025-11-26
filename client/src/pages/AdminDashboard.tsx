@@ -1,19 +1,13 @@
 import type React from "react";
 import CsvImporter from "../components/CsvImporter/CsvImporter";
+import "./AdminDashboard.css";
 
 const AdminDashboard: React.FC = () => {
   return (
-    <div
-      style={{
-        margin: "0 auto",
-        paddingTop: "50px",
-        textAlign: "center",
-        maxWidth: "80vw",
-      }}
-    >
+    <div className="admin-dashboard-page">
       <h1>Panneau d'Administration</h1>
       <p>Bienvenue dans l'espace réservé aux administrateurs.</p>
-      <hr style={{ margin: "2rem auto", maxWidth: "600px" }} />
+      <hr />
       <CsvImporter />
     </div>
   );

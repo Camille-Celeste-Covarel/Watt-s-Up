@@ -1,13 +1,24 @@
-/* ==========================================================================
-   Conteneur principal et contrôles
-   ========================================================================== */
+.importer-accordion {
+  border: 1px solid var(--quinte-color);
 
-h3 {
-  text-align: center;
-  color: #333;
-  margin-top: 0;
-  margin-bottom: 2rem;
-  font-weight: 600;
+  summary {
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    background-color: var(--quinte-color);
+    color: white;
+    list-style-position: inside;
+    transition: background-color 0.2s;
+    font-size: 14pt;
+
+    &:hover {
+      background-color: var(--fondamental-color);
+    }
+  }
+}
+
+.importer-container {
+  padding: 1.5rem;
 }
 
 .importer-controls {
@@ -25,59 +36,52 @@ h3 {
     justify-content: center;
   }
 
-  /*
-  Style commun pour tous les boutons
-  */
   button,
   .importer-browse-button {
-    padding: 0.6rem 1.2rem;
-    border: none;
-    color: white;
+    border: 3px solid var(--fondamental-color);
+    color: var(--fondamental-color);
+    background-color: white;
+    padding: 0.5rem 1rem;
     cursor: pointer;
     font-size: 1rem;
-    font-weight: 500;
-    transition: background-color 0.2s;
+    font-weight: 600;
+    transition: background-color 0.2s, color 0.2s;
 
     &:hover:not(:disabled) {
-      background-color: #0056b3;
+      background-color: var(--fondamental-color);
+      color: white;
     }
 
     &:disabled {
       background-color: #ccc;
+      border-color: #ccc;
+      color: #666;
       cursor: not-allowed;
     }
   }
 
-  button {
-    background-color: #007bff;
+  .start-charge-button {
+    background-color: var(--fondamental-color);
+    color: white;
   }
 
   .importer-stop-button {
-    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #dc3545;
+    background-color: white;
 
     &:hover:not(:disabled) {
-      background-color: #c82333;
-    }
-  }
-
-  .importer-browse-button {
-    background-color: #6c757d;
-
-    &:hover:not(:disabled) {
-      background-color: #5a6268;
+      background-color: #dc3545;
+      color: white;
     }
   }
 
   .file-name-display {
     margin-top: 0.5rem;
     font-style: italic;
-    color: #555;
+    color: var(--fondamental-color);
   }
 }
-
-/* ==========================================================================
-     Nouveau Dashboard d'importation
-     ========================================================================== */
 
 .import-dashboard {
   margin-top: 1.5rem;
@@ -86,15 +90,16 @@ h3 {
 
   .progress-bar-container {
     width: 100%;
-    background-color: #e9ecef;
+    background-color: #fff;
     height: 28px;
     overflow: hidden;
     position: relative;
-    box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--fondamental-color);
 
     .progress-bar {
       height: 100%;
-      transition: width 0.25s ease-out, background-image 0.5s linear;
+      background-color: var(--fondamental-color);
+      transition: width 0.25s ease-out;
     }
 
     .progress-bar-text {
@@ -108,7 +113,7 @@ h3 {
       justify-content: center;
       color: white;
       font-weight: bold;
-      text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.6);
+      mix-blend-mode: difference;
     }
   }
 
@@ -120,8 +125,8 @@ h3 {
 
     .log-console {
       flex-grow: 1;
-      background-color: #2d2d2d;
-      color: #f0f0f0;
+      background-color: #fff;
+      color: #333;
       padding: 1rem;
       font-family: "Courier New", Courier, monospace;
       font-size: 0.85rem;
@@ -129,13 +134,9 @@ h3 {
       flex-direction: column;
       justify-content: flex-end;
       overflow: hidden;
-
-      .log-line {
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding: 2px 0;
-      }
+      border: 1px solid var(--fondamental-color);
+      max-height: 30dvh;
+      overflow-y: auto;
     }
 
     .timer-and-stats {
@@ -147,13 +148,14 @@ h3 {
 
       .timer,
       .stats-recap {
-        background-color: #e9ecef;
         padding: 1rem;
         text-align: center;
         display: flex;
         flex-direction: column;
         justify-content: center;
         flex-grow: 1;
+        border: 1px solid var(--fondamental-color);
+        background-color: #fff;
 
         span {
           display: block;
@@ -167,13 +169,14 @@ h3 {
       .timer strong {
         font-size: 2.5rem;
         font-weight: 300;
-        color: #343a40;
+        color: var(--fondamental-color);
         line-height: 1.2;
       }
 
       .stats-recap strong {
         font-weight: 600;
         font-size: 1.2rem;
+        color: var(--fondamental-color);
       }
     }
   }
@@ -181,6 +184,7 @@ h3 {
   .error-accordion {
     margin-top: 1.5rem;
     overflow: hidden;
+    border: 1px solid #dc3545;
 
     summary {
       background-color: #f8d7da;

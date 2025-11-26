@@ -82,108 +82,110 @@ const CsvImporter: React.FC = () => {
   const isDashboardVisible = isImporting || importId;
 
   return (
-    <div className="importer-container">
-      <h3>Importer des Données depuis un CSV</h3>
-      <div className="importer-controls">
-        <div className="importer-button-group">
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileChange}
-            disabled={isImporting}
-            ref={fileInputRef}
-            style={{ display: "none" }}
-          />
+    <details className="importer-accordion">
+      <summary>Importer des Données depuis un CSV</summary>
+      <div className="importer-container">
+        <div className="importer-controls">
+          <div className="importer-button-group">
+            <input
+              type="file"
+              accept=".csv"
+              onChange={handleFileChange}
+              disabled={isImporting}
+              ref={fileInputRef}
+              style={{ display: "none" }}
+            />
 
-          <button
-            type="button"
-            onClick={handleBrowseClick}
-            disabled={isImporting}
-            className="importer-browse-button"
-          >
-            Parcourir...
-          </button>
-
-          <button
-            type="button"
-            onClick={handleUpload}
-            disabled={isImporting || !file || !isWsConnected}
-          >
-            {isImporting
-              ? "Importation..."
-              : !isWsConnected
-                ? "Connexion..."
-                : "Lancer l'importation"}
-          </button>
-          {isImporting && (
             <button
               type="button"
-              onClick={cancelImport}
-              className="importer-stop-button"
+              onClick={handleBrowseClick}
+              disabled={isImporting}
+              className="importer-browse-button"
             >
-              Arrêter
+              Parcourir...
             </button>
+
+            <button
+              type="button"
+              onClick={handleUpload}
+              disabled={isImporting || !file || !isWsConnected}
+            >
+              {isImporting
+                ? "Importation..."
+                : !isWsConnected
+                  ? "Connexion..."
+                  : "Lancer l'importation"}
+            </button>
+            {isImporting && (
+              <button
+                type="button"
+                onClick={cancelImport}
+                className="importer-stop-button"
+              >
+                Arrêter
+              </button>
+            )}
+          </div>
+
+          {(file || fileName) && (
+            <span className="file-name-display">{fileName || file?.name}</span>
           )}
         </div>
 
-        {(file || fileName) && (
-          <span className="file-name-display">{fileName || file?.name}</span>
-        )}
-      </div>
-
-      {isDashboardVisible && (
-        <div className="import-dashboard">
-          <div className="progress-bar-container">
-            <div
-              className="progress-bar"
-              style={{
-                width: `${progressPercentage}%`,
-                backgroundImage: getProgressBarGradient(progressPercentage),
-              }}
-            />
-            <span className="progress-bar-text">{progressPercentage}%</span>
-          </div>
-
-          <div className="status-row">
-            <div className="log-console">
-              {logLines.map((line, index) => (
-                <div
-                  key={`${index}-${line}`}
-                  className="log-line"
-                  style={{ opacity: (index + 1) / logLines.length }}
-                >
-                  {line}
-                </div>
-              ))}
+        {isDashboardVisible && (
+          <div className="import-dashboard">
+            <div className="progress-bar-container">
+              <div
+                className="progress-bar"
+                style={{
+                  width: `${progressPercentage}%`,
+                  backgroundImage: getProgressBarGradient(progressPercentage),
+                }}
+              />
+              <span className="progress-bar-text">{progressPercentage}%</span>
             </div>
-            <div className="timer-and-stats">
-              <div className="timer">
-                <span>Temps écoulé</span>
-                <strong>{formatTime(elapsedTime)}</strong>
-              </div>
-              <div className="stats-recap">
-                <strong>{stats.success.toLocaleString("fr-FR")}</strong>{" "}
-                réussites
-                <br />
-                <strong>{stats.errors.toLocaleString("fr-FR")}</strong> erreurs
-              </div>
-            </div>
-          </div>
 
-          {errorMessages.length > 0 && (
-            <details className="error-accordion">
-              <summary>Détail des erreurs ({errorMessages.length})</summary>
-              <div className="error-details">
-                {errorMessages.map((msg, index) => (
-                  <div key={`${index}-${msg}`}>{msg}</div>
+            <div className="status-row">
+              <div className="log-console">
+                {logLines.map((line, index) => (
+                  <div
+                    key={`${index}-${line}`}
+                    className="log-line"
+                    style={{ opacity: (index + 1) / logLines.length }}
+                  >
+                    {line}
+                  </div>
                 ))}
               </div>
-            </details>
-          )}
-        </div>
-      )}
-      <ImportHistory />
-    </div>
+              <div className="timer-and-stats">
+                <div className="timer">
+                  <span>Temps écoulé</span>
+                  <strong>{formatTime(elapsedTime)}</strong>
+                </div>
+                <div className="stats-recap">
+                  <strong>{stats.success.toLocaleString("fr-FR")}</strong>{" "}
+                  réussites
+                  <br />
+                  <strong>{stats.errors.toLocaleString("fr-FR")}</strong> erreurs
+                </div>
+              </div>
+            </div>
+
+            {errorMessages.length > 0 && (
+              <details className="error-accordion">
+                <summary>Détail des erreurs ({errorMessages.length})</summary>
+                <div className="error-details">
+                  {errorMessages.map((msg, index) => (
+                    <div key={`${index}-${msg}`}>{msg}</div>
+                  ))}
+                </div>
+              </details>
+            )}
+          </div>
+        )}
+        <ImportHistory />
+      </div>
+    </details>
   );
 };
 
