@@ -38,7 +38,10 @@
 }
 
 @media (min-width: 768px) {
+  .navbar-container {
+    display: none;
+  }
   :root {
-    --footer-height: 35px;
+    --footer-height: 0px;
   }
 }

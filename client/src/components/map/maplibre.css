@@ -1,7 +1,7 @@
 .map-wrap {
   position: relative;
   width: 100%;
-  height: calc(100dvh - 70px - 60px);
+  height: calc(100dvh - var(--footer-height) - 60px);
   cursor: default;
 }
 
@@ -93,7 +93,7 @@ h3 {
   .map-wrap {
     position: relative;
     width: 100%;
-    height: calc(100dvh - 35px - 60px);
+    height: calc(100dvh - var(--footer-height) - 60px);
     cursor: default;
   }
 }

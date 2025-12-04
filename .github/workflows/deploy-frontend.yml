@@ -96,6 +96,7 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             VITE_API_URL=${{ secrets.API_URL_SNAILFRONT }}
+            VITE_STADIA_API_KEY=${{ secrets.VITE_STADIA_API_KEY }}
 
   deploy:
     name: Deploy to SnailFront

@@ -130,7 +130,26 @@ function MapLibre() {
       bottomRightControlsRef.current.appendChild(globeElement);
     }
 
-    map.addControl(new MapLibreSearchControl({}), "top-left");
+    const apiKey = import.meta.env.VITE_STADIA_API_KEY;
+    if (!apiKey) {
+      console.error(
+        "Stadia Maps API key is missing. Please add VITE_STADIA_API_KEY to your environment variables.",
+      );
+    }
+
+    const searchControl = new MapLibreSearchControl({});
+    // @ts-expect-error - Bypassing TypeScript error due to possible outdated types
+    searchControl.searchUrl = (query: string) =>
+      `https://api.stadiamaps.com/geocoding/v1/search?api_key=${apiKey}&text=${encodeURIComponent(
+        query,
+      )}`;
+    // @ts-expect-error - Bypassing TypeScript error due to possible outdated types
+    searchControl.autocompleteUrl = (query: string) =>
+      `https://api.stadiamaps.com/geocoding/v1/autocomplete?api_key=${apiKey}&text=${encodeURIComponent(
+        query,
+      )}`;
+
+    map.addControl(searchControl, "top-left");
 
     map.on("load", () => {
       map.addSource("stations", {
