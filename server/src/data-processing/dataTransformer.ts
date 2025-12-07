@@ -348,13 +348,19 @@ export async function transformCsvRowToEntities(
     }
 
     const validOtherPlugName = getNonBooleanString(row.prise_type_autre);
-
     if (validOtherPlugName) {
       console.log(
         `[dataTransformer] Ligne #${rowNumber}: Détection d'un nom de prise non standard dans 'prise_type_autre': "${validOtherPlugName}".`,
         LogLevel.INFO,
       );
       const plugId = await findOrCreatePlugByName(validOtherPlugName);
+      addedPlugIds.add(plugId);
+    } else if (parseBoolean(row.prise_type_autre) === true) {
+      console.log(
+        `[dataTransformer] Ligne #${rowNumber}: 'prise_type_autre' est 'true' sans nom spécifique. Création d'une prise 'Autre'.`,
+        LogLevel.INFO,
+      );
+      const plugId = await findOrCreatePlugByName("Autre");
       addedPlugIds.add(plugId);
     }
 
