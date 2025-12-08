@@ -10,6 +10,7 @@ export class ImportLog
 {
   public id!: string;
   public import_id!: string;
+  public log_file_uuid!: string | null;
   public file_name!: string;
   public total_lines_in_file!: number;
   public total_lines_processed!: number;
@@ -41,6 +42,10 @@ export class ImportLog
           type: DataTypes.UUID,
           defaultValue: DataTypes.UUIDV4,
           allowNull: false,
+        },
+        log_file_uuid: {
+          type: DataTypes.UUID,
+          allowNull: true,
         },
         file_name: {
           type: DataTypes.STRING(255),

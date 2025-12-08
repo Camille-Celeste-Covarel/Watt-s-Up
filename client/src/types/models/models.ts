@@ -54,6 +54,7 @@ export type CompagnyCreationAttributes = Optional<
 export interface ImportLogAttributes {
   id: string;
   import_id: string;
+  log_file_uuid?: string | null;
   file_name: string;
   total_lines_in_file: number;
   total_lines_processed: number;

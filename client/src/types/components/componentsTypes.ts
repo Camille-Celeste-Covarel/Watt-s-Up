@@ -32,6 +32,7 @@ export interface TerminalGroup {
 
 export interface HistoryEntry {
   import_id: string;
+  log_file_uuid?: string;
   file_name: string;
   status: "COMPLETED" | "PARTIAL_SUCCESS" | "FAILED" | "CANCELLED";
   import_date: string;
