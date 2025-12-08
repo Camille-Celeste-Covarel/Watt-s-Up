@@ -1,4 +1,4 @@
-import type { StationAttributes } from "../../../server/src/types/models/models.ts";
+import type { StationAttributes } from "./models/models.ts";
 
 export interface StationMapAttributes extends StationAttributes {
   availableTerminalsCount?: number;
