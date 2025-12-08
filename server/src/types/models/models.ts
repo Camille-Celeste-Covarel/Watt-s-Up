@@ -59,7 +59,7 @@ export interface ImportLogAttributes {
   total_lines_processed: number;
   successful_lines: number;
   error_summary: Record<string, unknown> | null;
-  error_log_file_path: string | null;
+  log_file_uuid: string | null;
   status:
     | "IN_PROGRESS"
     | "COMPLETED"

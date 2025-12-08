@@ -15,7 +15,7 @@ export class ImportLog
   public total_lines_processed!: number;
   public successful_lines!: number;
   public error_summary!: ImportLogAttributes["error_summary"];
-  public error_log_file_path!: string | null;
+  public log_file_uuid!: string | null;
   public status!:
     | "IN_PROGRESS"
     | "COMPLETED"
@@ -62,8 +62,8 @@ export class ImportLog
           type: DataTypes.JSONB,
           allowNull: true,
         },
-        error_log_file_path: {
-          type: DataTypes.STRING(255),
+        log_file_uuid: {
+          type: DataTypes.UUID,
           allowNull: true,
         },
         status: {

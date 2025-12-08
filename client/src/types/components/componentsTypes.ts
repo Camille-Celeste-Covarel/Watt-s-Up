@@ -40,6 +40,7 @@ export interface HistoryEntry {
   successful_lines: number;
   duration_ms: number;
   error_summary: { message: string } | null;
+  log_file_uuid: string | null;
 }
 
 export interface ModalProps {

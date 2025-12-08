@@ -61,12 +61,21 @@ const ImportHistory: React.FC = () => {
               const statusInfo = getStatusInfo(entry.status);
               const importDate = new Date(entry.import_date);
               return (
-                <details key={entry.import_id} className="history-item-details-accordion">
+                <details
+                  key={entry.import_id}
+                  className="history-item-details-accordion"
+                >
                   <summary>
                     <div className="history-item-summary">
-                      <span className="history-item-status-icon">{statusInfo.icon}</span>
+                      <span className="history-item-status-icon">
+                        {statusInfo.icon}
+                      </span>
                       <span className="history-item-date-summary">
-                        {importDate.toLocaleDateString("fr-FR")} - {importDate.toLocaleTimeString("fr-FR", { hour: '2-digit', minute: '2-digit' })}
+                        {importDate.toLocaleDateString("fr-FR")} -{" "}
+                        {importDate.toLocaleTimeString("fr-FR", {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
                     </div>
                   </summary>
@@ -76,15 +85,21 @@ const ImportHistory: React.FC = () => {
                         <strong>Statut:</strong> {statusInfo.text}
                       </div>
                       <div>
-                        <strong>Durée:</strong> {formatDuration(entry.duration_ms)}
+                        <strong>Durée:</strong>{" "}
+                        {formatDuration(entry.duration_ms)}
                       </div>
                     </div>
                     <div className="history-item-group">
                       <div>
-                        <strong>Lignes:</strong> {entry.successful_lines?.toLocaleString("fr-FR") ?? 0} / {entry.total_lines_processed?.toLocaleString("fr-FR") ?? 0}
+                        <strong>Lignes:</strong>{" "}
+                        {entry.successful_lines?.toLocaleString("fr-FR") ?? 0} /{" "}
+                        {entry.total_lines_processed?.toLocaleString("fr-FR") ??
+                          0}
                       </div>
                       <div>
-                        <strong>Total:</strong> {entry.total_lines_in_file?.toLocaleString("fr-FR") ?? 0}
+                        <strong>Total:</strong>{" "}
+                        {entry.total_lines_in_file?.toLocaleString("fr-FR") ??
+                          0}
                       </div>
                     </div>
                     <div className="history-item-group">
@@ -95,7 +110,16 @@ const ImportHistory: React.FC = () => {
                     {entry.error_summary && (
                       <div className="history-item-group">
                         <div className="history-item-errors history-item-long-text">
-                          <strong>Erreurs:</strong> <span>{entry.error_summary.message}</span>
+                          <strong>Erreurs:</strong>{" "}
+                          <span>{entry.error_summary.message}</span>
+                        </div>
+                      </div>
+                    )}
+                    {entry.log_file_uuid && (
+                      <div className="history-item-group">
+                        <div className="history-item-long-text">
+                          <strong>Log ID:</strong>{" "}
+                          <span>{entry.log_file_uuid}</span>
                         </div>
                       </div>
                     )}
