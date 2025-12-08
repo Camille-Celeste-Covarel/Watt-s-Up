@@ -504,7 +504,7 @@ async function processConsolidatedStations(
 }
 
 async function processCsvInBackground(
-  importUuid: string,
+  processId: string,
   filePath: string,
   originalFileName: string,
   totalLinesFromMetadata: number,
@@ -514,11 +514,12 @@ async function processCsvInBackground(
 
   stagedStationData.clear();
 
-  registerImport(importUuid);
+  registerImport(processId);
 
+  const logFileUuid = uuidv4();
   const currentErrorLogFile = path.join(
     ERROR_LOG_DIR,
-    `import_errors_${importUuid}.log`,
+    `import_errors_${logFileUuid}.log`,
   );
 
   let importCompleted = false;
@@ -565,7 +566,8 @@ async function processCsvInBackground(
   }
   try {
     initialImportLogEntry = await Models.ImportLog.create({
-      import_id: importUuid,
+      import_id: processId,
+      log_file_uuid: logFileUuid,
       file_name: originalFileName,
       total_lines_in_file: totalLinesFromMetadata,
       total_lines_processed: 0,
@@ -577,7 +579,7 @@ async function processCsvInBackground(
     });
     console.log("Entrée ImportLog IN_PROGRESS créée en BDD.", LogLevel.DEBUG);
 
-    notifyStart(importUuid);
+    notifyStart(processId);
 
     const csvStream = fs
       .createReadStream(filePath)
@@ -588,7 +590,7 @@ async function processCsvInBackground(
     let wasInterrupted = false;
 
     for await (const row of csvStream as AsyncIterable<CsvRow>) {
-      if (importCompleted || isStopRequested(importUuid)) {
+      if (importCompleted || isStopRequested(processId)) {
         wasInterrupted = true;
         console.log(
           "Arrêt de l'importation demandé. Interruption de la lecture du fichier CSV.",
@@ -616,7 +618,7 @@ async function processCsvInBackground(
           LogLevel.INFO,
         );
         notifyProgress(
-          importUuid,
+          processId,
           currentProgressPercentage,
           `Traitement en cours : ${currentProgressPercentage}% des lignes CSV traitées.`,
           totalSuccessfulStations,
@@ -708,8 +710,11 @@ async function processCsvInBackground(
               `Début du flush de ${stationsToFlush.length} stations. Taille du tampon avant flush: ${stagedStationData.size + stationsToFlush.length}.`,
               LogLevel.INFO,
             );
-            const { successfulStations, successfulLines, errors: processErrors } =
-              await processConsolidatedStations(stationsToFlush, importUuid);
+            const {
+              successfulStations,
+              successfulLines,
+              errors: processErrors,
+            } = await processConsolidatedStations(stationsToFlush, processId);
             totalSuccessfulStations += successfulStations;
             totalSuccessfulLines += successfulLines;
             totalErrorEntries += processErrors.length;
@@ -740,7 +745,7 @@ async function processCsvInBackground(
         LogLevel.INFO,
       );
     }
-    if (!isStopRequested(importUuid) && stagedStationData.size > 0) {
+    if (!isStopRequested(processId) && stagedStationData.size > 0) {
       const stationsToFlush = Array.from(stagedStationData.values());
       stagedStationData.clear();
 
@@ -748,8 +753,11 @@ async function processCsvInBackground(
         `Début du flush final de ${stationsToFlush.length} stations.`,
         LogLevel.DEBUG,
       );
-      const { successfulStations, successfulLines, errors: processErrors } =
-        await processConsolidatedStations(stationsToFlush, importUuid);
+      const {
+        successfulStations,
+        successfulLines,
+        errors: processErrors,
+      } = await processConsolidatedStations(stationsToFlush, processId);
       totalSuccessfulStations += successfulStations;
       totalSuccessfulLines += successfulLines;
       totalErrorEntries += processErrors.length;
@@ -789,7 +797,7 @@ async function processCsvInBackground(
     );
 
     const finalStatus: ImportLogAttributes["status"] = isStopRequested(
-      importUuid,
+      processId,
     )
       ? "CANCELLED"
       : totalSuccessfulLines === 0 && totalProcessedCsvLines > 0
@@ -807,7 +815,8 @@ async function processCsvInBackground(
         : null;
 
     const importSummary: ImportLogCreationAttributes = {
-      import_id: importUuid,
+      import_id: processId,
+      log_file_uuid: logFileUuid,
       file_name: originalFileName,
       total_lines_in_file: totalLinesFromMetadata,
       total_lines_processed: totalProcessedCsvLines,
@@ -830,12 +839,18 @@ async function processCsvInBackground(
       } else {
         const newEntry = await Models.ImportLog.create(importSummary);
         finalDataForNotification = newEntry.get();
-        console.log("Entrée ImportLog créée en BDD (fallback).", LogLevel.DEBUG);
+        console.log(
+          "Entrée ImportLog créée en BDD (fallback).",
+          LogLevel.DEBUG,
+        );
       }
     } else {
       const newEntry = await Models.ImportLog.create(importSummary);
       finalDataForNotification = newEntry.get();
-      console.log("Entrée ImportLog créée en BDD (initial null).", LogLevel.DEBUG);
+      console.log(
+        "Entrée ImportLog créée en BDD (initial null).",
+        LogLevel.DEBUG,
+      );
     }
 
     console.log(
@@ -845,7 +860,10 @@ async function processCsvInBackground(
     if (finalDataForNotification) {
       notifyCompletion(finalDataForNotification);
     } else {
-      console.error("finalDataForNotification était null après le traitement, impossible d'envoyer la notification de complétion.", LogLevel.ERROR);
+      console.error(
+        "finalDataForNotification était null après le traitement, impossible d'envoyer la notification de complétion.",
+        LogLevel.ERROR,
+      );
     }
     console.log(
       "Notification de complétion envoyée avec succès.",
@@ -892,7 +910,8 @@ async function processCsvInBackground(
       const duration_ms = new Date().getTime() - startTime.getTime();
       const status: ImportLogAttributes["status"] = "FAILED";
       const importSummary: ImportLogCreationAttributes = {
-        import_id: importUuid,
+        import_id: processId,
+        log_file_uuid: logFileUuid,
         file_name: originalFileName || "N/A (Stream Error)",
         total_lines_in_file: totalLinesFromMetadata,
         total_lines_processed: totalProcessedCsvLines,
@@ -918,7 +937,10 @@ async function processCsvInBackground(
         } else {
           const newEntry = await Models.ImportLog.create(importSummary);
           finalDataForNotification = newEntry.get();
-          console.log("Entrée ImportLog FAILED créée en BDD (initial null).", LogLevel.DEBUG);
+          console.log(
+            "Entrée ImportLog FAILED créée en BDD (initial null).",
+            LogLevel.DEBUG,
+          );
         }
         console.log(
           "Envoi de la notification de complétion (catch block).",
@@ -927,7 +949,10 @@ async function processCsvInBackground(
         if (finalDataForNotification) {
           notifyCompletion(finalDataForNotification);
         } else {
-          console.error("finalDataForNotification était null après l'erreur, impossible d'envoyer la notification de complétion.", LogLevel.ERROR);
+          console.error(
+            "finalDataForNotification était null après l'erreur, impossible d'envoyer la notification de complétion.",
+            LogLevel.ERROR,
+          );
         }
         console.log(
           "Notification de complétion envoyée (catch block).",
@@ -942,7 +967,7 @@ async function processCsvInBackground(
       }
     }
   } finally {
-    unregisterImport(importUuid);
+    unregisterImport(processId);
     restoreConsoleOutput();
   }
 }
@@ -953,10 +978,10 @@ async function countLinesInFile(filePath: string): Promise<number> {
     const stream = fs.createReadStream(filePath);
     let lastCharWasNewline = false;
 
-    stream.on('data', (chunk: string | Buffer) => {
+    stream.on("data", (chunk: string | Buffer) => {
       const bufferChunk = chunk as Buffer;
       for (let i = 0; i < bufferChunk.length; ++i) {
-        if (bufferChunk[i] === 0x0A) {
+        if (bufferChunk[i] === 0x0a) {
           lineCount++;
           lastCharWasNewline = true;
         } else {
@@ -965,14 +990,14 @@ async function countLinesInFile(filePath: string): Promise<number> {
       }
     });
 
-    stream.on('end', () => {
+    stream.on("end", () => {
       if (stream.bytesRead > 0 && !lastCharWasNewline) {
         lineCount++;
       }
       resolve(lineCount);
     });
 
-    stream.on('error', reject);
+    stream.on("error", reject);
   });
 }
 
@@ -984,7 +1009,7 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
     return;
   }
 
-  const importUuid = uuidv4();
+  const processId = uuidv4();
   const filePath = (req.file as CustomFile).path;
   const originalFileName = (req.file as CustomFile).originalname;
 
@@ -998,22 +1023,22 @@ export const importCsv = async (req: Request, res: Response): Promise<void> => {
   res.status(202).json({
     message:
       "La demande d'importation a été acceptée et est en cours de traitement.",
-    importId: importUuid,
+    importId: processId,
   });
 
   console.log(
-    `Réponse 202 envoyée pour l'import ${importUuid}. Lancement du traitement en arrière-plan.`,
+    `Réponse 202 envoyée pour l'import ${processId}. Lancement du traitement en arrière-plan.`,
     LogLevel.INFO,
   );
 
   processCsvInBackground(
-    importUuid,
+    processId,
     filePath,
     originalFileName,
     totalLinesFromMetadata,
   ).catch((err) => {
     console.error(
-      `Erreur non gérée dans le traitement de fond pour l'import ${importUuid}:`,
+      `Erreur non gérée dans le traitement de fond pour l'import ${processId}:`,
       LogLevel.CRITICAL,
       err,
     );
